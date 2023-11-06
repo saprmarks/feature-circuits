@@ -22,6 +22,7 @@ if __name__ == "__main__":
                         help="Number of contexts to train on per step.")
     parser.add_argument("--max_contexts_len", type=int, default=128,
                         help="Maximum length of context.")
+    parser.add_argument("--save_steps", type=int, default=None, help="Number of steps between saves.")
     parser.add_argument("--device", type=str, default="cuda:0", help="Model device.")
     args = parser.parse_args()
 
@@ -38,6 +39,7 @@ if __name__ == "__main__":
         in_batch_size = args.in_bsz,
         out_batch_size = args.max_contexts_len * args.contexts_per_step,
         n_ctxs = args.contexts_per_step * 50,
+        is_hf=True,
         device='cuda:0'
     )
 
@@ -51,6 +53,7 @@ if __name__ == "__main__":
         entropy=False,
         resample_steps = args.resample_steps,
         log_steps = args.resample_steps,
+        save_steps = args.save_steps,
         device='cuda:0'
     )
 
