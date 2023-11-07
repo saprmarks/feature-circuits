@@ -14,5 +14,6 @@ python test_script.py \
 	--steps 100000 \
 	--contexts_per_step $MAX_CONTEXTS \
 	--resample_steps 25000 \
-	--save_steps 10000 \
-	--in_bsz $MAX_CONTEXTS
+	--save_steps 15000 \
+	--in_bsz $MAX_CONTEXTS \
+	--dict_size 32768
