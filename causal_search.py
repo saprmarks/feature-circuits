@@ -3,6 +3,7 @@ import json
 import os
 import io
 import random
+import argparse
 from tqdm import tqdm
 from nnsight import LanguageModel
 from dictionary_learning.buffer import ActivationBuffer
@@ -12,7 +13,7 @@ from datasets import load_dataset
 from einops import rearrange
 import torch as t
 
-def load_examples(dataset, num_examples, seed=12):
+def load_examples(dataset, num_examples, model, seed=12):
         examples = []
         dataset_items = open(dataset).readlines()
         random.seed(seed)
@@ -40,8 +41,19 @@ def load_examples(dataset, num_examples, seed=12):
         return examples
 
 
-def get_activation_caches(model, submodule, autoencoder,
-                           clean_input, patch_input):
+def compare_probs(logits, example_dict):
+    last_token_logits = logits[:,-1,:]
+    probs = last_token_logits.softmax(dim=-1)
+    prob_ratio = t.divide(probs[0][example_dict["clean_answer"]],
+                          probs[0][example_dict["patch_answer"]])
+    return prob_ratio
+
+
+def get_dictionary_activation_caches(model, submodule, autoencoder,
+                                     example_dict):
+    clean_input = example_dict["clean_prefix"]
+    patch_input = example_dict["patch_prefix"]
+
     # 1 clean forward, 1 patch forward
     with model.generate(max_new_tokens=1, pad_token_id=model.tokenizer.pad_token_id) as generator:
         with generator.invoke(clean_input, scan=False) as invoker:
@@ -51,61 +63,239 @@ def get_activation_caches(model, submodule, autoencoder,
         with generator.invoke(patch_input, scan=False) as invoker:
             patch_hidden_states = submodule.output.save()
     patch_dictionary_activations = autoencoder.encode(patch_hidden_states.value.to("cuda"))
-    return {"clean_dictionary_activations": clean_dictionary_activations,
-            "patch_dictionary_activations": patch_dictionary_activations}
+    return {"clean_activations": clean_dictionary_activations,
+            "patch_activations": patch_dictionary_activations}
 
 
-def search_for_phenomenon(model, submodule, autoencoder, dataset,
-                          num_return_features=10,
-                          num_examples=1):
-    examples = load_examples(dataset, num_examples)
+def get_submodule_activation_caches(model, submodule,
+                                    example_dict):
+    clean_input = example_dict["clean_prefix"]
+    patch_input = example_dict["patch_prefix"]
+
+    # 1 clean forward, 1 patch forward
+    with model.generate(max_new_tokens=1, pad_token_id=model.tokenizer.pad_token_id) as generator:
+        with generator.invoke(clean_input, scan=False) as invoker:
+            clean_hidden_states = submodule.output.save()
+    with model.generate(max_new_tokens=1, pad_token_id=model.tokenizer.pad_token_id) as generator:
+        with generator.invoke(patch_input, scan=False) as invoker:
+            patch_hidden_states = submodule.output.save()
+    return {"clean_activations": clean_hidden_states.value,
+            "patch_activations": patch_hidden_states.value}
+
+
+def get_forward_and_backward_caches(model, submodule, autoencoder,
+                                    example_dict):
+    # corrupted forward pass
+    with model.invoke(example_dict["patch_prefix"],
+                      fwd_args = {"inference": False}) as invoker_patch:
+        x = submodule.output
+        f = autoencoder.encode(x)
+        patch_f_saved = f.save()
+        x_hat = autoencoder.decode(f)
+        submodule.output = x_hat
+    
+    # clean forward passes
+    with model.invoke(example_dict["clean_prefix"],
+                      fwd_args = {"inference": False}) as invoker_clean:
+        x = submodule.output
+        f = autoencoder.encode(x)
+        clean_f_saved = f.save()
+        x_hat = autoencoder.decode(f)
+        submodule.output = x_hat
+    
+    # clean backward pass
+    clean_f_saved.value.retain_grad()
+    logits = invoker_clean.output.logits
+    metric = compare_probs(logits, example_dict)
+    metric.backward()
+
+    return {"clean_activations": clean_f_saved.value,
+            "patch_activations": patch_f_saved.value,
+            "clean_gradients":   clean_f_saved.value.grad}
+
+
+def get_forward_and_backward_caches_neurons(model, submodule, example_dict):
+    # corrupted forward pass
+    with model.invoke(example_dict["patch_prefix"],
+                      fwd_args = {"inference": False}) as invoker_patch:
+        patch_submodule_saved = submodule.output.save()
+    
+    backward_cache = {}
+    def backward_hook(module, grad_input, grad_output):
+        backward_cache["this"] = grad_output[0]
+
+    hook = model.local_model.gpt_neox.layers[3].mlp.dense_4h_to_h.register_full_backward_hook(backward_hook)
+
+    # clean forward passes
+    with model.invoke(example_dict["clean_prefix"],
+                      fwd_args = {"inference": False}) as invoker_clean:
+        clean_submodule_saved = submodule.output.save()
+    
+    # clean backward pass
+    # clean_submodule_saved.value.retain_grad()
+    logits = invoker_clean.output.logits
+    metric = compare_probs(logits, example_dict)
+    metric.backward()
+
+    return {"clean_activations": clean_submodule_saved.value,
+            "patch_activations": patch_submodule_saved.value,
+            "clean_gradients":   backward_cache["this"]}
+
+
+def search_dictionary_for_phenomenon(model, submodule, autoencoder, dataset,
+                                     num_return_features=10,
+                                     num_examples=100):
+    examples = load_examples(dataset, num_examples, model)
     print(f"Number of valid examples: {len(examples)}")
     
     num_features = autoencoder.dict_size
     indirect_effects = t.zeros(len(examples), num_features)
     for example_idx, example in tqdm(enumerate(examples), desc="Example", total=len(examples)):
-        dictionary_activations = get_activation_caches(model, submodule, autoencoder,
+        dictionary_activations = get_dictionary_activation_caches(model, submodule, autoencoder,
                                         example["clean_prefix"], example["patch_prefix"])
 
         # get clean logits
-        with model.forward(example["clean_prefix"]) as invoker:
-            acts = dictionary_activations["clean_dictionary_activations"]
+        with model.forward(example["clean_prefix"]) as invoker_clean:
+            acts = dictionary_activations["clean_activations"]
             clean_reconstructed_activations = autoencoder.decode(acts)
             submodule.output = clean_reconstructed_activations
-        logits = invoker.output.logits
-        logits = logits[:,-1,:]
+        logits = invoker_clean.output.logits
+        logits = logits[:,-1,:]     # logits at final token
         clean_probs = logits.softmax(dim=-1)
         y_clean = clean_probs[0][example["patch_answer"]].item() / clean_probs[0][example["clean_answer"]].item()
         
         # get logits with single patched feature
         for feature_idx in tqdm(range(0, num_features), leave=False, desc="Feature"):
-            with model.forward(example["clean_prefix"]) as invoker:
+            with model.forward(example["clean_prefix"]) as invoker_patch:
                 # patch single feature in dictionary
-                acts = dictionary_activations["clean_dictionary_activations"]
-                acts[:, -1, feature_idx] = dictionary_activations["patch_dictionary_activations"][:, -1, feature_idx]
+                acts = dictionary_activations["clean_activations"]
+                acts[:, -1, feature_idx] = dictionary_activations["patch_activations"][:, -1, feature_idx]
                 patch_reconstructed_activations = autoencoder.decode(acts)
                 submodule.output = patch_reconstructed_activations
-            logits = invoker.output.logits
-            logits = logits[:,-1,:]
+            logits = invoker_patch.output.logits
+            logits = logits[:,-1,:]     # logits at final token
             patch_probs = logits.softmax(dim=-1)
             y_patch = patch_probs[0][example["patch_answer"]].item() / patch_probs[0][example["clean_answer"]].item()
             indirect_effects[example_idx, feature_idx] = (y_patch - y_clean) / y_clean
     
     # take mean across examples
     indirect_effects = t.mean(indirect_effects, dim=0)
+    return indirect_effects
     # returns list of tuples of type (indirect_effect, feature_index)
-    return t.topk(indirect_effects, num_return_features)
+    # return t.topk(indirect_effects, num_return_features)
+
+
+def search_submodule_for_phenomenon(model, submodule, dataset,
+                          num_return_features=10,
+                          num_examples=100):
+    examples = load_examples(dataset, num_examples, model)
+    print(f"Number of valid examples: {len(examples)}")
+    
+    num_features = submodule.out_features
+    indirect_effects = t.zeros(len(examples), num_features)
+    for example_idx, example in tqdm(enumerate(examples), desc="Example", total=len(examples)):
+        dictionary_activations = get_submodule_activation_caches(model, submodule,
+                                        example["clean_prefix"], example["patch_prefix"])
+
+        # get clean logits
+        with model.forward(example["clean_prefix"]) as invoker_clean:
+            pass    # no interventions necessary
+        logits = invoker_clean.output.logits
+        logits = logits[:,-1,:]     # logits at final token
+        clean_probs = logits.softmax(dim=-1)
+        y_clean = clean_probs[0][example["patch_answer"]].item() / clean_probs[0][example["clean_answer"]].item()
+        
+        # get logits with single patched feature
+        for feature_idx in tqdm(range(0, num_features), leave=False, desc="Feature"):
+            with model.forward(example["clean_prefix"]) as invoker_patch:
+                # patch single feature in dictionary
+                acts = submodule.output
+                acts[:, -1, feature_idx] = dictionary_activations["patch_activations"][:, -1, feature_idx]
+                submodule.output = acts
+            logits = invoker_patch.output.logits
+            logits = logits[:,-1,:]     # logits at final token
+            patch_probs = logits.softmax(dim=-1)
+            y_patch = patch_probs[0][example["patch_answer"]].item() / patch_probs[0][example["clean_answer"]].item()
+            indirect_effects[example_idx, feature_idx] = (y_patch - y_clean) / y_clean
+    
+    # take mean across examples
+    indirect_effects = t.mean(indirect_effects, dim=0)
+    return indirect_effects
+    # returns list of tuples of type (indirect_effect, feature_index)
+    # return t.topk(indirect_effects, num_return_features)
+
+
+def attribution_patching(model, submodule, autoencoder,
+                         dataset, num_examples=100):
+    examples = load_examples(dataset, num_examples, model)
+    print(f"Number of valid examples: {len(examples)}")
+    
+    num_features = autoencoder.dict_size
+    indirect_effects = t.zeros(len(examples), num_features)
+    for example_idx, example in tqdm(enumerate(examples), desc="Example", total=len(examples)):
+        # get forward and backward patches
+        activations_gradients = get_forward_and_backward_caches(model, submodule,
+                                                                autoencoder, example)
+        act_clean = activations_gradients["clean_activations"][:,-1]
+        act_patch = activations_gradients["patch_activations"][:,-1]
+        grad_clean = activations_gradients["clean_gradients"][:,-1]
+        indirect_effects[example_idx] = grad_clean * (act_patch - act_clean)
+    
+    indirect_effects = t.mean(indirect_effects, dim=0)
+    return indirect_effects
+
+
+def attribution_patching_neurons(model, submodule,
+                         dataset, num_examples=100):
+    examples = load_examples(dataset, num_examples, model)
+    print(f"Number of valid examples: {len(examples)}")
+    
+    num_features = submodule.out_features
+    indirect_effects = t.zeros(len(examples), num_features)
+    for example_idx, example in tqdm(enumerate(examples), desc="Example", total=len(examples)):
+        # get forward and backward patches
+        activations_gradients = get_forward_and_backward_caches_neurons(model, submodule,
+                                                                example)
+        act_clean = activations_gradients["clean_activations"][:,-1]
+        act_patch = activations_gradients["patch_activations"][:,-1]
+        grad_clean = activations_gradients["clean_gradients"][:,-1]
+        indirect_effects[example_idx] = grad_clean * (act_patch - act_clean)
+    
+    indirect_effects = t.mean(indirect_effects, dim=0)
+    return indirect_effects
+
 
 if __name__ == "__main__":
-    model = LanguageModel("EleutherAI/pythia-70m-deduped")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--autoencoder", "-a", type=str,
+                        default='autoencoders/ae_mlp3_c4_lr0.0001_resample25000_dict32768.pt')
+    parser.add_argument("--dataset", "-d", type=str,
+                        default="phenomena/vocab/simple.json")
+    parser.add_argument("--num_examples", "-n", type=int, default=100,
+                        help="Number of example pairs to use in the causal search.")
+    args = parser.parse_args()
+
+    model = LanguageModel("EleutherAI/pythia-70m-deduped", dispatch=True)
+    model.local_model.requires_grad_(True)
     submodule = model.gpt_neox.layers[3].mlp.dense_4h_to_h
-    autoencoder = AutoEncoder(512, 2048).cuda()
-    autoencoder.load_state_dict(t.load('autoencoders/ae_mlp3_c4_lr0.0001_resample25000_dict2048.pt').state_dict())
+    autoencoder = AutoEncoder(512, 32768).cuda()
+    
+    autoencoder.load_state_dict(t.load('autoencoders/ae_mlp3_c4_lr0.0001_resample25000_dict32768.pt').state_dict())
     autoencoder = autoencoder.to("cuda")
     
-    effects, feature_idx = search_for_phenomenon(model,
-                                                 model.gpt_neox.layers[3].mlp.dense_4h_to_h,
-                                                 autoencoder,
-                                                 "phenomena/vocab/simple.json")
-    for effect, idx in zip(effects, feature_idx):
-        print(f"Feature {idx}: {effect:.5f}")
+    indirect_effects = attribution_patching_neurons(model,
+                                            model.gpt_neox.layers[3].mlp.dense_4h_to_h,
+                                            # autoencoder,
+                                            args.dataset,
+                                            num_examples=args.num_examples)
+    
+    # effects, feature_idx = search_submodule_for_phenomenon(model, model.gpt_neox.layers[3].mlp.dense_4h_to_h,
+    #                                                       args.dataset)
+    top_effects, top_idxs = t.topk(indirect_effects, 10)
+    bottom_effects, bottom_idxs = t.topk(indirect_effects, 10, largest=False)
+    for effect, idx in zip(top_effects, top_idxs):
+        print(f"Top Feature {idx}: {effect:.5f}")
+    for effect, idx in zip(bottom_effects, bottom_idxs):
+        print(f"Bottom Feature {idx}: {effect:.5f}")
+    # for effect, idx in zip(effects, feature_idx):
+    #     print(f"Feature {idx}: {effect:.5f}")
