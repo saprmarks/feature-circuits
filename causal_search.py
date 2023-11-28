@@ -84,7 +84,7 @@ def get_submodule_activation_caches(model, submodule,
 
 
 def get_forward_and_backward_caches(model, submodule, autoencoder,
-                                    example_dict):
+                                    example_dict, metric_fn=compare_probs):
     # corrupted forward pass
     with model.invoke(example_dict["patch_prefix"],
                       fwd_args = {"inference": False}) as invoker_patch:
@@ -106,7 +106,7 @@ def get_forward_and_backward_caches(model, submodule, autoencoder,
     # clean backward pass
     clean_f_saved.value.retain_grad()
     logits = invoker_clean.output.logits
-    metric = compare_probs(logits, example_dict)
+    metric = metric_fn(logits, example_dict)
     metric.backward()
 
     return {"clean_activations": clean_f_saved.value,
@@ -114,7 +114,7 @@ def get_forward_and_backward_caches(model, submodule, autoencoder,
             "clean_gradients":   clean_f_saved.value.grad}
 
 
-def get_forward_and_backward_caches_neurons(model, submodule, example_dict):
+def get_forward_and_backward_caches_neurons(model, local_submodule, example_dict):
     # corrupted forward pass
     with model.invoke(example_dict["patch_prefix"],
                       fwd_args = {"inference": False}) as invoker_patch:
@@ -140,6 +140,42 @@ def get_forward_and_backward_caches_neurons(model, submodule, example_dict):
     return {"clean_activations": clean_submodule_saved.value,
             "patch_activations": patch_submodule_saved.value,
             "clean_gradients":   backward_cache["this"]}
+
+
+def get_forward_and_backward_caches_wrt_features(model, submodule_lower, submodule_upper,
+                                                 autoencoder_lower, autoencoder_upper, feat_idx_upper,
+                                                 example_dict):
+    # corrupted forward pass
+    with model.invoke(example_dict["patch_prefix"],
+                      fwd_args = {"inference": False}) as invoker_patch:
+        x = submodule_lower.output
+        f = autoencoder_lower.encode(x)
+        patch_f_saved = f.save()
+        x_hat = autoencoder_lower.decode(f)
+        submodule_lower.output = x_hat
+    
+    # clean forward pass
+    upper_autoencoder_acts = None
+    with model.invoke(example_dict["clean_prefix"],
+                      fwd_args = {"inference": False}) as invoker_clean:
+        x = submodule_lower.output
+        f = autoencoder_lower.encode(x)
+        clean_f_saved = f.save()
+        x_hat = autoencoder_lower.decode(f)
+        submodule_lower.output = x_hat
+
+        y = submodule_upper.output
+        g = autoencoder_upper.encode(y)
+        clean_g_saved = g.save()
+    
+    # clean backward pass
+    clean_f_saved.value.retain_grad()
+    clean_feat_activation = clean_g_saved[:, -1, feat_idx_upper]
+    clean_feat_activation.backward()
+
+    return {"clean_activations": clean_f_saved.value,
+            "patch_activations": patch_f_saved.value,
+            "clean_gradients":   clean_f_saved.value.grad}
 
 
 def search_dictionary_for_phenomenon(model, submodule, autoencoder, dataset,
@@ -225,17 +261,14 @@ def search_submodule_for_phenomenon(model, submodule, dataset,
     # return t.topk(indirect_effects, num_return_features)
 
 
-def attribution_patching(model, submodule, autoencoder,
-                         dataset, num_examples=100):
-    examples = load_examples(dataset, num_examples, model)
-    print(f"Number of valid examples: {len(examples)}")
-    
+def attribution_patching(model, submodule, autoencoder, examples, metric_fn=compare_probs):
     num_features = autoencoder.dict_size
     indirect_effects = t.zeros(len(examples), num_features)
-    for example_idx, example in tqdm(enumerate(examples), desc="Example", total=len(examples)):
+    for example_idx, example in tqdm(enumerate(examples), desc="Example", leave=False, total=len(examples)):
         # get forward and backward patches
         activations_gradients = get_forward_and_backward_caches(model, submodule,
-                                                                autoencoder, example)
+                                                                autoencoder, example,
+                                                                metric_fn=metric_fn)
         act_clean = activations_gradients["clean_activations"][:,-1]
         act_patch = activations_gradients["patch_activations"][:,-1]
         grad_clean = activations_gradients["clean_gradients"][:,-1]
@@ -245,9 +278,8 @@ def attribution_patching(model, submodule, autoencoder,
     return indirect_effects
 
 
-def attribution_patching_neurons(model, submodule,
-                         dataset, num_examples=100):
-    examples = load_examples(dataset, num_examples, model)
+def attribution_patching_neurons(model, submodule, examples):
+    # examples = load_examples(dataset, num_examples, model)
     print(f"Number of valid examples: {len(examples)}")
     
     num_features = submodule.out_features
@@ -265,29 +297,80 @@ def attribution_patching_neurons(model, submodule,
     return indirect_effects
 
 
+# TODO: test
+def attribution_patching_wrt_features(model, submodule_lower, submodule_upper,
+                                      autoencoder_lower, autoencoder_upper, feat_idx_upper,
+                                      examples):
+    num_features_lower = autoencoder_lower.dict_size
+    indirect_effects = t.zeros(len(examples), num_features_lower)
+    for example_idx, example in tqdm(enumerate(examples), desc="Example", leave=False, total=len(examples)):
+        # get forward and backward patches
+        activations_gradients = get_forward_and_backward_caches_wrt_features(model, submodule_lower, submodule_upper,
+                                                                autoencoder_lower, autoencoder_upper, feat_idx_upper,
+                                                                example)
+        act_clean = activations_gradients["clean_activations"][:,-1]
+        act_patch = activations_gradients["patch_activations"][:,-1]
+        grad_clean = activations_gradients["clean_gradients"][:,-1]
+        indirect_effects[example_idx] = grad_clean * (act_patch - act_clean)
+    
+    indirect_effects = t.mean(indirect_effects, dim=0)
+    return indirect_effects
+
+
+def load_submodule(model, submodule_str):
+    if "." not in submodule_str:
+        return getattr(model, submodule_str)
+    
+    submodules = submodule_str.split(".")
+    curr_module = None
+    for module in submodules:
+        if module == "model":
+            continue
+        if not curr_module:
+            curr_module = getattr(model, module)
+            continue
+        curr_module = getattr(curr_module, module)
+    return curr_module
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--autoencoder", "-a", type=str,
+    parser.add_argument("--autoencoders", "-a", type=str,
+                        default='autoencoders/ae_mlp3_c4_lr0.0001_resample25000_dict32768.pt')
+    parser.add_argument("--models", "-m", type=str,
                         default='autoencoders/ae_mlp3_c4_lr0.0001_resample25000_dict32768.pt')
     parser.add_argument("--dataset", "-d", type=str,
                         default="phenomena/vocab/simple.json")
     parser.add_argument("--num_examples", "-n", type=int, default=100,
                         help="Number of example pairs to use in the causal search.")
+    parser.add_argument("--submodule", "-s", type=str,
+                        default="model.gpt_neox.layers.3.mlp.dense_4h_to_h")
     args = parser.parse_args()
 
+    # load model and specify submodule
     model = LanguageModel("EleutherAI/pythia-70m-deduped", dispatch=True)
     model.local_model.requires_grad_(True)
-    submodule = model.gpt_neox.layers[3].mlp.dense_4h_to_h
-    autoencoder = AutoEncoder(512, 32768).cuda()
-    
-    autoencoder.load_state_dict(t.load('autoencoders/ae_mlp3_c4_lr0.0001_resample25000_dict32768.pt').state_dict())
+    submodule = load_submodule(model, args.submodule)
+    submodule_width = submodule.out_features
+    dataset = load_examples(args.dataset, args.num_examples, model)
+
+    # load autoencoder
+    autoencoder_size = 32768
+    if "_sz" in args.autoencoder:
+        autoencoder_size = int(args.autoencoder.split("_sz")[1].split("_")[0].split(".")[0])
+    elif "_dict" in args.autoencoder:
+        autoencoder_size = int(args.autoencoder.split("_dict")[1].split("_")[0].split(".")[0])
+    autoencoder = AutoEncoder(submodule_width, autoencoder_size).cuda()
+    try:
+        autoencoder.load_state_dict(t.load(args.autoencoder))
+    except TypeError:
+        autoencoder.load_state_dict(t.load(args.autoencoder).state_dict())
     autoencoder = autoencoder.to("cuda")
     
-    indirect_effects = attribution_patching_neurons(model,
-                                            model.gpt_neox.layers[3].mlp.dense_4h_to_h,
-                                            # autoencoder,
-                                            args.dataset,
-                                            num_examples=args.num_examples)
+    indirect_effects = attribution_patching_wrt_features(model,
+                                            submodule,
+                                            autoencoder,
+                                            dataset)
     
     # effects, feature_idx = search_submodule_for_phenomenon(model, model.gpt_neox.layers[3].mlp.dense_4h_to_h,
     #                                                       args.dataset)
