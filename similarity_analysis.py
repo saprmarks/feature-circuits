@@ -77,12 +77,14 @@ def neuron_similarity(autoencoders, models, submodules, dataset):
         correlation = covariance / t.matmul(stddevs_1.T, stddevs_2)
         correlation = t.abs(correlation).to("cpu").numpy()
         
-        # TODO: RSA citation — correlation distance
-        correlations[ae1][ae2] = correlation.max(axis=1)
-        correlations[ae2][ae1] = correlation.max(axis=0)
+        # TODO: RSA — correlation distance
+        # correlations[ae1][ae2] = correlation.max(axis=1)
+        # correlations[ae2][ae1] = correlation.max(axis=0)
+        correlations[ae1][ae2] = np.nanmax(correlation, axis=1)
+        correlations[ae2][ae1] = np.nanmax(correlation, axis=0)
 
-        similarities[ae1][ae2] = correlations[ae1][ae2].mean()
-        similarities[ae2][ae1] = correlations[ae2][ae1].mean()
+        similarities[ae1][ae2] = np.nanmean(correlations[ae1][ae2])# .mean()
+        similarities[ae2][ae1] = np.nanmean(correlations[ae2][ae1])# .mean()
 
         pairs[ae1][ae2] = correlation.argmax(axis=1)
         pairs[ae2][ae1] = correlation.argmax(axis=0)
@@ -164,7 +166,7 @@ def representation_similarity(autoencoders, models, submodules, dataset):
     return output
 
 
-def plot_heatmap(similarities, labels=None):
+def plot_heatmap(similarities, savepath, labels=None):
     import matplotlib.pyplot as plt
     import seaborn as sns
     sns.set()
@@ -187,7 +189,7 @@ def plot_heatmap(similarities, labels=None):
     plt.ylabel("Layer")
     plt.yticks(rotation=0)
     # plt.xticks(rotation=40, ha='right')
-    plt.savefig("figures/similarity_across_layers.png", format="png", bbox_inches="tight")
+    plt.savefig(savepath, format="png", bbox_inches="tight")
 
 
 if __name__ == "__main__":
@@ -202,7 +204,7 @@ if __name__ == "__main__":
                         default="model.gpt_neox.layers.3.mlp.dense_4h_to_h")
     parser.add_argument("--models", "-m", type=str,
                         default="EleutherAI/pythia-70m-deduped")
-    parser.add_argument("--plot_heatmap", action="store_true")
+    parser.add_argument("--plot_heatmap", type=str, default=None)
     parser.add_argument("--labels", type=str, default=None,
                         help="Labels for each autoencoder.")
     args = parser.parse_args()
@@ -231,11 +233,11 @@ if __name__ == "__main__":
     for _ in range(args.num_examples):
         texts.append(next(dataset)["text"])
 
-    results = representation_similarity(autoencoders, models, submodules, texts)
+    results = neuron_similarity(autoencoders, models, submodules, texts)
     # with open("linCKA_pythia-70m-deduped_100c4.pkl", "wb") as results_file:
     #     pickle.dump(dict(results["similarities"]), results_file)
 
     if args.plot_heatmap:
-        plot_heatmap(results["similarities"], labels=args.labels)
+        plot_heatmap(results["similarities"], args.plot_heatmap, labels=args.labels)
 
     print(results)
