@@ -31,7 +31,7 @@ def load_autoencoder(submodule, autoencoder_path):
     return autoencoder
 
 
-def neuron_similarity(autoencoders, models, submodules, dataset):
+def neuron_similarity(autoencoders, models, submodules, dataset, on_weights=False):
     representations = defaultdict(list)
     correlations = defaultdict(lambda: defaultdict())
     similarities = defaultdict(lambda: defaultdict())
@@ -43,14 +43,18 @@ def neuron_similarity(autoencoders, models, submodules, dataset):
         submodule = load_submodule(model, submodule_str)
         autoencoder = load_autoencoder(submodule, autoencoder_path)
 
-        print("Encoding dataset...")
-        for ex_id, example in tqdm(enumerate(dataset), desc="Encoding", leave=False, total=len(dataset)):
-            # print(example)
-            with model.invoke(example) as invoker:
-                x = submodule.output
-                f = autoencoder.encode(x)
-                f_saved = f.save()        # [Batch size, seq len, dict size]
-            representations[ae_id].append(f_saved.value[:, -1, :].squeeze().to("cuda"))
+        if on_weights:
+            representations[ae_id] = autoencoder.encoder.weight.T
+        else:
+            print("Encoding dataset...")
+            for ex_id, example in tqdm(enumerate(dataset), desc="Encoding", leave=False, total=len(dataset)):
+                # print(example)
+                with model.invoke(example) as invoker:
+                    x = submodule.output
+                    f = autoencoder.encode(x)
+                    f_saved = f.save()        # [Batch size, seq len, dict size]
+                representations[ae_id].append(f_saved.value[:, -1, :].squeeze().to("cuda"))
+            representations[ae_id] = t.stack(representations[ae_id])
     
     print("Analyzing correlations...")
     for ae1, ae2 in tqdm(product(representations.keys(),
@@ -58,12 +62,12 @@ def neuron_similarity(autoencoders, models, submodules, dataset):
                                  desc="Correlation",
                                  total=len(representations.keys())**2):
         if ae1 == ae2:                  # if same
-            continue
+            pass
         if ae2 in correlations[ae1]:    # if seen
             continue
 
-        representations_1 = t.stack(representations[ae1])
-        representations_2 = t.stack(representations[ae2])
+        representations_1 = representations[ae1]
+        representations_2 = representations[ae2]
         num_neurons_1 = representations_1.shape[-1]
         num_neurons_2 = representations_2.shape[-1]
         means_1 = t.mean(representations_1, dim=0, keepdim=True)
@@ -71,11 +75,10 @@ def neuron_similarity(autoencoders, models, submodules, dataset):
         stddevs_1 = t.std(representations_1, dim=0, keepdim=True)
         stddevs_2 = t.std(representations_2, dim=0, keepdim=True)
 
-        covariance = ((t.matmul(representations_1.T, representations_2) / representations_1.shape[0])
+        covariance = (t.matmul(representations_1.T, representations_2) / representations_1.shape[0]
                     - t.matmul(means_1.T, means_2))
-        print(covariance.shape)
         correlation = covariance / t.matmul(stddevs_1.T, stddevs_2)
-        correlation = t.abs(correlation).to("cpu").numpy()
+        correlation = t.abs(correlation).detach().to("cpu").numpy()
         
         # TODO: RSA — correlation distance
         # correlations[ae1][ae2] = correlation.max(axis=1)
@@ -121,7 +124,7 @@ def neuron_similarity(autoencoders, models, submodules, dataset):
     return output
 
 
-def representation_similarity(autoencoders, models, submodules, dataset):
+def representation_similarity(autoencoders, models, submodules, dataset, on_weights=False):
     representations = defaultdict(list)
     similarities = defaultdict(lambda: defaultdict())
     
@@ -131,26 +134,30 @@ def representation_similarity(autoencoders, models, submodules, dataset):
         submodule = load_submodule(model, submodule_str)
         autoencoder = load_autoencoder(submodule, autoencoder_path)
 
-        print("Encoding dataset...")
-        for ex_id, example in tqdm(enumerate(dataset), desc="Encoding", leave=False, total=len(dataset)):
-            with model.invoke(example) as invoker:
-                x = submodule.output
-                f = autoencoder.encode(x)
-                f_saved = f.save()
-            representations[ae_id].append(f_saved.value[:, -1, :].squeeze().to("cuda"))    # [Batch size, seq len, dict size]
-    
+        if on_weights:
+            representations[ae_id] = autoencoder.encoder.weight.T
+        else:
+            print("Encoding dataset...")
+            for ex_id, example in tqdm(enumerate(dataset), desc="Encoding", leave=False, total=len(dataset)):
+                with model.invoke(example) as invoker:
+                    x = submodule.output
+                    f = autoencoder.encode(x)
+                    f_saved = f.save()
+                representations[ae_id].append(f_saved.value[:, -1, :].squeeze().to("cuda"))    # [Batch size, seq len, dict size]
+            representations[ae_id] = t.stack(representations[ae1])
+
     for ae1, ae2 in tqdm(product(representations.keys(),
                                  representations.keys()),
                                  desc="Correlation",
                                  total=len(representations.keys())**2):
         if ae1 == ae2:
-            similarities[ae1][ae2] = 1.0
-            continue
+            # similarities[ae1][ae2] = 1.0
+            pass
         if ae2 in similarities[ae1]:    # if seen
             continue
 
-        X = t.stack(representations[ae1])
-        Y = t.stack(representations[ae2])
+        X = representations[ae1]
+        Y = representations[ae2]
 
         XtX_F = t.norm(t.matmul(X.T, X), p='fro').item()
         YtY_F = t.norm(t.matmul(Y.T, Y), p='fro').item()
@@ -184,7 +191,7 @@ def plot_heatmap(similarities, savepath, labels=None):
         yticklabels = sorted_similarities.keys()
     sns.heatmap(df, annot=True, fmt=".2f", linewidth=.5, cmap=sns.cubehelix_palette(as_cmap=True),
                 xticklabels=xticklabels, yticklabels=yticklabels)
-    plt.title("Similarity of Dictionary Activations Across Layers")
+    plt.title("Similarity of Weights Across Layers")
     plt.xlabel("Layer")
     plt.ylabel("Layer")
     plt.yticks(rotation=0)
@@ -207,6 +214,8 @@ if __name__ == "__main__":
     parser.add_argument("--plot_heatmap", type=str, default=None)
     parser.add_argument("--labels", type=str, default=None,
                         help="Labels for each autoencoder.")
+    parser.add_argument("--on_weights", action="store_true",
+                        help="Whether to analyze weights (as opposed to activations on text samples.)")
     args = parser.parse_args()
 
     autoencoders, models, submodules = [], [], []
@@ -233,7 +242,7 @@ if __name__ == "__main__":
     for _ in range(args.num_examples):
         texts.append(next(dataset)["text"])
 
-    results = neuron_similarity(autoencoders, models, submodules, texts)
+    results = neuron_similarity(autoencoders, models, submodules, texts, on_weights=args.on_weights)
     # with open("linCKA_pythia-70m-deduped_100c4.pkl", "wb") as results_file:
     #     pickle.dump(dict(results["similarities"]), results_file)
 
