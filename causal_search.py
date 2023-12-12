@@ -114,32 +114,29 @@ def get_forward_and_backward_caches(model, submodule, autoencoder,
             "clean_gradients":   clean_f_saved.value.grad}
 
 
-def get_forward_and_backward_caches_neurons(model, local_submodule, example_dict):
+def get_forward_and_backward_caches_neurons(model, submodule, example_dict,
+                                            metric_fn=compare_probs):
     # corrupted forward pass
     with model.invoke(example_dict["patch_prefix"],
                       fwd_args = {"inference": False}) as invoker_patch:
-        patch_submodule_saved = submodule.output.save()
+        x = submodule.output
+        clean_x_saved = x.save()
     
-    backward_cache = {}
-    def backward_hook(module, grad_input, grad_output):
-        backward_cache["this"] = grad_output[0]
-
-    hook = model.local_model.gpt_neox.layers[3].mlp.dense_4h_to_h.register_full_backward_hook(backward_hook)
-
     # clean forward passes
     with model.invoke(example_dict["clean_prefix"],
                       fwd_args = {"inference": False}) as invoker_clean:
-        clean_submodule_saved = submodule.output.save()
+        x = submodule.output
+        patch_x_saved = x.save()
     
     # clean backward pass
-    # clean_submodule_saved.value.retain_grad()
+    clean_x_saved.value.retain_grad()
     logits = invoker_clean.output.logits
-    metric = compare_probs(logits, example_dict)
+    metric = metric_fn(logits, example_dict)
     metric.backward()
 
-    return {"clean_activations": clean_submodule_saved.value,
-            "patch_activations": patch_submodule_saved.value,
-            "clean_gradients":   backward_cache["this"]}
+    return {"clean_activations": clean_x_saved.value,
+            "patch_activations": patch_x_saved.value,
+            "clean_gradients":   clean_x_saved.value.grad}
 
 
 def get_forward_and_backward_caches_wrt_features(model, submodule_lower, submodule_upper,
@@ -297,7 +294,6 @@ def attribution_patching_neurons(model, submodule, examples):
     return indirect_effects
 
 
-# TODO: test
 def attribution_patching_wrt_features(model, submodule_lower, submodule_upper,
                                       autoencoder_lower, autoencoder_upper, feat_idx_upper,
                                       examples):
@@ -372,13 +368,9 @@ if __name__ == "__main__":
                                             autoencoder,
                                             dataset)
     
-    # effects, feature_idx = search_submodule_for_phenomenon(model, model.gpt_neox.layers[3].mlp.dense_4h_to_h,
-    #                                                       args.dataset)
     top_effects, top_idxs = t.topk(indirect_effects, 10)
     bottom_effects, bottom_idxs = t.topk(indirect_effects, 10, largest=False)
     for effect, idx in zip(top_effects, top_idxs):
         print(f"Top Feature {idx}: {effect:.5f}")
     for effect, idx in zip(bottom_effects, bottom_idxs):
         print(f"Bottom Feature {idx}: {effect:.5f}")
-    # for effect, idx in zip(effects, feature_idx):
-    #     print(f"Feature {idx}: {effect:.5f}")
