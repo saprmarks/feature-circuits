@@ -13,7 +13,6 @@ from causal_search import load_submodule
 from dictionary_learning.dictionary import AutoEncoder
 from dictionary_learning.buffer import ActivationBuffer
 
-
 def load_autoencoder(submodule, autoencoder_path):
     submodule_width = submodule.out_features
     autoencoder_size = 8192
@@ -30,6 +29,27 @@ def load_autoencoder(submodule, autoencoder_path):
 
     return autoencoder
 
+def cossim(a, b):
+    """
+    Compute the pairwise cosine similarities between the rows of a and b.
+    """
+    a = a / a.norm(dim=-1, keepdim=True)
+    b = b / b.norm(dim=-1, keepdim=True)
+    return t.mm(a, b.T)
+
+def meanmax(m, max_dim=-1):
+    return m.max(dim=max_dim).values.mean()
+
+def mmcs(d1, d2, encoder=True):
+    """
+    Given two dictionaries d1, d2, compute the mean (over features in d1)
+    maximum cossine similarity with a feature in d2.
+    If encoder is True, then use encoder weights, else use decoder weights.
+    """
+    if encoder:
+        return meanmax(cossim(d1.encoder.weight, d2.encoder.weight))
+    else:
+        return meanmax(cossim(d1.decoder.weight.T, d2.decoder.weight.T))
 
 def neuron_similarity(autoencoders, models, submodules, dataset):
     representations = defaultdict(list)
