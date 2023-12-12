@@ -31,6 +31,7 @@ def load_autoencoder(submodule, autoencoder_path):
 
     return autoencoder
 
+
 def cossim(a, b):
     """
     Compute the pairwise cosine similarities between the rows of a and b.
@@ -39,8 +40,10 @@ def cossim(a, b):
     b = b / b.norm(dim=-1, keepdim=True)
     return t.mm(a, b.T)
 
+
 def meanmax(m, max_dim=-1):
     return m.max(dim=max_dim).values.mean()
+
 
 def mmcs(d1, d2, encoder=True):
     """
@@ -52,6 +55,7 @@ def mmcs(d1, d2, encoder=True):
         return meanmax(cossim(d1.encoder.weight, d2.encoder.weight))
     else:
         return meanmax(cossim(d1.decoder.weight.T, d2.decoder.weight.T))
+    
 
 def neuron_similarity(autoencoders, models, submodules, dataset, on_weights=False):
     representations = defaultdict(list)
@@ -66,8 +70,7 @@ def neuron_similarity(autoencoders, models, submodules, dataset, on_weights=Fals
         autoencoder = load_autoencoder(submodule, autoencoder_path)
 
         if on_weights:
-            # TODO: change back to encoder
-            representations[ae_id] = autoencoder.decoder.weight.T
+            representations[ae_id] = autoencoder.encoder.weight.T
         else:
             print("Encoding dataset...")
             for ex_id, example in tqdm(enumerate(dataset), desc="Encoding", leave=False, total=len(dataset)):
@@ -84,8 +87,6 @@ def neuron_similarity(autoencoders, models, submodules, dataset, on_weights=Fals
                                  representations.keys()),
                                  desc="Correlation",
                                  total=len(representations.keys())**2):
-        if ae1 == ae2:                  # if same
-            pass
         if ae2 in correlations[ae1]:    # if seen
             continue
 
@@ -98,15 +99,12 @@ def neuron_similarity(autoencoders, models, submodules, dataset, on_weights=Fals
         stddevs_1 = t.std(representations_1, dim=0, keepdim=True)
         stddevs_2 = t.std(representations_2, dim=0, keepdim=True)
 
-        # TODO: change these back when using encoder
-        covariance = (t.matmul(representations_1, representations_2.T) / representations_1.shape[1]
-                    - t.matmul(means_1, means_2.T))
-        correlation = covariance / t.matmul(stddevs_1, stddevs_2.T)
+        covariance = (t.matmul(representations_1.T, representations_2) / representations_1.shape[0]
+                    - t.matmul(means_1.T, means_2))
+        correlation = covariance / t.matmul(stddevs_1.T, stddevs_2)
         correlation = t.abs(correlation).detach().to("cpu").numpy()
         
         # TODO: RSA — correlation distance
-        # correlations[ae1][ae2] = correlation.max(axis=1)
-        # correlations[ae2][ae1] = correlation.max(axis=0)
         correlations[ae1][ae2] = np.nanmax(correlation, axis=1)
         correlations[ae2][ae1] = np.nanmax(correlation, axis=0)
 
@@ -116,34 +114,10 @@ def neuron_similarity(autoencoders, models, submodules, dataset, on_weights=Fals
         pairs[ae1][ae2] = correlation.argmax(axis=1)
         pairs[ae2][ae1] = correlation.argmax(axis=0)
     
-    """
-    neuron_sort = {} 
-    neuron_notated_sort = {}
-    for network in tqdm(representations.keys(), desc='annotation'):
-        neuron_sort[network] = sorted(list(range(num_neurons_1)),
-                                  key=(lambda i: correlations[network][network2][i] for network2 in correlations[network]),
-                                  reverse=True)
-        neuron_notated_sort[network] = [
-            (
-                neuron,
-                {
-                    network2 : (
-                        correlations[network][network2][neuron], 
-                        pairs[network][network2][neuron],
-                    ) 
-                    for network2 in correlations[network]
-                }
-            ) 
-            for neuron in neuron_sort[network]
-        ]
-    """
-    
     output = {
         "correlations": correlations,
         "pairs": pairs,
         "similarities": similarities,
-        #"neuron_sort": neuron_sort,
-        #"neuron_notated_sort": neuron_notated_sort
     }
     return output
 
@@ -159,7 +133,6 @@ def representation_similarity(autoencoders, models, submodules, dataset, on_weig
         autoencoder = load_autoencoder(submodule, autoencoder_path)
 
         if on_weights:
-            # TODO: change back to encoder
             representations[ae_id] = autoencoder.encoder.weight.T
         else:
             print("Encoding dataset...")
@@ -175,24 +148,20 @@ def representation_similarity(autoencoders, models, submodules, dataset, on_weig
                                  representations.keys()),
                                  desc="Correlation",
                                  total=len(representations.keys())**2):
-        if ae1 == ae2:
-            # similarities[ae1][ae2] = 1.0
-            pass
         if ae2 in similarities[ae1]:    # if seen
             continue
 
         X = representations[ae1]
         Y = representations[ae2]
 
-        # TODO: put these back when switched back to encoder
         XtX_F = t.norm(t.matmul(X.T, X), p='fro').item()
         YtY_F = t.norm(t.matmul(Y.T, Y), p='fro').item()
         YtX_F = t.norm(t.matmul(Y.T, X), p='fro').item()
-
+        
         sim = (YtX_F ** 2) / (XtX_F * YtY_F)
         similarities[ae1][ae2] = sim
         similarities[ae2][ae1] = sim
-    
+
     output = {
         "similarities": similarities
     }
