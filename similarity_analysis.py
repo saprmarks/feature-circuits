@@ -21,6 +21,8 @@ def load_autoencoder(submodule, autoencoder_path):
         autoencoder_size = int(autoencoder_path.split("_sz")[1].split("_")[0].split(".")[0])
     elif "_dict" in autoencoder_path:
         autoencoder_size = int(autoencoder_path.split("_dict")[1].split("_")[0].split(".")[0])
+    elif "/ae.pt" in autoencoder_path:
+        autoencoder_size = int(autoencoder_path.split("/")[-2].split("_")[1])
     autoencoder = AutoEncoder(submodule_width, autoencoder_size).to("cuda")
 
     try:
@@ -44,7 +46,8 @@ def neuron_similarity(autoencoders, models, submodules, dataset, on_weights=Fals
         autoencoder = load_autoencoder(submodule, autoencoder_path)
 
         if on_weights:
-            representations[ae_id] = autoencoder.encoder.weight.T
+            # TODO: change back to encoder
+            representations[ae_id] = autoencoder.decoder.weight.T
         else:
             print("Encoding dataset...")
             for ex_id, example in tqdm(enumerate(dataset), desc="Encoding", leave=False, total=len(dataset)):
@@ -75,9 +78,10 @@ def neuron_similarity(autoencoders, models, submodules, dataset, on_weights=Fals
         stddevs_1 = t.std(representations_1, dim=0, keepdim=True)
         stddevs_2 = t.std(representations_2, dim=0, keepdim=True)
 
-        covariance = (t.matmul(representations_1.T, representations_2) / representations_1.shape[0]
-                    - t.matmul(means_1.T, means_2))
-        correlation = covariance / t.matmul(stddevs_1.T, stddevs_2)
+        # TODO: change these back when using encoder
+        covariance = (t.matmul(representations_1, representations_2.T) / representations_1.shape[1]
+                    - t.matmul(means_1, means_2.T))
+        correlation = covariance / t.matmul(stddevs_1, stddevs_2.T)
         correlation = t.abs(correlation).detach().to("cpu").numpy()
         
         # TODO: RSA — correlation distance
@@ -135,6 +139,7 @@ def representation_similarity(autoencoders, models, submodules, dataset, on_weig
         autoencoder = load_autoencoder(submodule, autoencoder_path)
 
         if on_weights:
+            # TODO: change back to encoder
             representations[ae_id] = autoencoder.encoder.weight.T
         else:
             print("Encoding dataset...")
@@ -144,7 +149,7 @@ def representation_similarity(autoencoders, models, submodules, dataset, on_weig
                     f = autoencoder.encode(x)
                     f_saved = f.save()
                 representations[ae_id].append(f_saved.value[:, -1, :].squeeze().to("cuda"))    # [Batch size, seq len, dict size]
-            representations[ae_id] = t.stack(representations[ae1])
+            representations[ae_id] = t.stack(representations[ae_id])
 
     for ae1, ae2 in tqdm(product(representations.keys(),
                                  representations.keys()),
@@ -159,6 +164,7 @@ def representation_similarity(autoencoders, models, submodules, dataset, on_weig
         X = representations[ae1]
         Y = representations[ae2]
 
+        # TODO: put these back when switched back to encoder
         XtX_F = t.norm(t.matmul(X.T, X), p='fro').item()
         YtY_F = t.norm(t.matmul(Y.T, Y), p='fro').item()
         YtX_F = t.norm(t.matmul(Y.T, X), p='fro').item()
@@ -177,6 +183,9 @@ def plot_heatmap(similarities, savepath, labels=None):
     import matplotlib.pyplot as plt
     import seaborn as sns
     sns.set()
+    sns.set(font_scale=1.25)
+
+    plt.figure(figsize=(15, 12))
 
     sorted_similarities = dict(sorted(similarities.items()))
     for item in similarities:
@@ -187,11 +196,17 @@ def plot_heatmap(similarities, savepath, labels=None):
         xticklabels = labels.split(",")
         yticklabels = labels.split(",")
     else:
-        xticklabels = sorted_similarities.keys()
-        yticklabels = sorted_similarities.keys()
-    sns.heatmap(df, annot=True, fmt=".2f", linewidth=.5, cmap=sns.cubehelix_palette(as_cmap=True),
-                xticklabels=xticklabels, yticklabels=yticklabels)
-    plt.title("Similarity of Weights Across Layers")
+        # TODO: put this back
+        # xticklabels = sorted_similarities.keys()
+        # yticklabels = sorted_similarities.keys()
+        pass
+    sns.heatmap(df, annot=False, fmt=".2f", linewidth=.5, cmap=sns.cubehelix_palette(as_cmap=True),)
+    #             xticklabels=xticklabels, yticklabels=yticklabels)
+    plt.xticks([3, 9, 15], ["0_8192", "1_32768", "2_32768"])
+    plt.yticks([3, 9, 15], ["0_8192", "1_32768", "2_32768"])
+    plt.hlines([6,12], 0, 18, colors=["black","black"])
+    plt.vlines([6,12], 0, 18, colors=["black","black"])
+    plt.title("CKA Similarity (weights)")
     plt.xlabel("Layer")
     plt.ylabel("Layer")
     plt.yticks(rotation=0)
@@ -214,6 +229,8 @@ if __name__ == "__main__":
     parser.add_argument("--plot_heatmap", type=str, default=None)
     parser.add_argument("--labels", type=str, default=None,
                         help="Labels for each autoencoder.")
+    parser.add_argument("--representation_similarity", "-r", action="store_true",
+                        help="Compute representation-level similarity instead of neuron-level recall.")
     parser.add_argument("--on_weights", action="store_true",
                         help="Whether to analyze weights (as opposed to activations on text samples.)")
     args = parser.parse_args()
@@ -242,7 +259,10 @@ if __name__ == "__main__":
     for _ in range(args.num_examples):
         texts.append(next(dataset)["text"])
 
-    results = neuron_similarity(autoencoders, models, submodules, texts, on_weights=args.on_weights)
+    if args.representation_similarity:
+        results = representation_similarity(autoencoders, models, submodules, texts, on_weights=args.on_weights)
+    else:
+        results = neuron_similarity(autoencoders, models, submodules, texts, on_weights=args.on_weights)
     # with open("linCKA_pythia-70m-deduped_100c4.pkl", "wb") as results_file:
     #     pickle.dump(dict(results["similarities"]), results_file)
 
