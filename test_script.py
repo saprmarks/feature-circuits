@@ -38,6 +38,7 @@ def randomize_except_embeddings(model, seed=14):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--model", type=str, default="EleutherAI/pythia-70m-deduped", help="Model name.")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate.")
     parser.add_argument("--steps", type=int, default=10000, help="Number of training steps.")
     parser.add_argument("--resample_steps", type=int, default=1000,
@@ -55,9 +56,25 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=14, help="Random seed.")
     args = parser.parse_args()
 
-    model = LanguageModel('EleutherAI/pythia-70m-deduped', device_map='cuda:0')
-    submodule = model.gpt_neox.layers[args.layer_num].mlp.dense_4h_to_h
+    model = LanguageModel(args.model, device_map='cuda:0')
+    # submodule = model.gpt_neox.layers[args.layer_num].mlp.dense_4h_to_h
+    submodule = model.gpt_neox.layers[args.layer_num]
+    # activation_dim = submodule.out_features
     t.manual_seed(args.seed)
+
+    model_dir = args.model.split("/")[-1]
+    submodule_dir = f"resid_out_layer_{args.layer_num}"
+    save_dir = os.path.join("autoencoders", model_dir, submodule_dir, f"0_{args.dict_size}")
+
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir, exist_ok=True)
+    with open(f"{save_dir}/config.json", "w") as config_file:
+        config = {"activation_dim": 512, "dictionary_size": args.dict_size,
+                  "entropy": False, "io": "out", "sparsity_penalty": 3e-3, "lr": args.lr,
+                  "steps": args.steps, "layer": args.layer_num, "model": args.model,
+                  "submodule": "resid_out", "resample_steps": args.resample_steps,
+                  "warmup_steps": 10000}
+        config_file.write(json.dumps(config))
     
     # random ablation
     # model = randomize_except_embeddings(model, seed=args.seed)
@@ -71,25 +88,27 @@ if __name__ == "__main__":
         submodule,
         in_batch_size = args.in_bsz,
         out_batch_size = args.max_contexts_len * args.contexts_per_step,
+        out_feats = 512,
         n_ctxs = args.contexts_per_step * 100,
         is_hf=True,
     )
 
     ae = trainSAE(
         buffer,
-        activation_dim=512,
-        layer_num=args.layer_num,
+        # activation_dim = activation_dim,
+        activation_dim = 512,
         dictionary_size = args.dict_size,
         steps = args.steps,
+        warmup_steps = 10000,
         lr = args.lr,
-        sparsity_penalty = 6e-3,
+        sparsity_penalty = 3e-3,
         entropy=False,
         resample_steps = args.resample_steps,
         log_steps = args.resample_steps,
         save_steps = args.save_steps,
-        save_dir="autoencoders/",
+        save_dir = save_dir,
         device='cuda:0',
         seed=args.seed
     )
 
-    t.save(ae, f"autoencoders/ae_mlp{args.layer_num}_c4_lr{args.lr}_resample{args.resample_steps}_dict{args.dict_size}_seed{args.seed}.pt")
+    t.save(ae.state_dict(), f"{save_dir}/ae.pt")
