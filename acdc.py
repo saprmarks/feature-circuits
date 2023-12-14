@@ -2,6 +2,7 @@
 
 import torch as t
 from torch import nn
+from tqdm import tqdm
 
 def get_hook(layer, patch, clean, threshold):
     def hook(grad):
@@ -27,6 +28,7 @@ def find_circuit(
         model,
         submodules,
         autoencoders,
+        approx=True,
         threshold=0.5,
 ):
     clean_input, clean_answer = clean
@@ -43,22 +45,44 @@ def find_circuit(
     logits = invoker.output.logits
     patch_logit_diff = logits[0, -1, patch_answer_idx] - logits[0, -1, clean_answer_idx]
 
-    clean_features = []
-    with model.invoke(clean_input, fwd_args={'inference' : False}) as invoker:
-        for i, (submodule, ae) in enumerate(zip(submodules, autoencoders)):
-            f = ae.encode(submodule.output)
-            clean_features.append(f.save())
-            
-            patch, clean = patched_features[i], clean_features[i]
-            hook = get_hook(i, patch, clean, threshold)
-            f.register_hook(hook)
+    if approx:
+        clean_features = []
+        with model.invoke(clean_input, fwd_args={'inference' : False}) as invoker:
+            for i, (submodule, ae) in enumerate(zip(submodules, autoencoders)):
+                f = ae.encode(submodule.output)
+                clean_features.append(f.save())
+                
+                patch, clean = patched_features[i], clean_features[i]
+                hook = get_hook(i, patch, clean, threshold)
+                f.register_hook(hook)
 
-            submodule.output = ae.decode(f)
-        
-    logits = invoker.output.logits
-    clean_logit_diff = logits[0, -1, patch_answer_idx] - logits[0, -1, clean_answer_idx]
-    clean_logit_diff.backward()
-    print(f'Total change: {patch_logit_diff.item() - clean_logit_diff.item()}')
+                submodule.output = ae.decode(f)
+            
+        logits = invoker.output.logits
+        clean_logit_diff = logits[0, -1, patch_answer_idx] - logits[0, -1, clean_answer_idx]
+        clean_logit_diff.backward()
+        print(f'Total change: {patch_logit_diff.item() - clean_logit_diff.item()}')
+
+    else: # normal activation patching
+        # get logits on clean run
+        with model.invoke(clean_input) as invoker:
+            pass
+        logits = invoker.output.logits
+        clean_logit_diff = logits[0, -1, patch_answer_idx] - logits[0, -1, clean_answer_idx]
+
+        print(f'Clean diff: {clean_logit_diff.item()}')
+        print(f'Patch diff: {patch_logit_diff.item()}')
+
+        for i, (submodule, ae, patch) in tqdm(enumerate(zip(submodules, autoencoders, patched_features)), position=0, desc="Layer"):
+            for feat in tqdm(range(ae.dict_size), position=1, desc="Feature", leave=False):
+                with model.invoke(clean_input) as invoker:
+                    f = ae.encode(submodule.output)
+                    f[:,:,feat] = patch.value[:,:,feat]
+                    submodule.output = ae.decode(f)
+                logits = invoker.output.logits
+                logit_diff = logits[0, -1, patch_answer_idx] - logits[0, -1, clean_answer_idx]
+                if logit_diff - clean_logit_diff > threshold:
+                    print(f"Layer {i}, Feature {feat}, Diff: {logit_diff.item()}")
 
 
 # %%
