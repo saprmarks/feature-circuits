@@ -128,7 +128,7 @@ class Circuit:
 
             # if effect greater than threshold, add to graph
             for submodule_idx in range(len(effects_on_y)):
-                print(t.topk(effects_on_y[submodule_idx], 5))
+                # print(t.topk(effects_on_y[submodule_idx], 5))
                 feature_indices = (effects_on_y[submodule_idx] > self.y_threshold).nonzero().flatten().tolist()
                 submodule_type = submodules_i_type[submodule_idx]
                 for feature_idx in feature_indices:
