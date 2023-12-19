@@ -98,8 +98,8 @@ submodules = [
 
 autoencoders = []
 for i in range(layers):
-    ae = AutoEncoder(512, 16 * 512)
-    ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/mlp_out_layer{i}/0_8192/ae.pt'))
+    ae = AutoEncoder(512, 64 * 512)
+    ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/mlp_out_layer{i}/1_32768/ae.pt'))
     autoencoders.append(ae)
 
 clean = (
