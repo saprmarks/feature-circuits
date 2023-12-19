@@ -10,9 +10,13 @@ from dictionary_learning.buffer import ActivationBuffer
 from dictionary_learning.dictionary import AutoEncoder
 from causal_search import (
     load_examples, load_submodule, relative_prob_change, logit_diff,
-    attribution_patching, attribution_patching_wrt_features
+    attribution_patching, attribution_patching_wrt_features, submodule_type_to_name
 )
-from acdc import patching_on_y
+from acdc import patching_on_y, patching_on_feature_activation
+from subnetwork import (
+    Node, Subnetwork,
+)
+from patching import subnetwork_patch
 
 
 class CircuitNode:
@@ -56,7 +60,9 @@ class Circuit:
         self.dataset = dataset
         self.metric_fn = metric_fn
         self.y_threshold = 0.2
-        self.feat_threshold = 0.2
+        self.feat_threshold = 0.1
+        self.path_threshold = 0.1
+        self.filter_proportion = 0.25
 
         self.root = CircuitNode("y")
     
@@ -82,6 +88,15 @@ class Circuit:
         except TypeError:
             autoencoder.load_state_dict(t.load(dict_path).state_dict())
         return autoencoder
+    
+
+    def _get_paths_to_root(self, lower_node, upper_node):
+        for parent in upper_node.parents:
+            if parent.name == "y":
+                yield [lower_node, upper_node]
+            else:
+                for path in self._get_paths_to_root(upper_node, parent):
+                    yield [lower_node] + path
 
     """
     # TODO: test
@@ -111,12 +126,10 @@ class Circuit:
     """
 
 
-    # TODO: test   
     def locate_circuit(self):
         num_layers = self.model.config.num_hidden_layers
         nodes_per_layer = defaultdict(list)
         # Iterate backwards through layers. Establish causal effects
-        # TODO: change upper limit to num_layers-1
         for layer_i in tqdm(range(num_layers-1, -1, -1), desc="Layer",
                             total=num_layers):
             # First, get effect on output y
@@ -124,7 +137,8 @@ class Circuit:
             submodules_i_type = ["mlp" if "mlp" in s else "attn" if "attention" in s else "resid" for s in submodules_i_name]
             submodules_i = [load_submodule(self.model, submodule_i_name) for submodule_i_name in submodules_i_name]
             dictionaries_i = [self.load_dictionary(layer_i, submodules_i[idx], submodules_i_type[idx]) for idx in range(len(submodules_i))]
-            effects_on_y = patching_on_y(self.dataset, self.model, submodules_i, dictionaries_i)
+            effects_on_y = patching_on_y(self.dataset, self.model, submodules_i, dictionaries_i,
+                                         threshold=self.y_threshold)
 
             # if effect greater than threshold, add to graph
             for submodule_idx in range(len(effects_on_y)):
@@ -138,29 +152,70 @@ class Circuit:
                     nodes_per_layer[layer_i].append(child)
                     self.root.add_child(child)
 
-            """
             # Second, get effect on other features already in the graph (above this feature)
             # TODO: test
             for layer_j in tqdm(range(num_layers-1, layer_i, -1), leave=False, desc="Layers above",
                                 total = num_layers - layer_i):
-                # TODO: causal effect of lower features i on upper features j
-                submodule_j_name = self.submodule_generic.format(str(layer_j))
-                submodule_j = load_submodule(self.model, submodule_j_name)
-                dictionary_j = self.load_dictionary(layer_j, submodule_j)
-                for node_j in nodes_per_layer[layer_j]:
-                    feat_idx_j = node_j.name.split("_")[1]
-                    effect_on_feat_j = attribution_patching_wrt_features(self.model, submodule_i, submodule_j,
-                                            dictionary_i, dictionary_j, feat_idx_j, self.dataset)
-                    indices = (abs(effect_on_feat_j) > self.feat_threshold).nonzero().flatten().tolist()
-                    for index in indices:
-                        node_name = f"{layer_i}_{index}"
-                        child = CircuitNode(node_name)
-                        effect_via_path = path_patching(child, node_j)
-                        if child not in nodes_per_layer[layer_i]:
-                            nodes_per_layer[layer_i].append(child)
-                        node_j.add_child(child)
-            """
+                # causal effect of lower features i on upper features j
 
+                candidate_paths = []
+                # first, filter possible features i for those that actually change the activation of feature j
+                for node_j in nodes_per_layer[layer_j]:
+                    submodule_j_type = "mlp" if "mlp" in node_j.name else "attn" if "attention" in node_j.name else "resid"
+                    submodule_j_name = submodule_type_to_name(submodule_j_type).format(layer_j)
+                    submodule_j = load_submodule(self.model, submodule_j_name)
+                    dictionary_j = self.load_dictionary(layer_j, submodule_j, submodule_j_type)
+                    feat_idx_j = int(node_j.name.split("_")[1])
+                    effects_on_feat_j = patching_on_feature_activation(self.dataset, self.model, submodules_i, submodule_j,
+                                            dictionaries_i, dictionary_j, feat_idx_j,
+                                            threshold=self.feat_threshold, dataset_proportion=self.filter_proportion)
+                    for submodule_idx in range(len(effects_on_feat_j)):
+                        feature_indices = (effects_on_feat_j[submodule_idx] > self.y_threshold).nonzero().flatten().tolist()
+                        submodule_type = submodules_i_type[submodule_idx]
+                        for feature_idx in feature_indices:
+                            node_name = f"{layer_i}_{feature_idx}_{submodule_type}"
+                            node_i = CircuitNode(node_name)
+                            # find all possible paths from node_i to node_j to root
+                            candidate_paths_i_j = self._get_paths_to_root(node_i, node_j)
+                            for candidate_path in candidate_paths_i_j:
+                                candidate_paths.append(candidate_path)
+                
+                # now, iterate through candidate paths and keep those that effect the output above the threshold
+                for candidate_path in candidate_paths:
+                    # build subnetwork
+                    # TODO: build submodules list, build autoencoders list
+                    path_submodules = []
+                    path_autoencoders = []
+                    subnetwork = Subnetwork()
+                    for idx, node in enumerate(candidate_path):
+                        layer, feat_idx, submodule_type = node.name.split("_")
+                        submodule_suffix = ""   # residual
+                        if submodule_type == "mlp":
+                            submodule_suffix = ".mlp.dense_4h_to_h"
+                        elif submodule_type == "attn":
+                            submodule_suffix = ".attention.dense"
+                        submodule_node = Node(self.model, f'gpt_neox.layers.{layer}{submodule_suffix}/{feat_idx}')
+                        subnetwork.add_node(submodule_node)
+                        # first (lowest) node in subcircuit
+                        if idx == 0:
+                            start_node = submodule_node
+                        # load submodule and autoencoder
+                        path_submodule_name = submodule_type_to_name(submodule_j_type).format(layer_j)
+                        path_submodule = load_submodule(self.model, submodule_j_name)
+                        path_dictionary = self.load_dictionary(layer_j, submodule_j, submodule_j_type)
+                        path_submodules.append(path_submodule)
+                        path_autoencoders.append(path_dictionary)
+                    path_effect = subnetwork_patch(self.dataset, self.model, path_submodules, path_autoencoders,
+                                                   subnetwork, start_node)
+                    print(path_effect)
+                    if path_effect > self.path_threshold:
+                        child = CircuitNode(candidate_path[0])
+                        parent = CircuitNode(candidate_path[1])
+                        parent.add_child(child)
+                        child.effect_on_parent = path_effect
+                        nodes_per_layer[layer_i].append(child)
+
+                        
     def to_dict(self):
         # Depth-first search
         def _dfs(curr_node, d = {}):
