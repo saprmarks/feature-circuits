@@ -1,9 +1,8 @@
-# %%
-
 import random
 import torch as t
 from torch import nn
 from tqdm import tqdm
+from attribution import patching_effect, EffectOut
 
 def get_hook(submodule_idx, patch, clean, threshold, mean_effects):
     def hook(grad):
@@ -33,80 +32,43 @@ def patching_on_y(
         dataset,
         model,
         submodules,
-        autoencoders,
-        approx=True,
-        threshold=0.2,
+        dictionaries,
+        method='all-folded',
+        steps=10,
 ):
-    mean_effects = []   # allow variable-size autoencoders
-    for ae in autoencoders:
-        mean_effects.append(t.zeros(ae.encoder.out_features))
+    clean_inputs = t.cat([example['clean_prefix'] for example in dataset], dim=0)
+    patch_inputs = t.cat([example['patch_prefix'] for example in dataset], dim=0)
+    clean_answer_idxs = t.Tensor([example['clean_answer'] for example in dataset]).long() # shape [n_examples]
+    patch_answer_idxs = t.Tensor([example['patch_answer'] for example in dataset]).long()
 
-    for example in tqdm(dataset, desc="Examples", leave=False, total=len(dataset)):
-        clean_input, clean_answer_idx = example["clean_prefix"], example["clean_answer"]
-        patch_input, patch_answer_idx = example["patch_prefix"], example["patch_answer"]
+    def metric_fn(model):
+        logits = model.embed_out.output[:, -1, :] # shape [n_examples, vocab_size]
+        logit_diff = t.gather(
+            logits,
+            dim=-1,
+            index=patch_answer_idxs.unsqueeze(-1)
+        ) - t.gather(
+            logits,
+            dim=-1,
+            index=clean_answer_idxs.unsqueeze(-1)
+        )
+        return logit_diff.squeeze(-1) # shape [n_examples]
 
-        patched_features = []
-        with model.invoke(patch_input) as invoker:
-            for submodule, ae in zip(submodules, autoencoders):
-                hidden_states = submodule.output
-                if len(hidden_states) > 1:
-                    hidden_states = hidden_states[0]
-                f = ae.encode(hidden_states)
-                patched_features.append(f.save())
-                if len(submodule.output) > 1:
-                    submodule.output[0] = ae.decode(f)
-                else:
-                    submodule.output = ae.decode(f)
-        logits = invoker.output.logits
-        patch_logit_diff = logits[0, -1, patch_answer_idx] - logits[0, -1, clean_answer_idx]
+    effects, total_effect = patching_effect(
+        clean_inputs,
+        patch_inputs,
+        model,
+        submodules,
+        dictionaries,
+        metric_fn,
+        method=method,
+        steps=10,
+    )
 
-        if approx:
-            clean_features = []
-            with model.invoke(clean_input, fwd_args={'inference' : False}) as invoker:
-                for i, (submodule, ae) in enumerate(zip(submodules, autoencoders)):
-                    hidden_states = submodule.output
-                    if len(hidden_states) > 1:
-                        hidden_states = hidden_states[0]
-                    f = ae.encode(hidden_states)
-                    clean_features.append(f.save())
-                    
-                    patch, clean = patched_features[i], clean_features[i]
-                    hook = get_hook(i, patch, clean, threshold, mean_effects)
-                    f.register_hook(hook)
-
-                    if len(submodule.output) > 1:
-                        submodule.output[0] = ae.decode(f)
-                    else:
-                        submodule.output = ae.decode(f)
-                
-            logits = invoker.output.logits
-            clean_logit_diff = logits[0, -1, patch_answer_idx] - logits[0, -1, clean_answer_idx]
-            clean_logit_diff.backward()
-            # print(f'Total change: {patch_logit_diff.item() - clean_logit_diff.item()}')
-
-        else: # normal activation patching
-            # get logits on clean run
-            with model.invoke(clean_input) as invoker:
-                pass
-            logits = invoker.output.logits
-            clean_logit_diff = logits[0, -1, patch_answer_idx] - logits[0, -1, clean_answer_idx]
-
-            print(f'Clean diff: {clean_logit_diff.item()}')
-            print(f'Patch diff: {patch_logit_diff.item()}')
-
-            for i, (submodule, ae, patch) in tqdm(enumerate(zip(submodules, autoencoders, patched_features)), position=0, desc="Layer"):
-                for feat in tqdm(range(ae.dict_size), position=1, desc="Feature", leave=False):
-                    with model.invoke(clean_input) as invoker:
-                        f = ae.encode(submodule.output)
-                        f[:,:,feat] = patch.value[:,:,feat]
-                        submodule.output = ae.decode(f)
-                    logits = invoker.output.logits
-                    logit_diff = logits[0, -1, patch_answer_idx] - logits[0, -1, clean_answer_idx]
-                    if logit_diff - clean_logit_diff > threshold:
-                        print(f"Layer {i}, Feature {feat}, Diff: {logit_diff.item()}")
-    
-    mean_effects = [t.divide(sum_effects, len(dataset)) for sum_effects in mean_effects]
-    return mean_effects
+    return EffectOut(
+        effects={k : v.mean(dim=0) for k, v in effects.items()},
+        total_effect=total_effect.mean(dim=0),
+    )
 
 
 def patching_on_feature_activation(
