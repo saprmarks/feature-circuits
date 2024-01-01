@@ -5,6 +5,7 @@ import io
 import argparse
 from tqdm import tqdm
 from nnsight import LanguageModel
+from nnsight.models.Mamba import Mamba
 from dictionary_learning.buffer import ActivationBuffer
 from dictionary_learning.dictionary import AutoEncoder
 from dictionary_learning.training import trainSAE
@@ -56,14 +57,15 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=14, help="Random seed.")
     args = parser.parse_args()
 
-    model = LanguageModel(args.model, device_map='cuda:0')
+    # model = LanguageModel(args.model, device_map='cuda:0')
+    model = Mamba(args.model, device_map="cuda:0")
     # submodule = model.gpt_neox.layers[args.layer_num].mlp.dense_4h_to_h
     submodule = model.gpt_neox.layers[args.layer_num]
     # activation_dim = submodule.out_features
     t.manual_seed(args.seed)
 
     model_dir = args.model.split("/")[-1]
-    submodule_dir = f"resid_out_layer_{args.layer_num}"
+    submodule_dir = f"mixer_out_layer{args.layer_num}"
     save_dir = os.path.join("autoencoders", model_dir, submodule_dir, f"0_{args.dict_size}")
 
     if not os.path.exists(save_dir):
@@ -72,7 +74,7 @@ if __name__ == "__main__":
         config = {"activation_dim": 512, "dictionary_size": args.dict_size,
                   "entropy": False, "io": "out", "sparsity_penalty": 3e-3, "lr": args.lr,
                   "steps": args.steps, "layer": args.layer_num, "model": args.model,
-                  "submodule": "resid_out", "resample_steps": args.resample_steps,
+                  "submodule": "mixer_out", "resample_steps": args.resample_steps,
                   "warmup_steps": 10000}
         config_file.write(json.dumps(config))
     
