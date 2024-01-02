@@ -1,0 +1,6 @@
+# Notes for which modules are required for setting up this library.
+# Not tested for a fresh installation of this library.
+
+zstandard
+nnsight
+matplotlib
