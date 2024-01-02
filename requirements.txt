@@ -1,6 +1,7 @@
-# Notes for which modules are required for setting up this library.
-# Not tested for a fresh installation of this library.
+# Notes on required modules by @canrager
+# Not tested with fresh installation, probably incomplete
 
-zstandard
 nnsight
 matplotlib
+zstandard
+circuitsvis .
