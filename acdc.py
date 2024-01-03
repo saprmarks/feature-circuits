@@ -64,7 +64,7 @@ def patching_on_y(
         dictionaries,
         metric_fn,
         method=method,
-        steps=10,
+        steps=steps,
     )
 
     return EffectOut(
