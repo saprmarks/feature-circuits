@@ -1,3 +1,5 @@
+# %% 
+# Define circuit discovery functions
 import random
 import torch as t
 from torch import nn
@@ -66,7 +68,7 @@ def patching_on_y(
     )
 
     return EffectOut(
-        effects={k : v.mean(dim=0) for k, v in effects.items()},
+        effects={k : v.mean(dim=0) for k, v in effects.items()}, # v shape: [pos, d_sae]
         total_effect=total_effect.mean(dim=0),
     )
 
@@ -181,31 +183,3 @@ def patching_on_feature_activation(
     
     mean_effects = [t.divide(sum_effects, len(examples)) for sum_effects in mean_effects]
     return mean_effects
-
-if __name__ == "__main__":
-    from nnsight import LanguageModel
-    from dictionary_learning.dictionary import AutoEncoder
-
-    model = LanguageModel('EleutherAI/pythia-70m-deduped', device_map='cuda:0')
-    layers = len(model.gpt_neox.layers)
-
-    submodules = [
-        model.gpt_neox.layers[i].attention.dense for i in range(layers)
-    ]
-
-    # We'll probably need to replace this; will take a lot of memory in larger models
-    autoencoders = []
-    for i in range(layers):
-        ae = AutoEncoder(512, 16 * 512)
-        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/attn_out_layer{i}/0_32768/ae.pt'))
-        autoencoders.append(ae)
-
-    clean = (
-        "The man", " is"
-    )
-    patch = (
-        "The men", " are"
-    )
-
-    grads = effect_on_y(clean, patch, model, submodules, autoencoders, threshold=0.5)
-    # %%

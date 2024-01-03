@@ -4,4 +4,5 @@
 nnsight
 matplotlib
 zstandard
-circuitsvis .
+circuitsvis
+imageio # for making mean activation distribution gif

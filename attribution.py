@@ -36,7 +36,7 @@ def _pe_attrib_all_folded(
             x_hat = dictionary.decode(f)
             residual = x - x_hat
             submodule.output = x_hat + residual
-            metric_patch = metric_fn(model).save()
+        metric_patch = metric_fn(model).save()
     
     total_effect = metric_patch.value - metric_clean.value
 
