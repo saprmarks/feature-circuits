@@ -1,5 +1,3 @@
-# %% 
-# Define circuit discovery functions
 import random
 import torch as t
 from torch import nn
@@ -41,7 +39,7 @@ def patching_on_y(dataset, model, submodules, dictionaries, method='all-folded',
 
     return consolidated_patching_on(dataset, model, submodules, dictionaries, metric_fn, method, steps)
 
-def patching_on_feature_activation(dataset, model, submodules, dictionaries, downstream_feature_layer, downstream_feature_id=None, method='all-folded', steps=10):
+def patching_on_downstream_feature(dataset, model, submodules, dictionaries, downstream_feature_layer, downstream_feature_id=None, method='all-folded', steps=10):
     def metric_fn(model):
         x = submodules[downstream_feature_layer].output
         f = dictionaries[downstream_feature_layer].encode(x)
