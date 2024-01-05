@@ -329,6 +329,16 @@ def load_submodule(model, submodule_str):
     return curr_module
 
 
+def submodule_type_to_name(submodule_type):
+    if submodule_type == "mlp":
+        return "model.gpt_neox.layers.{}.mlp.dense_4h_to_h"
+    elif submodule_type == "attn":
+        return "model.gpt_neox.layers.{}.attention.dense"
+    elif submodule_type.startswith("resid"):
+        return "model.gpt_neox.layers.{}"
+    raise ValueError("Unrecognized submodule type. Please select from {mlp, attn, resid}")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--autoencoders", "-a", type=str,
