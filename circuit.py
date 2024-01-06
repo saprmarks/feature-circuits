@@ -56,8 +56,8 @@ class Circuit:
         self.dictionary_dir = dictionary_dir
         self.dictionary_size = dictionary_size
         self.dataset = dataset
-        self.y_threshold = 0.1
-        self.feat_threshold = 0.05
+        self.y_threshold = 0.025
+        self.feat_threshold = 0.01
         self.path_threshold = 0.01
         self.filter_proportion = 0.25
 
@@ -263,8 +263,6 @@ if __name__ == "__main__":
     circuit.locate_circuit()
     print(circuit.to_dict())
 
-    save_path = args.dataset.split(".json")[0] + "_circuit.pkl"
-    """
+    save_path = args.dataset.split("/")[-1].split(".json")[0] + "_circuit.pkl"
     with open(save_path, 'wb') as pickle_file:
-        pickle.dump(circuit.to_dict(), save_path)
-    """
+        pickle.dump(circuit.to_dict(), pickle_file)
