@@ -17,33 +17,53 @@ def _pe_attrib_all_folded(
     with model.invoke(clean, fwd_args={'inference' : False}) as invoker:
         hidden_states_clean = {}
         for submodule, dictionary in zip(submodules, dictionaries):
+            is_resid = False
             x = submodule.output
-            f = dictionary.encode(x)
+            if len(x[0].shape) > 2:
+                is_resid = True
+                f = dictionary.encode(x[0])
+            else:
+                f = dictionary.encode(x)
             f.retain_grad()
             hidden_states_clean[submodule] = f.save()
+
             x_hat = dictionary.decode(f)
-            residual = (x - x_hat).detach()
-            submodule.output = x_hat + residual
+            if is_resid:
+                residual = (x[0] - x_hat).detach()
+                submodule.output[0] = x_hat + residual
+            else:
+                residual = (x - x_hat).detach()
+                submodule.output = x_hat + residual
         metric_clean = metric_fn(model).save()
     metric_clean.value.sum().backward()
 
     with model.invoke(patch):
         hidden_states_patch = {}
         for submodule, dictionary in zip(submodules, dictionaries):
+            is_resid = False
             x = submodule.output
-            f = dictionary.encode(x)
+            if len(x[0].shape) > 2:
+                is_resid = True
+                f = dictionary.encode(x[0])
+            else:
+                f = dictionary.encode(x)
             hidden_states_patch[submodule] = f.save()
+
             x_hat = dictionary.decode(f)
-            residual = x - x_hat
-            submodule.output = x_hat + residual
-            metric_patch = metric_fn(model).save()
+            if is_resid:
+                residual = (x[0] - x_hat).detach()
+                submodule.output[0] = x_hat + residual
+            else:
+                residual = (x - x_hat).detach()
+                submodule.output = x_hat + residual
+        metric_patch = metric_fn(model).save()
     
-    total_effect = metric_patch.value - metric_clean.value
+    total_effect = (metric_patch.value - metric_clean.value) / metric_clean.value
 
     effects = {}
     for submodule in submodules:
         patch_state, clean_state = hidden_states_patch[submodule], hidden_states_clean[submodule]
-        effects[submodule] = (patch_state.value - clean_state.value) * clean_state.value.grad
+        effects[submodule] = ((patch_state.value - clean_state.value) * clean_state.value.grad) / metric_clean.value[:, None, None]
 
     return EffectOut(effects, total_effect)
 
@@ -81,7 +101,7 @@ def _pe_attrib_separate(
     effects = {}
     for submodule in submodules:
         patch_state, clean_state = hidden_states_patch[submodule], hidden_states_clean[submodule]
-        effects[submodule] = (patch_state.value - clean_state.value) * clean_state.value.grad
+        effects[submodule] = ((patch_state.value - clean_state.value) * clean_state.value.grad) / metric_clean[:, None, None]
 
     return EffectOut(effects, total_effect)
 

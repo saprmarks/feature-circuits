@@ -9,10 +9,9 @@ from collections import defaultdict
 from dictionary_learning.buffer import ActivationBuffer
 from dictionary_learning.dictionary import AutoEncoder
 from causal_search import (
-    load_examples, load_submodule, relative_prob_change, logit_diff,
-    attribution_patching, attribution_patching_wrt_features, submodule_type_to_name
+    load_examples, load_submodule, submodule_type_to_name
 )
-from acdc import patching_on_y, patching_on_feature_activation
+from acdc import patching_on_y, patching_on_downstream_feature
 from subnetwork import (
     Node, Subnetwork,
 )
@@ -51,17 +50,15 @@ class CircuitNode:
 
 
 class Circuit:
-    def __init__(self, model, submodules, dictionary_dir, dictionary_size, dataset,
-                 metric_fn = relative_prob_change):
+    def __init__(self, model, submodules, dictionary_dir, dictionary_size, dataset):
         self.model = model
         self.submodules_generic = submodules
         self.dictionary_dir = dictionary_dir
         self.dictionary_size = dictionary_size
         self.dataset = dataset
-        self.metric_fn = metric_fn
-        self.y_threshold = 0.2
-        self.feat_threshold = 0.1
-        self.path_threshold = 0.1
+        self.y_threshold = 0.025
+        self.feat_threshold = 0.01
+        self.path_threshold = 0.01
         self.filter_proportion = 0.25
 
         self.root = CircuitNode("y")
@@ -137,18 +134,17 @@ class Circuit:
             submodules_i_type = ["mlp" if "mlp" in s else "attn" if "attention" in s else "resid" for s in submodules_i_name]
             submodules_i = [load_submodule(self.model, submodule_i_name) for submodule_i_name in submodules_i_name]
             dictionaries_i = [self.load_dictionary(layer_i, submodules_i[idx], submodules_i_type[idx]) for idx in range(len(submodules_i))]
-            effects_on_y = patching_on_y(self.dataset, self.model, submodules_i, dictionaries_i,
-                                         threshold=self.y_threshold)
+            effects_on_y = patching_on_y(self.dataset, self.model, submodules_i, dictionaries_i)
+            effects_on_y = effects_on_y.effects
 
             # if effect greater than threshold, add to graph
-            for submodule_idx in range(len(effects_on_y)):
-                # print(t.topk(effects_on_y[submodule_idx], 5))
-                feature_indices = (effects_on_y[submodule_idx] > self.y_threshold).nonzero().flatten().tolist()
+            for submodule_idx, submodule in enumerate(effects_on_y):
+                feature_indices = (effects_on_y[submodule][-1, :] > self.y_threshold).nonzero().flatten().tolist()
                 submodule_type = submodules_i_type[submodule_idx]
                 for feature_idx in feature_indices:
                     node_name = f"{layer_i}_{feature_idx}_{submodule_type}"
                     child = CircuitNode(node_name)
-                    child.effect_on_parent = effects_on_y[submodule_idx][feature_idx].item()
+                    child.effect_on_parent = effects_on_y[submodule][-1, feature_idx].item()
                     nodes_per_layer[layer_i].append(child)
                     self.root.add_child(child)
 
@@ -157,29 +153,36 @@ class Circuit:
             for layer_j in tqdm(range(num_layers-1, layer_i, -1), leave=False, desc="Layers above",
                                 total = num_layers - layer_i):
                 # causal effect of lower features i on upper features j
-
                 candidate_paths = []
                 # first, filter possible features i for those that actually change the activation of feature j
                 for node_j in nodes_per_layer[layer_j]:
-                    submodule_j_type = "mlp" if "mlp" in node_j.name else "attn" if "attention" in node_j.name else "resid"
+                    submodule_j_type = "mlp" if "mlp" in node_j.name else "attn" if "attn" in node_j.name else "resid"
                     submodule_j_name = submodule_type_to_name(submodule_j_type).format(layer_j)
                     submodule_j = load_submodule(self.model, submodule_j_name)
                     dictionary_j = self.load_dictionary(layer_j, submodule_j, submodule_j_type)
                     feat_idx_j = int(node_j.name.split("_")[1])
-                    effects_on_feat_j = patching_on_feature_activation(self.dataset, self.model, submodules_i, submodule_j,
-                                            dictionaries_i, dictionary_j, feat_idx_j,
-                                            threshold=self.feat_threshold, dataset_proportion=self.filter_proportion)
-                    for submodule_idx in range(len(effects_on_feat_j)):
-                        feature_indices = (effects_on_feat_j[submodule_idx] > self.y_threshold).nonzero().flatten().tolist()
+                    effects_on_feat_j = patching_on_downstream_feature(self.dataset, self.model, submodules_i, dictionaries_i,
+                                            submodule_j, dictionary_j, downstream_feature_id=feat_idx_j)
+                    effects_on_feat_j = effects_on_feat_j.effects
+
+                    for submodule_idx, submodule in enumerate(effects_on_feat_j):
+                        feature_indices = (effects_on_feat_j[submodule][-1, :] > self.feat_threshold).nonzero().flatten().tolist()
                         submodule_type = submodules_i_type[submodule_idx]
                         for feature_idx in feature_indices:
                             node_name = f"{layer_i}_{feature_idx}_{submodule_type}"
                             node_i = CircuitNode(node_name)
+                            node_i.effect_on_parent = effects_on_feat_j[submodule][-1, feature_idx].item()
+                            nodes_per_layer[layer_i].append(node_i)
+                            node_j.add_child(node_i)
+                            """
+                            # add this back in
                             # find all possible paths from node_i to node_j to root
                             candidate_paths_i_j = self._get_paths_to_root(node_i, node_j)
                             for candidate_path in candidate_paths_i_j:
                                 candidate_paths.append(candidate_path)
-                
+                            """
+                """
+                # add this back in
                 # now, iterate through candidate paths and keep those that effect the output above the threshold
                 for candidate_path in candidate_paths:
                     # build subnetwork
@@ -207,14 +210,14 @@ class Circuit:
                         path_autoencoders.append(path_dictionary)
                     path_effect = subnetwork_patch(self.dataset, self.model, path_submodules, path_autoencoders,
                                                    subnetwork, start_node)
-                    print(path_effect)
+
                     if path_effect > self.path_threshold:
                         child = CircuitNode(candidate_path[0])
                         parent = CircuitNode(candidate_path[1])
                         parent.add_child(child)
                         child.effect_on_parent = path_effect
                         nodes_per_layer[layer_i].append(child)
-
+                """
                         
     def to_dict(self):
         # Depth-first search
@@ -240,7 +243,7 @@ if __name__ == "__main__":
     parser.add_argument("--dictionary_dir", "-a", type=str, default="/share/projects/dictionary_circuits/autoencoders/")
     parser.add_argument("--dictionary_size", "-S", type=int, default=32768,
                         help="Width of trained dictionaries.")
-    parser.add_argument("--dataset", "-d", type=str, default="phenomena/vocab/simple.json")
+    parser.add_argument("--dataset", "-d", type=str, default="/share/projects/dictionary_circuits/data/phenomena/simple.json")
     parser.add_argument("--num_examples", "-n", type=int, default=100,
                         help="Number of example pairs to use in the causal search.")
     args = parser.parse_args()
@@ -260,8 +263,6 @@ if __name__ == "__main__":
     circuit.locate_circuit()
     print(circuit.to_dict())
 
-    save_path = args.dataset.split(".json")[0] + "_circuit.pkl"
-    """
+    save_path = args.dataset.split("/")[-1].split(".json")[0] + "_circuit.pkl"
     with open(save_path, 'wb') as pickle_file:
-        pickle.dump(circuit.to_dict(), save_path)
-    """
+        pickle.dump(circuit.to_dict(), pickle_file)

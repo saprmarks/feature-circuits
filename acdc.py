@@ -4,37 +4,61 @@ from torch import nn
 from tqdm import tqdm
 from attribution import patching_effect, EffectOut
 
-def get_hook(submodule_idx, patch, clean, threshold, mean_effects):
-    def hook(grad):
-        effects = grad * (patch.value - clean.value)
-        mean_effects[submodule_idx] += effects[0, -1]
-        print("grad", t.topk(grad, 5))
-        print("patch acts", t.topk(patch.value, 5))
-        print("clean acts", t.topk(clean.value, 5))
-        effects = t.where(
-            t.gt(grad * (patch.value - clean.value), threshold),
-            grad,
-            t.zeros_like(grad)
-        )
+def consolidated_patching_on(dataset, model, submodules, dictionaries, metric_fn, method='all-folded', steps=10):
+    clean_inputs = t.cat([example['clean_prefix'] for example in dataset], dim=0)
+    patch_inputs = t.cat([example['patch_prefix'] for example in dataset], dim=0)
 
-        """
-        # print(f"Submodule {submodule_idx}")
-        for feature_idx in t.nonzero(effects):
-            value = effects[tuple(feature_idx)] * (patch.value - clean.value)[tuple(feature_idx)]
-            # print(f"Multindex: {tuple(feature_idx.tolist())}, Value: {value}")
-        # print()
-        """
-
-        return effects
-    return hook
-
-def patching_on_y(
-        dataset,
+    effects, total_effect = patching_effect(
+        clean_inputs,
+        patch_inputs,
         model,
         submodules,
         dictionaries,
-        method='all-folded',
-        steps=10,
+        metric_fn,
+        method=method,
+        steps=steps,
+    )
+
+    return EffectOut(
+        effects={k : v.mean(dim=0) for k, v in effects.items()},
+        total_effect=total_effect.mean(dim=0),
+    )
+
+def patching_on_y(dataset, model, submodules, dictionaries, method='all-folded', steps=10):
+    clean_answer_idxs = t.Tensor([example['clean_answer'] for example in dataset]).long()
+    patch_answer_idxs = t.Tensor([example['patch_answer'] for example in dataset]).long()
+
+    def metric_fn(model):
+        logits = model.embed_out.output[:, -1, :]
+        logit_diff = t.gather(
+            logits, dim=-1, index=patch_answer_idxs.unsqueeze(-1)
+        ) - t.gather(
+            logits, dim=-1, index=clean_answer_idxs.unsqueeze(-1)
+        )
+        return logit_diff.squeeze(-1)
+
+    return consolidated_patching_on(dataset, model, submodules, dictionaries, metric_fn, method, steps)
+
+def patching_on_downstream_feature(dataset, model, submodules, dictionaries, downstream_feature_layer, downstream_feature_id=None, method='all-folded', steps=10):
+    def metric_fn(model):
+        x = submodules[downstream_feature_layer].output
+        f = dictionaries[downstream_feature_layer].encode(x)
+
+        if downstream_feature_id:
+            f = f[:, :, downstream_feature_id]
+        return f.sum(dim=-1)
+
+    return consolidated_patching_on(dataset, model, submodules, dictionaries, metric_fn, method, steps)
+
+# Outdated patching_on_y; split up into two functions now
+'''
+def patching_on_y(
+    dataset,
+    model,
+    submodules,
+    dictionaries,
+    method='all-folded',
+    steps=10,
 ):
     clean_inputs = t.cat([example['clean_prefix'] for example in dataset], dim=0)
     patch_inputs = t.cat([example['patch_prefix'] for example in dataset], dim=0)
@@ -62,14 +86,40 @@ def patching_on_y(
         dictionaries,
         metric_fn,
         method=method,
-        steps=10,
+        steps=steps,
     )
 
     return EffectOut(
-        effects={k : v.mean(dim=0) for k, v in effects.items()},
+        effects={k : v.mean(dim=0) for k, v in effects.items()}, # v shape: [pos, d_sae]
         total_effect=total_effect.mean(dim=0),
     )
+'''
 
+# Outdated patching_on_feature_activation()
+'''
+def get_hook(submodule_idx, patch, clean, threshold, mean_effects):
+    def hook(grad):
+        effects = grad * (patch.value - clean.value)
+        mean_effects[submodule_idx] += effects[0, -1]
+        print("grad", t.topk(grad, 5))
+        print("patch acts", t.topk(patch.value, 5))
+        print("clean acts", t.topk(clean.value, 5))
+        effects = t.where(
+            t.gt(grad * (patch.value - clean.value), threshold),
+            grad,
+            t.zeros_like(grad)
+        )
+
+        """
+        # print(f"Submodule {submodule_idx}")
+        for feature_idx in t.nonzero(effects):
+            value = effects[tuple(feature_idx)] * (patch.value - clean.value)[tuple(feature_idx)]
+            # print(f"Multindex: {tuple(feature_idx.tolist())}, Value: {value}")
+        # print()
+        """
+
+        return effects
+    return hook
 
 def patching_on_feature_activation(
         dataset,
@@ -181,31 +231,4 @@ def patching_on_feature_activation(
     
     mean_effects = [t.divide(sum_effects, len(examples)) for sum_effects in mean_effects]
     return mean_effects
-
-if __name__ == "__main__":
-    from nnsight import LanguageModel
-    from dictionary_learning.dictionary import AutoEncoder
-
-    model = LanguageModel('EleutherAI/pythia-70m-deduped', device_map='cuda:0')
-    layers = len(model.gpt_neox.layers)
-
-    submodules = [
-        model.gpt_neox.layers[i].attention.dense for i in range(layers)
-    ]
-
-    # We'll probably need to replace this; will take a lot of memory in larger models
-    autoencoders = []
-    for i in range(layers):
-        ae = AutoEncoder(512, 16 * 512)
-        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/attn_out_layer{i}/0_32768/ae.pt'))
-        autoencoders.append(ae)
-
-    clean = (
-        "The man", " is"
-    )
-    patch = (
-        "The men", " are"
-    )
-
-    grads = effect_on_y(clean, patch, model, submodules, autoencoders, threshold=0.5)
-    # %%
+'''
