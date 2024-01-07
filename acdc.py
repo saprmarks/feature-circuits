@@ -39,10 +39,12 @@ def patching_on_y(dataset, model, submodules, dictionaries, method='all-folded',
 
     return consolidated_patching_on(dataset, model, submodules, dictionaries, metric_fn, method, steps)
 
-def patching_on_downstream_feature(dataset, model, submodules, dictionaries, downstream_feature_layer, downstream_feature_id=None, method='all-folded', steps=10):
+def patching_on_downstream_feature(dataset, model, submodules, dictionaries,
+                                   downstream_submodule, downstream_dictionary,
+                                   downstream_feature_id=None, method='all-folded', steps=10):
     def metric_fn(model):
-        x = submodules[downstream_feature_layer].output
-        f = dictionaries[downstream_feature_layer].encode(x)
+        x = downstream_submodule.output
+        f = downstream_dictionary.encode(x)
 
         if downstream_feature_id:
             f = f[:, :, downstream_feature_id]
