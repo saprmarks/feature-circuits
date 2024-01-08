@@ -13,34 +13,7 @@ from datasets import load_dataset
 from einops import rearrange
 import torch as t
 
-def load_examples(dataset, num_examples, model, seed=12):
-        examples = []
-        dataset_items = open(dataset).readlines()
-        random.seed(seed)
-        random.shuffle(dataset_items)
-        for line in dataset_items:
-            data = json.loads(line)
-            clean_prefix = model.tokenizer(data["clean_prefix"], return_tensors="pt",
-                                           padding=False).input_ids
-            patch_prefix = model.tokenizer(data["patch_prefix"], return_tensors="pt",
-                                           padding=False).input_ids
-            clean_answer = model.tokenizer(data["clean_answer"], return_tensors="pt",
-                                           padding=False).input_ids
-            patch_answer = model.tokenizer(data["patch_answer"], return_tensors="pt",
-                                           padding=False).input_ids
-            if clean_prefix.shape[1] != patch_prefix.shape[1]:
-                continue
-            if clean_answer.shape[1] != 1 or patch_answer.shape[1] != 1:
-                continue
-            
-            example_dict = {"clean_prefix": clean_prefix, "patch_prefix": patch_prefix,
-                            "clean_answer": clean_answer.item(), "patch_answer": patch_answer.item()}
-            examples.append(example_dict)
-            if len(examples) >= num_examples:
-                break
-        return examples
-
-
+# Helper functions for causal search
 def compare_probs(logits, example_dict):
     last_token_logits = logits[:,-1,:]
     probs = last_token_logits.softmax(dim=-1)
@@ -311,32 +284,6 @@ def attribution_patching_wrt_features(model, submodule_lower, submodule_upper,
     
     indirect_effects = t.mean(indirect_effects, dim=0)
     return indirect_effects
-
-
-def load_submodule(model, submodule_str):
-    if "." not in submodule_str:
-        return getattr(model, submodule_str)
-    
-    submodules = submodule_str.split(".")
-    curr_module = None
-    for module in submodules:
-        if module == "model":
-            continue
-        if not curr_module:
-            curr_module = getattr(model, module)
-            continue
-        curr_module = getattr(curr_module, module)
-    return curr_module
-
-
-def submodule_type_to_name(submodule_type):
-    if submodule_type == "mlp":
-        return "model.gpt_neox.layers.{}.mlp.dense_4h_to_h"
-    elif submodule_type == "attn":
-        return "model.gpt_neox.layers.{}.attention.dense"
-    elif submodule_type.startswith("resid"):
-        return "model.gpt_neox.layers.{}"
-    raise ValueError("Unrecognized submodule type. Please select from {mlp, attn, resid}")
 
 
 if __name__ == "__main__":

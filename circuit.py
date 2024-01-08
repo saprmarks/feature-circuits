@@ -2,13 +2,14 @@ import argparse
 import os
 import pickle
 import torch as t
+import regex as re
 
 from nnsight import LanguageModel
 from tqdm import tqdm
 from collections import defaultdict
 from dictionary_learning.buffer import ActivationBuffer
 from dictionary_learning.dictionary import AutoEncoder
-from causal_search import (
+from loading_utils import (
     load_examples, load_submodule, submodule_type_to_name
 )
 from acdc import patching_on_y, patching_on_downstream_feature
@@ -16,7 +17,6 @@ from subnetwork import (
     Node, Subnetwork,
 )
 from patching import subnetwork_patch
-
 
 class CircuitNode:
     def __init__(self, name, data = None, children = None, parents = None):
@@ -62,30 +62,6 @@ class Circuit:
         self.filter_proportion = 0.25
 
         self.root = CircuitNode("y")
-    
-    def load_dictionary(self, layer, submodule, submodule_type):
-        dict_id = "1" if submodule_type == "mlp" else "0"
-        dict_path = os.path.join(self.dictionary_dir,
-                                 f"{submodule_type}_out_layer{layer}",
-                                 f"{dict_id}_{self.dictionary_size}/ae.pt")
-        try:
-            submodule_width = submodule.out_features
-        except AttributeError:
-            # is residual. need to load model to get this
-            with self.model.invoke("test") as invoker:
-                hidden_states = submodule.output.save()
-            hidden_states = hidden_states.value
-            if isinstance(hidden_states, tuple):
-                hidden_states = hidden_states[0]
-            submodule_width = hidden_states.shape[2]
-        autoencoder = AutoEncoder(submodule_width, self.dictionary_size).cuda()
-        # TODO: add support for both of these cases to the `load_state_dict` method
-        try:
-            autoencoder.load_state_dict(t.load(dict_path))
-        except TypeError:
-            autoencoder.load_state_dict(t.load(dict_path).state_dict())
-        return autoencoder
-    
 
     def _get_paths_to_root(self, lower_node, upper_node):
         for parent in upper_node.parents:
@@ -121,11 +97,109 @@ class Circuit:
                 with model.forward(example["clean_prefix"]) as invoker_clean:
                     pass    # no interventions necessary
     """
+    def locate_circuit_per_downstream_layer(self):
+        num_layers = self.model.config.num_hidden_layers # not needed?
+        circuit_nodes = defaultdict(list) # Hashtable mapping, parent/downstream node: List of children / upstream nodes.
 
+        # List submodule names in order of forward pass
+        submodule_names = []
+        for layer in range(num_layers):
+            for submod in self.submodules_generic: # assumes components per layer (attn, mlp, resid) are ordered by call during a forward pass
+                submodule_names.append(submod.format(str(layer)))
+
+        # Load submodules and dictionaries
+        submodules = []
+        dictionaries = []
+        for submod_name in submodule_names:
+            submod = load_submodule(self.model, submod_name)
+            submodules.append(submod)
+            submod_layer, submod_type = retrieve_submodule_layer_type(submod_name)
+            dictionaries.append(self.load_dictionary(
+                layer=submod_layer, 
+                submodule=submod,
+                submodule_type=submod_type))
+        
+
+        # Effects on y
+        # Try loading all dictionaries at once
+
+        effects_on_y = patching_on_y(self.dataset, self.model, submodules, dictionaries)
+            
+
+        # Iterate backwards through submodules. Establish causal effects, selected layer treated as downstream layer
+        for submod_ds_idx, submod_ds in tqdm(reversed(enumerate(submodule_names)), desc="submodules",
+                            total=num_layers):
+
+            # Load upstream submodules
+            # Load downstream submodule
+
+            # Iterate through features already in graph in selected layer as downstream features
+            # For feature `feat_ds_idx` in subgraph
+
+            feat_ds_effects = patching_on_downstream_feature(
+                self.dataset, 
+                self.model, 
+                submodules_i, 
+                dictionaries_i,
+                submodule_j, 
+                dictionary_j, 
+                downstream_feature_id=feat_idx_j)
+
+            # Save effects in feature graph
+
+
+
+            # Aarons code to fiddle with submodules
+            submodules_i_name = [submodule.format(str(layer_ds)) for submodule in self.submodules_generic]
+            submodules_i_type = ["mlp" if "mlp" in s else "attn" if "attention" in s else "resid" for s in submodules_i_name]
+            submodules_i = [load_submodule(self.model, submodule_i_name) for submodule_i_name in submodules_i_name]
+            dictionaries_i = [self.load_dictionary(layer_ds, submodules_i[idx], submodules_i_type[idx]) for idx in range(len(submodules_i))]
+            effects_on_y = patching_on_y(self.dataset, self.model, submodules_i, dictionaries_i)
+            effects_on_y = effects_on_y.effects
+
+
+
+            # if effect greater than threshold, add to graph
+            for submodule_idx, submodule in enumerate(effects_on_y):
+                feature_indices = (effects_on_y[submodule][-1, :] > self.y_threshold).nonzero().flatten().tolist()
+                submodule_type = submodules_i_type[submodule_idx]
+                for feature_idx in feature_indices:
+                    node_name = f"{layer_ds}_{feature_idx}_{submodule_type}"
+                    child = CircuitNode(node_name)
+                    child.effect_on_parent = effects_on_y[submodule][-1, feature_idx].item()
+                    nodes_per_layer[layer_ds].append(child)
+                    self.root.add_child(child)
+
+            # Second, get effect on other features already in the graph (above this feature)
+            # TODO: test
+            for layer_j in tqdm(range(num_layers-1, layer_ds, -1), leave=False, desc="Layers above",
+                                total = num_layers - layer_ds):
+                # causal effect of lower features i on upper features j
+                candidate_paths = []
+                # first, filter possible features i for those that actually change the activation of feature j
+                for node_j in nodes_per_layer[layer_j]:
+                    submodule_j_type = "mlp" if "mlp" in node_j.name else "attn" if "attn" in node_j.name else "resid"
+                    submodule_j_name = submodule_type_to_name(submodule_j_type).format(layer_j)
+                    submodule_j = load_submodule(self.model, submodule_j_name)
+                    dictionary_j = self.load_dictionary(layer_j, submodule_j, submodule_j_type)
+                    feat_idx_j = int(node_j.name.split("_")[1])
+                    effects_on_feat_j = patching_on_downstream_feature(self.dataset, self.model, submodules_i, dictionaries_i,
+                                            submodule_j, dictionary_j, downstream_feature_id=feat_idx_j)
+                    effects_on_feat_j = effects_on_feat_j.effects
+
+                    for submodule_idx, submodule in enumerate(effects_on_feat_j):
+                        feature_indices = (effects_on_feat_j[submodule][-1, :] > self.feat_threshold).nonzero().flatten().tolist()
+                        submodule_type = submodules_i_type[submodule_idx]
+                        for feature_idx in feature_indices:
+                            node_name = f"{layer_ds}_{feature_idx}_{submodule_type}"
+                            node_i = CircuitNode(node_name)
+                            node_i.effect_on_parent = effects_on_feat_j[submodule][-1, feature_idx].item()
+                            nodes_per_layer[layer_ds].append(node_i)
+                            node_j.add_child(node_i)
 
     def locate_circuit(self):
         num_layers = self.model.config.num_hidden_layers
-        nodes_per_layer = defaultdict(list)
+        nodes_per_layer = defaultdict(list) # List of all circuit nodes per layer.
         # Iterate backwards through layers. Establish causal effects
         for layer_i in tqdm(range(num_layers-1, -1, -1), desc="Layer",
                             total=num_layers):
