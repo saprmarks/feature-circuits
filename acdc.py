@@ -44,7 +44,10 @@ def patching_on_downstream_feature(dataset, model, submodules, dictionaries,
                                    downstream_feature_id=None, method='all-folded', steps=10):
     def metric_fn(model):
         x = downstream_submodule.output
-        f = downstream_dictionary.encode(x)
+        if len(x[0].shape) > 2:
+            f = downstream_dictionary.encode(x[0])
+        else:
+            f = downstream_dictionary.encode(x)
 
         if downstream_feature_id:
             f = f[:, :, downstream_feature_id]
