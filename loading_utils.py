@@ -70,6 +70,25 @@ def submodule_type_to_name(submodule_type):
     raise ValueError("Unrecognized submodule type. Please select from {mlp, attn, resid}")
 
 
+def submodule_name_to_type_layer(submod_name):
+    layer_match = re.search(r"layers\.(\d+)\.", submod_name) # TODO Generalize for other models. This search string is Pythia-specific.
+    if layer_match:
+        submod_layer = int(layer_match.group(1))
+    else:
+        raise ValueError(f"No layer number found in submodule name: {submod_name}")
+    
+    if "attention" in submod_name:
+        submod_type = "attn"
+    elif "mlp" in submod_name:
+        submod_type = "mlp"
+    elif "resid" in submod_name:
+        submod_type = "resid"
+    else:
+        raise ValueError(f"No submodule type found in submodule name: {submod_name}")
+    
+    return submod_layer, submod_type
+
+
 def load_dictionary(model, submodule_layer, submodule_object, submodule_type, dict_cfg):
         dict_id = "1" if submodule_type == "mlp" else "0"
         dict_path = os.path.join(dict_cfg.dir,
@@ -95,22 +114,7 @@ def load_dictionary(model, submodule_layer, submodule_object, submodule_type, di
 
 
 def load_submodule_and_dictionary(model, submod_name, dict_cfg: DictionaryCfg):
-    layer_match = re.search(r"layers\.(\d+)\.", submod_name) # TODO Generalize for other models. This search string is Pythia-specific.
-    if layer_match:
-        submod_layer = int(layer_match.group(1))
-    else:
-        raise ValueError(f"No layer number found in submodule name: {submod_name}")
-
-    if "attention" in submod_name:
-        submod_type = "attn"
-    elif "mlp" in submod_name:
-        submod_type = "mlp"
-    elif "resid" in submod_name:
-        submod_type = "resid"
-    else:
-        raise ValueError(f"No submodule type found in submodule name: {submod_name}")
-
+    submod_layer, submod_type = submodule_name_to_type_layer(submod_name)
     submodule = load_submodule(model, submod_name)
     dictionary = load_dictionary(model, submod_layer, submodule, submod_type, dict_cfg)
-    print(f"loaded {submod_type=}{submod_layer=}")
     return submodule, dictionary
