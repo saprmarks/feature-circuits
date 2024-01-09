@@ -9,6 +9,7 @@ from nnsight import LanguageModel
 from dictionary_learning.buffer import ActivationBuffer
 from dictionary_learning.dictionary import AutoEncoder
 from dictionary_learning.training import trainSAE
+from loading_utils import load_examples, load_submodule
 from datasets import load_dataset
 from einops import rearrange
 import torch as t

@@ -4,7 +4,17 @@ import json
 import random
 import torch as t
 from dictionary_learning.dictionary import AutoEncoder
+from dataclasses import dataclass
 
+@dataclass
+class DictionaryCfg(): # TODO Move to dictionary_learning repo?
+    def __init__(
+        self,
+        dictionary_dir,
+        dictionary_size
+        ) -> None:
+        self.dir = dictionary_dir
+        self.size = dictionary_size
 
 def load_examples(dataset, num_examples, model, seed=12):
         examples = []
@@ -60,22 +70,22 @@ def submodule_type_to_name(submodule_type):
     raise ValueError("Unrecognized submodule type. Please select from {mlp, attn, resid}")
 
 
-def load_dictionary(self, submodule_layer, submodule_object, submodule_type):
+def load_dictionary(model, submodule_layer, submodule_object, submodule_type, dict_cfg):
         dict_id = "1" if submodule_type == "mlp" else "0"
-        dict_path = os.path.join(self.dictionary_dir,
+        dict_path = os.path.join(dict_cfg.dir,
                                  f"{submodule_type}_out_layer{submodule_layer}",
-                                 f"{dict_id}_{self.dictionary_size}/ae.pt")
+                                 f"{dict_id}_{dict_cfg.size}/ae.pt")
         try:
             submodule_width = submodule_object.out_features
         except AttributeError:
             # is residual. need to load model to get this
-            with self.model.invoke("test") as invoker:
+            with model.invoke("test") as invoker:
                 hidden_states = submodule_object.output.save()
             hidden_states = hidden_states.value
             if isinstance(hidden_states, tuple):
                 hidden_states = hidden_states[0]
             submodule_width = hidden_states.shape[2]
-        autoencoder = AutoEncoder(submodule_width, self.dictionary_size).cuda()
+        autoencoder = AutoEncoder(submodule_width, dict_cfg.size).cuda()
         # TODO: add support for both of these cases to the `load_state_dict` method
         try:
             autoencoder.load_state_dict(t.load(dict_path))
@@ -84,12 +94,12 @@ def load_dictionary(self, submodule_layer, submodule_object, submodule_type):
         return autoencoder
 
 
-def load_submodule_and_dictionary(model, submod_name):
-    layer_match = re.search(r"layer\.(\d+)\.", submod_name) # TODO Generalize for other models. This search string is Pythia-specific.
+def load_submodule_and_dictionary(model, submod_name, dict_cfg: DictionaryCfg):
+    layer_match = re.search(r"layers\.(\d+)\.", submod_name) # TODO Generalize for other models. This search string is Pythia-specific.
     if layer_match:
-        submod_layer = layer_match.group(1)
+        submod_layer = int(layer_match.group(1))
     else:
-        print(f"No layer number found in submodule name: {submod_name}")
+        raise ValueError(f"No layer number found in submodule name: {submod_name}")
 
     if "attention" in submod_name:
         submod_type = "attn"
@@ -98,8 +108,9 @@ def load_submodule_and_dictionary(model, submod_name):
     elif "resid" in submod_name:
         submod_type = "resid"
     else:
-        print(f"No submodule type found in submodule name: {submod_name}")
+        raise ValueError(f"No submodule type found in submodule name: {submod_name}")
 
     submodule = load_submodule(model, submod_name)
-    dictionary = load_dictionary(submod_layer, submodule, submod_type)
+    dictionary = load_dictionary(model, submod_layer, submodule, submod_type, dict_cfg)
+    print(f"loaded {submod_type=}{submod_layer=}")
     return submodule, dictionary
