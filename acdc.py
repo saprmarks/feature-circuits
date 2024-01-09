@@ -49,10 +49,13 @@ def patching_on_downstream_feature(
     dict_cfg,
     method='separate', 
     steps=10):
-    submodule, dictionary = load_submodule_and_dictionary(model, downstream_submodule_name, dict_cfg)
+    downstream_submodule, downstream_dictionary = load_submodule_and_dictionary(model, downstream_submodule_name, dict_cfg)
     def metric_fn(model):
-        x = submodule.output
-        f = dictionary.encode(x)
+        x = downstream_submodule.output
+        if len(x[0].shape) > 2:
+            f = downstream_dictionary.encode(x[0])
+        else:
+            f = downstream_dictionary.encode(x)
 
         if downstream_feature_id:
             f = f[:, :, downstream_feature_id]
