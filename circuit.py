@@ -248,14 +248,15 @@ def run_with_ablated_features(model, example, dictionary_dir, dictionary_size, f
         features_per_layer[int(layer)][submodule_type].append(int(feat_idx))
 
     saved_submodules = {}
-    def _ablate_features(submodule, feature_list):
+    def _ablate_features(submodule_type, feature_list):
         submodule_name = submodule_type_to_name(submodule_type).format(layer)
         submodule = load_submodule(model, submodule_name)
+        # load autoencoder
         is_resid = len(submodule.output[0].shape) > 2
         if is_resid:
             submodule_width = submodule.output[0].shape[2]
         else:
-            submodule_width = submodule.output.out_features
+            submodule_width = submodule.out_features
         autoencoder = AutoEncoder(submodule_width, dictionary_size).cuda()
         try:
             autoencoder.load_state_dict(
@@ -265,6 +266,7 @@ def run_with_ablated_features(model, example, dictionary_dir, dictionary_size, f
             autoencoder.load_state_dict(
                 t.load(os.path.join(dictionary_dir, f"{submodule_type}_out_layer{layer}/0_32768/ae.pt"))
             )
+
         # encode activations into features
         if is_resid:
             x = submodule.output[0]
@@ -279,14 +281,15 @@ def run_with_ablated_features(model, example, dictionary_dir, dictionary_size, f
         else:
             submodule.output = autoencoder.decode(f)
 
+        # replace activations of submodule
         if return_submodules and submodule_name in return_submodules:
             saved_submodules[submodule_name] = submodule.output.save()
 
     with model.invoke(example) as invoker:
         # from lowest layer to highest (does this matter in nnsight?)
         for layer in sorted(features_per_layer):
-            for submodule in features_per_layer[layer]:
-                _ablate_features(submodule, features_per_layer[layer][submodule])
+            for submodule_type in features_per_layer[layer]:
+                _ablate_features(submodule_type, features_per_layer[layer][submodule_type])
     saved_submodules["model"] = invoker.output
 
     return saved_submodules
