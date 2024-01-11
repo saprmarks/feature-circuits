@@ -56,8 +56,8 @@ class Circuit:
         self.dict_cfg = DictionaryCfg(dictionary_dir, dictionary_size)
         self.dataset = dataset
         self.patch_token_pos = -1
-        self.y_threshold = 0.02
-        self.feat_threshold = 0.02
+        self.y_threshold = 0.05
+        self.feat_threshold = 0.2
         self.path_threshold = 0.01
         self.filter_proportion = 0.25
 
@@ -88,7 +88,7 @@ class Circuit:
                     nodes_per_submod[us_submod_name].append(child)
         return nodes_per_submod
 
-    def locate_circuit(self):
+    def locate_circuit(self, patch_method='separate'):
         num_layers = self.model.config.num_hidden_layers # not needed?
         nodes_per_submod = defaultdict(list)
 
@@ -99,7 +99,7 @@ class Circuit:
                 submodule_names.append(submod.format(str(layer)))
 
         # Effects on y
-        effects_on_y = patching_on_y(self.dataset, self.model, submodule_names, self.dict_cfg).effects
+        effects_on_y = patching_on_y(self.dataset, self.model, submodule_names, self.dict_cfg, method=patch_method).effects
         nodes_per_submod = self._evaluate_effects(effects_on_y, self.y_threshold, self.root, nodes_per_submod)
 
         # Effects on downstream (parent) features
@@ -118,7 +118,8 @@ class Circuit:
                         upstream_submodule_names,
                         ds_submod_name,
                         downstream_feature_id=ds_node_idx,
-                        dict_cfg=self.dict_cfg
+                        dict_cfg=self.dict_cfg,
+                        method=patch_method,
                         ).effects
                     nodes_per_submod = self._evaluate_effects(feat_ds_effects, self.feat_threshold, ds_node, nodes_per_submod)
              
@@ -245,6 +246,6 @@ if __name__ == "__main__":
     circuit.locate_circuit(patch_method=args.patch_method)
     print(circuit.to_dict())
 
-    save_path = args.dataset.split("/")[-1].split(".json")[0] + "_old_circuit.pkl"
+    save_path = args.dataset.split("/")[-1].split(".json")[0] + "_circuit.pkl"
     with open(save_path, 'wb') as pickle_file:
         pickle.dump(circuit.to_dict(), pickle_file)
