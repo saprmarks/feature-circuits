@@ -57,7 +57,7 @@ class Circuit:
         self.dictionary_size = dictionary_size
         self.dataset = dataset
         self.y_threshold = 0.025
-        self.feat_threshold = 0.01
+        self.feat_threshold = 0.1
         self.path_threshold = 0.01
         self.filter_proportion = 0.25
 
@@ -134,7 +134,8 @@ class Circuit:
             submodules_i_type = ["mlp" if "mlp" in s else "attn" if "attention" in s else "resid" for s in submodules_i_name]
             submodules_i = [load_submodule(self.model, submodule_i_name) for submodule_i_name in submodules_i_name]
             dictionaries_i = [self.load_dictionary(layer_i, submodules_i[idx], submodules_i_type[idx]) for idx in range(len(submodules_i))]
-            effects_on_y = patching_on_y(self.dataset, self.model, submodules_i, dictionaries_i)
+            effects_on_y = patching_on_y(self.dataset, self.model, submodules_i, dictionaries_i,
+                                         method="separate")
             effects_on_y = effects_on_y.effects
 
             # if effect greater than threshold, add to graph
@@ -162,7 +163,8 @@ class Circuit:
                     dictionary_j = self.load_dictionary(layer_j, submodule_j, submodule_j_type)
                     feat_idx_j = int(node_j.name.split("_")[1])
                     effects_on_feat_j = patching_on_downstream_feature(self.dataset, self.model, submodules_i, dictionaries_i,
-                                            submodule_j, dictionary_j, downstream_feature_id=feat_idx_j)
+                                            submodule_j, dictionary_j, downstream_feature_id=feat_idx_j,
+                                            method='separate')
                     effects_on_feat_j = effects_on_feat_j.effects
 
                     for submodule_idx, submodule in enumerate(effects_on_feat_j):
@@ -263,6 +265,6 @@ if __name__ == "__main__":
     circuit.locate_circuit()
     print(circuit.to_dict())
 
-    save_path = args.dataset.split("/")[-1].split(".json")[0] + "_circuit.pkl"
+    save_path = args.dataset.split("/")[-1].split(".json")[0] + "_old_circuit.pkl"
     with open(save_path, 'wb') as pickle_file:
         pickle.dump(circuit.to_dict(), pickle_file)

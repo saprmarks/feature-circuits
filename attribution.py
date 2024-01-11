@@ -5,6 +5,7 @@ from torch import nn
 from tqdm import tqdm
 
 EffectOut = namedtuple('EffectOut', ['effects', 'total_effect'])
+EPS = 1e-7
 
 def _pe_attrib_all_folded(
         clean,
@@ -58,12 +59,12 @@ def _pe_attrib_all_folded(
                 submodule.output = x_hat + residual
         metric_patch = metric_fn(model).save()
     
-    total_effect = (metric_patch.value - metric_clean.value) / metric_clean.value
+    total_effect = (metric_patch.value - metric_clean.value) / (metric_clean.value + EPS)
 
     effects = {}
     for submodule in submodules:
         patch_state, clean_state = hidden_states_patch[submodule], hidden_states_clean[submodule]
-        effects[submodule] = ((patch_state.value - clean_state.value) * clean_state.value.grad) / metric_clean.value[:, None, None]
+        effects[submodule] = ((patch_state.value - clean_state.value) * clean_state.value.grad) / (metric_clean.value[:, None, None] + EPS)
 
     return EffectOut(effects, total_effect)
 
@@ -109,12 +110,12 @@ def _pe_attrib_separate(
             hidden_states_patch[submodule] = f.save()
         metric_patch = metric_fn(model).save()
 
-    total_effect = metric_patch.value - metric_clean.value
+    total_effect = (metric_patch.value - metric_clean.value) / (metric_clean.value + EPS)
     
     effects = {}
     for submodule in submodules:
         patch_state, clean_state = hidden_states_patch[submodule], hidden_states_clean[submodule]
-        effects[submodule] = ((patch_state.value - clean_state.value) * clean_state.value.grad) / metric_clean.value[:, None, None]
+        effects[submodule] = ((patch_state.value - clean_state.value) * clean_state.value.grad) / (metric_clean.value[:, None, None] + EPS)
 
     return EffectOut(effects, total_effect)
 
