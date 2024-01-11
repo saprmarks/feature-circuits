@@ -248,7 +248,7 @@ def run_with_ablated_features(model, example, dictionary_dir, dictionary_size, f
         features_per_layer[int(layer)][submodule_type].append(int(feat_idx))
 
     saved_submodules = {}
-    def _ablate_features(submodule_type, feature_list):
+    def _ablate_features(submodule_type, layer, feature_list):
         submodule_name = submodule_type_to_name(submodule_type).format(layer)
         submodule = load_submodule(model, submodule_name)
         # load autoencoder
@@ -276,10 +276,11 @@ def run_with_ablated_features(model, example, dictionary_dir, dictionary_size, f
         for feature_idx in feature_list:
             f[:, :, feature_idx] = 0.0      # ablate features
         # replace submodule w/ autoencoder out
-        if is_resid:
-            submodule.output[0] = autoencoder.decode(f)
-        else:
-            submodule.output = autoencoder.decode(f)
+        if len(feature_list) > 0:
+            if is_resid:
+                submodule.output[0] = autoencoder.decode(f)
+            else:
+                submodule.output = autoencoder.decode(f)
 
         # replace activations of submodule
         if return_submodules and submodule_name in return_submodules:
@@ -289,7 +290,18 @@ def run_with_ablated_features(model, example, dictionary_dir, dictionary_size, f
         # from lowest layer to highest (does this matter in nnsight?)
         for layer in sorted(features_per_layer):
             for submodule_type in features_per_layer[layer]:
-                _ablate_features(submodule_type, features_per_layer[layer][submodule_type])
+                _ablate_features(submodule_type, layer, features_per_layer[layer][submodule_type])
+        if return_submodules:
+            for submodule_name in return_submodules:
+                if submodule_name not in saved_submodules.keys():
+                    print(submodule_name)
+                    submodule_type = "mlp" if "mlp" in submodule_name else "attn" if "attention" in submodule_name else "resid"
+                    submodule_parts = submodule_name.split(".")
+                    for idx, part in enumerate(submodule_parts):
+                        if part.startswith("layer"):
+                            layer = int(submodule_parts[idx+1])
+                            break
+                    _ablate_features(submodule_type, layer, [])
     saved_submodules["model"] = invoker.output
 
     return saved_submodules
