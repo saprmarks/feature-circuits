@@ -251,6 +251,11 @@ def run_with_ablated_features(model, example, dictionary_dir, dictionary_size, f
     def _ablate_features(submodule_type, layer, feature_list):
         submodule_name = submodule_type_to_name(submodule_type).format(layer)
         submodule = load_submodule(model, submodule_name)
+        # if there are no features to ablate, just return the submodule output
+        if len(feature_list) == 0 and return_submodules and submodule_name in return_submodules:
+            saved_submodules[submodule_name] = submodule.output.save()
+            return
+        
         # load autoencoder
         is_resid = len(submodule.output[0].shape) > 2
         if is_resid:
@@ -276,11 +281,10 @@ def run_with_ablated_features(model, example, dictionary_dir, dictionary_size, f
         for feature_idx in feature_list:
             f[:, :, feature_idx] = 0.0      # ablate features
         # replace submodule w/ autoencoder out
-        if len(feature_list) > 0:
-            if is_resid:
-                submodule.output[0] = autoencoder.decode(f)
-            else:
-                submodule.output = autoencoder.decode(f)
+        if is_resid:
+            submodule.output[0] = autoencoder.decode(f)
+        else:
+            submodule.output = autoencoder.decode(f)
 
         # replace activations of submodule
         if return_submodules and submodule_name in return_submodules:
