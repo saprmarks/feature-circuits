@@ -56,8 +56,8 @@ class Circuit:
         self.dict_cfg = DictionaryCfg(dictionary_dir, dictionary_size)
         self.dataset = dataset
         self.patch_token_pos = -1
-        self.y_threshold = 0.025
-        self.feat_threshold = 0.01
+        self.y_threshold = 0.02
+        self.feat_threshold = 0.02
         self.path_threshold = 0.01
         self.filter_proportion = 0.25
 
@@ -137,6 +137,83 @@ class Circuit:
         return out_dict
     
 
+def run_with_ablated_features(model, example, dictionary_dir, dictionary_size, features,
+                              return_submodules=None):
+    """
+    TODO: This method currently uses zero ablations. Should update this to also support
+    naturalistic ablations.
+    """
+    # usage: features_per_layer[layer][submodule_type]
+    features_per_layer = defaultdict(lambda: defaultdict(list))
+    for feature in features:
+        submodule_type, layer_and_feat_idx = feature.split("_")
+        layer, feat_idx = layer_and_feat_idx.split("/")
+        features_per_layer[int(layer)][submodule_type].append(int(feat_idx))
+
+    saved_submodules = {}
+    def _ablate_features(submodule_type, layer, feature_list):
+        submodule_name = submodule_type_to_name(submodule_type).format(layer)
+        submodule = load_submodule(model, submodule_name)
+        # if there are no features to ablate, just return the submodule output
+        if len(feature_list) == 0 and return_submodules and submodule_name in return_submodules:
+            saved_submodules[submodule_name] = submodule.output.save()
+            return
+        
+        # load autoencoder
+        is_resid = len(submodule.output[0].shape) > 2
+        if is_resid:
+            submodule_width = submodule.output[0].shape[2]
+        else:
+            submodule_width = submodule.out_features
+        autoencoder = AutoEncoder(submodule_width, dictionary_size).cuda()
+        try:
+            autoencoder.load_state_dict(
+                t.load(os.path.join(dictionary_dir, f"{submodule_type}_out_layer{layer}/1_32768/ae.pt"))
+            )
+        except FileNotFoundError:
+            autoencoder.load_state_dict(
+                t.load(os.path.join(dictionary_dir, f"{submodule_type}_out_layer{layer}/0_32768/ae.pt"))
+            )
+
+        # encode activations into features
+        if is_resid:
+            x = submodule.output[0]
+        else:
+            x = submodule.output
+        f = autoencoder.encode(x)
+        for feature_idx in feature_list:
+            f[:, :, feature_idx] = 0.0      # ablate features
+        # replace submodule w/ autoencoder out
+        if is_resid:
+            submodule.output[0] = autoencoder.decode(f)
+        else:
+            submodule.output = autoencoder.decode(f)
+
+        # replace activations of submodule
+        if return_submodules and submodule_name in return_submodules:
+            saved_submodules[submodule_name] = submodule.output.save()
+
+    with model.invoke(example) as invoker:
+        # from lowest layer to highest (does this matter in nnsight?)
+        for layer in sorted(features_per_layer):
+            for submodule_type in features_per_layer[layer]:
+                _ablate_features(submodule_type, layer, features_per_layer[layer][submodule_type])
+        if return_submodules:
+            for submodule_name in return_submodules:
+                if submodule_name not in saved_submodules.keys():
+                    print(submodule_name)
+                    submodule_type = "mlp" if "mlp" in submodule_name else "attn" if "attention" in submodule_name else "resid"
+                    submodule_parts = submodule_name.split(".")
+                    for idx, part in enumerate(submodule_parts):
+                        if part.startswith("layer"):
+                            layer = int(submodule_parts[idx+1])
+                            break
+                    _ablate_features(submodule_type, layer, [])
+    saved_submodules["model"] = invoker.output
+
+    return saved_submodules
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", "-m", type=str, default="EleutherAI/pythia-70m-deduped",
@@ -149,6 +226,8 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", "-d", type=str, default="/share/projects/dictionary_circuits/data/phenomena/simple.json")
     parser.add_argument("--num_examples", "-n", type=int, default=100,
                         help="Number of example pairs to use in the causal search.")
+    parser.add_argument("--patch_method", "-p", type=str, choices=["all-folded", "separate", "ig", "exact"],
+                        default="all-folded", help="Method to use for attribution patching.")
     args = parser.parse_args()
 
     submodules = args.submodules
@@ -163,9 +242,9 @@ if __name__ == "__main__":
     dictionary_dir = os.path.join(args.dictionary_dir, args.model.split("/")[-1])
 
     circuit = Circuit(model, submodules, dictionary_dir, args.dictionary_size, dataset)
-    circuit.locate_circuit()
+    circuit.locate_circuit(patch_method=args.patch_method)
     print(circuit.to_dict())
 
-    save_path = args.dataset.split("/")[-1].split(".json")[0] + "_circuit.pkl"
+    save_path = args.dataset.split("/")[-1].split(".json")[0] + "_old_circuit.pkl"
     with open(save_path, 'wb') as pickle_file:
         pickle.dump(circuit.to_dict(), pickle_file)
