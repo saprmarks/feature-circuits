@@ -6,3 +6,5 @@ matplotlib
 zstandard
 circuitsvis
 imageio # for making mean activation distribution gif
+datasets
+pandas
