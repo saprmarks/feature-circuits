@@ -26,11 +26,18 @@ def consolidated_patching_on(dataset, model, upstream_submodule_names, dict_cfg,
     )
 
 def patching_on_y(dataset, model, upstream_submodule_names, dict_cfg, method='separate', steps=10):
-    clean_answer_idxs = t.Tensor([example['clean_answer'] for example in dataset]).long()
-    patch_answer_idxs = t.Tensor([example['patch_answer'] for example in dataset]).long()
+    clean_answer_idxs, patch_answer_idxs, prefix_lengths_wo_pad = [], [], []
+    for example in dataset:
+        clean_answer_idxs.append(example['clean_answer'])
+        patch_answer_idxs.append(example['patch_answer'])
+        prefix_lengths_wo_pad.append(example['prefix_length_wo_pad'])
+    clean_answer_idxs = t.Tensor(clean_answer_idxs).long()
+    patch_answer_idxs = t.Tensor(patch_answer_idxs).long()
+    prefix_lengths_wo_pad = t.Tensor(prefix_lengths_wo_pad).int()
 
     def metric_fn(model):
-        logits = model.embed_out.output[:, -1, :]
+        indices_first_dim = t.arange(clean_answer_idxs.shape[0])
+        logits = model.embed_out.output[indices_first_dim, prefix_lengths_wo_pad-1, :]
         logit_diff = t.gather(
             logits, dim=-1, index=patch_answer_idxs.unsqueeze(-1)
         ) - t.gather(

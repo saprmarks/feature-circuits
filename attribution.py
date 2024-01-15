@@ -6,7 +6,6 @@ from loading_utils import load_submodule_and_dictionary, DictionaryCfg
 
 EffectOut = namedtuple('EffectOut', ['effects', 'total_effect'])
 EPS = 1e-7
-EPS = 1e-7
 
 def _pe_attrib_all_folded(
         clean,
@@ -116,7 +115,6 @@ def _pe_attrib_separate(
             hidden_states_patch[submod_name] = f.save()
         metric_patch = metric_fn(model).save()
 
-    total_effect = (metric_patch.value - metric_clean.value) / (metric_clean.value + EPS)
     total_effect = (metric_patch.value - metric_clean.value) / (metric_clean.value + EPS)
     
     effects = {}

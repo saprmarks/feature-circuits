@@ -99,7 +99,8 @@ class Circuit:
                 submodule_names.append(submod.format(str(layer)))
 
         # Effects on y
-        effects_on_y = patching_on_y(self.dataset, self.model, submodule_names, self.dict_cfg, method=patch_method).effects
+        pat_y_out = patching_on_y(self.dataset, self.model, submodule_names, self.dict_cfg, method=patch_method)
+        effects_on_y = pat_y_out.effects
         nodes_per_submod = self._evaluate_effects(effects_on_y, self.y_threshold, self.root, nodes_per_submod)
 
         # Effects on downstream (parent) features
@@ -122,6 +123,7 @@ class Circuit:
                         method=patch_method,
                         ).effects
                     nodes_per_submod = self._evaluate_effects(feat_ds_effects, self.feat_threshold, ds_node, nodes_per_submod)
+        return pat_y_out
              
     def to_dict(self):
         # Depth-first search
@@ -228,7 +230,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_examples", "-n", type=int, default=100,
                         help="Number of example pairs to use in the causal search.")
     parser.add_argument("--patch_method", "-p", type=str, choices=["all-folded", "separate", "ig", "exact"],
-                        default="all-folded", help="Method to use for attribution patching.")
+                        default="separate", help="Method to use for attribution patching.")
     args = parser.parse_args()
 
     submodules = args.submodules
@@ -239,7 +241,7 @@ if __name__ == "__main__":
 
     model = LanguageModel(args.model, dispatch=True)
     model.local_model.requires_grad_(True)
-    dataset = load_examples(args.dataset, args.num_examples, model)
+    dataset = load_examples(args.dataset, args.num_examples, model, pad_to_length=3)
     dictionary_dir = os.path.join(args.dictionary_dir, args.model.split("/")[-1])
 
     circuit = Circuit(model, submodules, dictionary_dir, args.dictionary_size, dataset)
