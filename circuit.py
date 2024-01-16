@@ -107,8 +107,8 @@ class Circuit:
 
             # Effects on downstream (parent) features
             # Iterate backwards through submodules and measure causal effects.
-            for ds_layer in range(num_layers-1, us_layer, -1):
-                for ds_submod_name in tqdm(nodes_per_submod[ds_layer], desc="downstream_submodules"):
+            for ds_layer in tqdm(range(num_layers-1, us_layer, -1), desc="downstream_layers", total=num_layers-us_layer-1):
+                for ds_submod_name in nodes_per_submod[ds_layer]:
                     # if ds_submod_name in nodes_per_submod: # If current submodule contains relevant features
                     upstream_submodule_names = submodules_per_layer[us_layer]
                     # if len(upstream_submodule_names) < 1:

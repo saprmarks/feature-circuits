@@ -104,7 +104,7 @@ def _pe_attrib_separate(
         metric_clean.value.sum().backward()
 
     hidden_states_patch = {}
-    with model.invoke(patch):
+    with model.invoke(patch) as invoker:
         for submod_name in upstream_submodule_names:
             submodule, dictionary = load_submodule_and_dictionary(model, submod_name, dict_cfg)
             x = submodule.output
@@ -115,7 +115,7 @@ def _pe_attrib_separate(
             hidden_states_patch[submod_name] = f.save()
         metric_patch = metric_fn(model).save()
 
-    total_effect = (metric_patch.value - metric_clean.value) # / (metric_clean.value + EPS)
+    total_effect = metric_patch.value - metric_clean.value # / (metric_clean.value + EPS)
     
     effects = {}
     for submod_name in upstream_submodule_names:
