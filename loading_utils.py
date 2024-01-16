@@ -81,8 +81,11 @@ def submodule_type_to_name(submodule_type):
 
 def submodule_name_to_type_layer(submod_name):
     layer_match = re.search(r"layers\.(\d+)\.", submod_name) # TODO Generalize for other models. This search string is Pythia-specific.
+    resid_match = re.search(r"layers\.(\d+)$", submod_name)
     if layer_match:
         submod_layer = int(layer_match.group(1))
+    elif resid_match:
+        submod_layer = int(resid_match.group(1))
     else:
         raise ValueError(f"No layer number found in submodule name: {submod_name}")
     
@@ -90,7 +93,7 @@ def submodule_name_to_type_layer(submod_name):
         submod_type = "attn"
     elif "mlp" in submod_name:
         submod_type = "mlp"
-    elif "resid" in submod_name:
+    elif len(submod_name.split(".")) == 4:
         submod_type = "resid"
     else:
         raise ValueError(f"No submodule type found in submodule name: {submod_name}")
