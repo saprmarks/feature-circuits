@@ -6,7 +6,6 @@ from loading_utils import load_submodule_and_dictionary, DictionaryCfg
 
 EffectOut = namedtuple('EffectOut', ['effects', 'total_effect'])
 EPS = 1e-7
-EPS = 1e-7
 
 def _pe_attrib_all_folded(
         clean,
@@ -56,19 +55,18 @@ def _pe_attrib_all_folded(
             x_hat = dictionary.decode(f)
             if is_resid:
                 residual = (x[0] - x_hat).detach()
-                submodule.output[0] = x_hat + residual
+                submodule.output = (x_hat + residual, *submodule.output[1:])
             else:
                 residual = (x - x_hat).detach()
                 submodule.output = x_hat + residual
         metric_patch = metric_fn(model).save()
     
-    total_effect = (metric_patch.value - metric_clean.value) / (metric_clean.value + EPS)
-    total_effect = (metric_patch.value - metric_clean.value) / (metric_clean.value + EPS)
+    total_effect = (metric_patch.value - metric_clean.value) # / (metric_clean.value + EPS)
 
     effects = {}
     for submod_name in upstream_submodule_names:
         patch_state, clean_state = hidden_states_patch[submod_name], hidden_states_clean[submod_name]
-        effects[submod_name] = ((patch_state.value - clean_state.value) * clean_state.value.grad) / (metric_clean.value[:, None, None] + EPS)
+        effects[submod_name] = (patch_state.value - clean_state.value) * clean_state.value.grad # / (metric_clean.value[:, None, None] + EPS)
 
     return EffectOut(effects, total_effect)
 
@@ -97,7 +95,7 @@ def _pe_attrib_separate(
             x_hat = dictionary.decode(f)
             if is_resid:
                 residual = (x[0] - x_hat).detach()
-                submodule.output[0] = x_hat + residual
+                submodule.output = (x_hat + residual, *submodule.output[1:])
             else:
                 residual = (x - x_hat).detach()
                 submodule.output = x_hat + residual
@@ -116,13 +114,12 @@ def _pe_attrib_separate(
             hidden_states_patch[submod_name] = f.save()
         metric_patch = metric_fn(model).save()
 
-    total_effect = (metric_patch.value - metric_clean.value) / (metric_clean.value + EPS)
-    total_effect = (metric_patch.value - metric_clean.value) / (metric_clean.value + EPS)
+    total_effect = (metric_patch.value - metric_clean.value) # / (metric_clean.value + EPS)
     
     effects = {}
     for submod_name in upstream_submodule_names:
         patch_state, clean_state = hidden_states_patch[submod_name], hidden_states_clean[submod_name]
-        effects[submod_name] = ((patch_state.value - clean_state.value) * clean_state.value.grad) / (metric_clean.value[:, None, None] + EPS)
+        effects[submod_name] = (patch_state.value - clean_state.value) * clean_state.value.grad # / (metric_clean.value[:, None, None] + EPS)
 
     return EffectOut(effects, total_effect)
 
