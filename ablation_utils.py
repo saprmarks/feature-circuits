@@ -4,6 +4,83 @@ import torch as t
 from loading_utils import load_submodule
 from dictionary_learning.dictionary import AutoEncoder
 
+def run_with_ablated_features(model, example, dictionary_dir, dictionary_size, features,
+                              return_submodules=None):
+    """
+    TODO: This method currently uses zero ablations. Should update this to also support
+    naturalistic ablations.
+    """
+    # usage: features_per_layer[layer][submodule_type]
+    features_per_layer = defaultdict(lambda: defaultdict(list))
+    for feature in features:
+        submodule_type, layer_and_feat_idx = feature.split("_")
+        layer, feat_idx = layer_and_feat_idx.split("/")
+        features_per_layer[int(layer)][submodule_type].append(int(feat_idx))
+
+    saved_submodules = {}
+    def _ablate_features(submodule_type, layer, feature_list):
+        submodule_name = submodule_type_to_name(submodule_type).format(layer)
+        submodule = load_submodule(model, submodule_name)
+        # if there are no features to ablate, just return the submodule output
+        if len(feature_list) == 0 and return_submodules and submodule_name in return_submodules:
+            saved_submodules[submodule_name] = submodule.output.save()
+            return
+        
+        # load autoencoder
+        is_resid = len(submodule.output[0].shape) > 2
+        if is_resid:
+            submodule_width = submodule.output[0].shape[2]
+        else:
+            submodule_width = submodule.out_features
+        autoencoder = AutoEncoder(submodule_width, dictionary_size).cuda()
+        try:
+            autoencoder.load_state_dict(
+                t.load(os.path.join(dictionary_dir, f"{submodule_type}_out_layer{layer}/1_32768/ae.pt"))
+            )
+        except FileNotFoundError:
+            autoencoder.load_state_dict(
+                t.load(os.path.join(dictionary_dir, f"{submodule_type}_out_layer{layer}/0_32768/ae.pt"))
+            )
+
+        # encode activations into features
+        if is_resid:
+            x = submodule.output[0]
+        else:
+            x = submodule.output
+        f = autoencoder.encode(x)
+        for feature_idx in feature_list:
+            f[:, :, feature_idx] = 0.0      # ablate features
+        # replace submodule w/ autoencoder out
+        if is_resid:
+            submodule.output[0] = autoencoder.decode(f)
+        else:
+            submodule.output = autoencoder.decode(f)
+
+        # replace activations of submodule
+        if return_submodules and submodule_name in return_submodules:
+            saved_submodules[submodule_name] = submodule.output.save()
+
+    with model.invoke(example) as invoker:
+        # from lowest layer to highest (does this matter in nnsight?)
+        for layer in sorted(features_per_layer):
+            for submodule_type in features_per_layer[layer]:
+                _ablate_features(submodule_type, layer, features_per_layer[layer][submodule_type])
+        if return_submodules:
+            for submodule_name in return_submodules:
+                if submodule_name not in saved_submodules.keys():
+                    print(submodule_name)
+                    submodule_type = "mlp" if "mlp" in submodule_name else "attn" if "attention" in submodule_name else "resid"
+                    submodule_parts = submodule_name.split(".")
+                    for idx, part in enumerate(submodule_parts):
+                        if part.startswith("layer"):
+                            layer = int(submodule_parts[idx+1])
+                            break
+                    _ablate_features(submodule_type, layer, [])
+    saved_submodules["model"] = invoker.output
+
+    return saved_submodules
+
+
 def get_mean_activations(model, buffer, submodule, autoencoder, steps=5000, device="cuda"):
     """
     For use in mean ablation.
