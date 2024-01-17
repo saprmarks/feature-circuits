@@ -223,7 +223,7 @@ def _pe_exact(
         total_effect = metric_patch.value - metric_clean.value
 
     effects = {}
-    for submodule in submodules:
+    for submodule, dictionary in zip(submodules, dictionaries):
         patch_state, clean_state, residual = \
             hidden_states_patch[submodule], hidden_states_clean[submodule], residuals[submodule]
         effect = t.zeros_like(clean_state.value)
@@ -232,8 +232,6 @@ def _pe_exact(
         idxs = t.nonzero(patch_state.value - clean_state.value)
         for idx in tqdm(idxs):
             with model.invoke(clean):
-                is_resid = (type(submodule.output.shape) == tuple)
-
                 f = clean_state.value.clone()
                 f[tuple(idx)] = patch_state.value[tuple(idx)]
                 x_hat = dictionary.decode(f)
@@ -252,19 +250,19 @@ def patching_effect(
         clean,
         patch,
         model,
-        upstream_submodule_names,
-        dict_cfg,
+        submodules,
+        dictionaries,
         metric_fn,
         method='all-folded',
         steps=10,
 ):
     if method == 'all-folded':
-        return _pe_attrib_all_folded(clean, patch, model, upstream_submodule_names, dict_cfg, metric_fn)
+        return _pe_attrib_all_folded(clean, patch, model, submodules, dictionaries, metric_fn)
     elif method == 'separate':
-        return _pe_attrib_separate(clean, patch, model, upstream_submodule_names, dict_cfg, metric_fn)
+        return _pe_attrib_separate(clean, patch, model, submodules, dictionaries, metric_fn)
     elif method == 'ig':
-        return _pe_ig(clean, patch, model, upstream_submodule_names, dict_cfg, metric_fn, steps=steps)
+        return _pe_ig(clean, patch, model, submodules, dictionaries, metric_fn, steps=steps)
     elif method == 'exact':
-        return _pe_exact(clean, patch, model, upstream_submodule_names, dict_cfg, metric_fn)
+        return _pe_exact(clean, patch, model, submodules, dictionaries, metric_fn)
     else:
         raise ValueError(f"Unknown method {method}")
