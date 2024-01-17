@@ -91,7 +91,7 @@ class Circuit:
         return nodes_per_submod
 
     def locate_circuit(self, patch_method='separate'):
-        num_layers = self.model.config.num_hidden_layers # not needed?
+        num_layers = self.model.config.num_hidden_layers
         nodes_per_submod = defaultdict(lambda: defaultdict(set))
 
         # List submodule names in order of forward pass
