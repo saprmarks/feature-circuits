@@ -1,35 +1,29 @@
 from collections import namedtuple
 import torch as t
-from torch import nn
 from tqdm import tqdm
-from loading_utils import load_submodule_and_dictionary, DictionaryCfg
 
 EffectOut = namedtuple('EffectOut', ['effects', 'total_effect'])
-EPS = 1e-7
-EPS = 1e-7
+
 
 def _pe_attrib_all_folded(
         clean,
         patch,
         model,
-        upstream_submodule_names,
-        dict_cfg,
+        submodules,
+        dictionaries,
         metric_fn,
 ):
     # get clean states
     hidden_states_clean = {}
     with model.invoke(clean, fwd_args={'inference' : False}) as invoker:
-        hidden_states_clean = {}
-        for submod_name in upstream_submodule_names:
-            submodule, dictionary = load_submodule_and_dictionary(model, submod_name, dict_cfg)
-            is_resid = False
+        for submodule, dictionary in zip(submodules, dictionaries):
             x = submodule.output
-            if type(x.shape) == tuple:
-                is_resid = True
+            is_resid = (type(x.shape) == tuple)
+            if is_resid:
                 x = x[0]
             f = dictionary.encode(x)
             f.retain_grad()
-            hidden_states_clean[submod_name] = f.save()
+            hidden_states_clean[submodule] = f.save()
 
             x_hat = dictionary.decode(f)
             residual = (x - x_hat).detach()
@@ -38,6 +32,8 @@ def _pe_attrib_all_folded(
             else:
                 submodule.output = x_hat + residual
         metric_clean = metric_fn(model).save()
+
+    # backprop to get gradients for features
     metric_clean.value.sum().backward()
     
     if patch is None:
@@ -48,23 +44,20 @@ def _pe_attrib_all_folded(
     else:
         hidden_states_patch = {}
         with model.invoke(patch):
-            for submod_name in upstream_submodule_names:
-                submodule, dictionary = load_submodule_and_dictionary(model, submod_name, dict_cfg)
-                is_resid = False
+            for submodule, dictionary in zip(submodules, dictionaries):
                 x = submodule.output
-                if type(x.shape) == tuple:
-                    is_resid = True
+                is_resid = (type(x.shape) == tuple)
+                if is_resid:
                     x = x[0]
                 f = dictionary.encode(x)
-                hidden_states_patch[submod_name] = f.save()
-
+                hidden_states_patch[submodule] = f.save()
             metric_patch = metric_fn(model).save()
         total_effect = metric_patch.value - metric_clean.value
 
     effects = {}
-    for submod_name in upstream_submodule_names:
-        patch_state, clean_state = hidden_states_patch[submod_name], hidden_states_clean[submod_name]
-        effects[submod_name] = (patch_state.value - clean_state.value) * clean_state.value.grad
+    for submodule in submodules:
+        patch_state, clean_state = hidden_states_patch[submodule], hidden_states_clean[submodule]
+        effects[submodule] = (patch_state.value - clean_state.value) * clean_state.value.grad
 
     return EffectOut(effects, total_effect)
 
@@ -72,22 +65,20 @@ def _pe_attrib_separate(
         clean,
         patch,
         model,
-        upstream_submodule_names,
-        dict_cfg,
+        submodules,
+        dictionaries,
         metric_fn,
 ):
     hidden_states_clean = {}
-    for submod_name in upstream_submodule_names:
-        submodule, dictionary = load_submodule_and_dictionary(model, submod_name, dict_cfg)
+    for submodule, dictionary in zip(submodules, dictionaries):
         with model.invoke(clean, fwd_args={'inference' : False}) as invoker:
-            is_resid = False
             x = submodule.output
-            if type(x.shape) == tuple:
-                is_resid = True
+            is_resid = (type(x.shape) == tuple)
+            if is_resid:
                 x = x[0]
             f = dictionary.encode(x)
             f.retain_grad()
-            hidden_states_clean[submod_name] = f.save()
+            hidden_states_clean[submodule] = f.save()
             
             x_hat = dictionary.decode(f)
             residual = (x - x_hat).detach()
@@ -106,21 +97,20 @@ def _pe_attrib_separate(
     else:
         hidden_states_patch = {}
         with model.invoke(patch):
-            for submod_name in upstream_submodule_names:
-                submodule, dictionary = load_submodule_and_dictionary(model, submod_name, dict_cfg)
+            for submodule, dictionary in zip(submodules, dictionaries):
                 x = submodule.output
-                if type(x.shape) == tuple:
+                is_resid = (type(x.shape) == tuple)
+                if is_resid:
                     x = x[0]
                 f = dictionary.encode(x)
-                hidden_states_patch[submod_name] = f.save()
+                hidden_states_patch[submodule] = f.save()
             metric_patch = metric_fn(model).save()
-
         total_effect = metric_patch.value - metric_clean.value
     
     effects = {}
-    for submod_name in upstream_submodule_names:
-        patch_state, clean_state = hidden_states_patch[submod_name], hidden_states_clean[submod_name]
-        effects[submod_name] = (patch_state.value - clean_state.value) * clean_state.value.grad
+    for submodule in submodules:
+        patch_state, clean_state = hidden_states_patch[submodule], hidden_states_clean[submodule]
+        effects[submodule] = (patch_state.value - clean_state.value) * clean_state.value.grad
 
     return EffectOut(effects, total_effect)
 
@@ -128,8 +118,8 @@ def _pe_ig(
         clean,
         patch,
         model,
-        upstream_submodule_names,
-        dict_cfg,
+        submodules,
+        dictionaries,
         metric_fn,
         steps=10,
 ):
@@ -138,16 +128,15 @@ def _pe_ig(
     residuals = {}
     is_resids = {}
     with model.invoke(clean):
-        for submod_name in upstream_submodule_names:
-            submodule, dictionary = load_submodule_and_dictionary(model, submod_name, dict_cfg)
+        for submodule, dictionary in zip(submodules, dictionaries):
             x = submodule.output
-            is_resids[submod_name] = type(x.shape) == tuple
-            if is_resids[submod_name]:
+            is_resids[submodule] = (type(x.shape) == tuple)
+            if is_resids[submodule]:
                 x = x[0]
             f = dictionary.encode(x)
-            hidden_states_clean[submod_name] = f.save()
+            hidden_states_clean[submodule] = f.save()
             x_hat = dictionary.decode(f)
-            residuals[submod_name] = (x - x_hat).save()
+            residuals[submodule] = (x - x_hat).save()
         metric_clean = metric_fn(model).save()
 
     hidden_states_patch = {}
@@ -158,8 +147,7 @@ def _pe_ig(
         total_effect = None
     else:
         with model.invoke(patch):
-            for submod_name in upstream_submodule_names:
-                submodule, dictionary = load_submodule_and_dictionary(model, submod_name, dict_cfg)
+            for submodule, dictionary in zip(submodules, dictionaries):
                 x = submodule.output
                 if is_resids[submodule]:
                     x = x[0]
@@ -169,10 +157,9 @@ def _pe_ig(
         total_effect = metric_patch.value - metric_clean.value
 
     effects = {}
-    for submod_name in upstream_submodule_names:
-        submodule, dictionary = load_submodule_and_dictionary(model, submod_name, dict_cfg)
+    for submodule, dictionary in zip(submodules, dictionaries):
         patch_state, clean_state, residual = \
-            hidden_states_patch[submod_name], hidden_states_clean[submod_name], residuals[submod_name]
+            hidden_states_patch[submodule], hidden_states_clean[submodule], residuals[submodule]
         with model.forward(inference=False) as runner:
             metrics = []
             fs = []
@@ -190,7 +177,7 @@ def _pe_ig(
         metric = sum([m.value for m in metrics])
         metric.sum().backward()
         grad = sum([f.grad for f in fs])
-        effects[submod_name] = grad * (patch_state.value - clean_state.value) / steps
+        effects[submodule] = grad * (patch_state.value - clean_state.value) / steps
 
     return EffectOut(effects, total_effect)
 
@@ -198,27 +185,24 @@ def _pe_exact(
         clean,
         patch,
         model,
-        upstream_submodule_names,
-        dict_cfg,
+        submodules,
+        dictionaries,
         metric_fn,
 ):
     
     hidden_states_clean = {}
     residuals = {}
-    with model.invoke(clean) as invoker:
-        for submod_name in upstream_submodule_names:
-            submodule, dictionary = load_submodule_and_dictionary(model, submod_name, dict_cfg)
-            is_resid = False
+    with model.invoke(clean):
+        for submodule, dictionary in zip(submodules, dictionaries):
             x = submodule.output
-            if type(x.shape) == tuple:
-                is_resid = True
+            is_resid = (type(x.shape) == tuple)
+            if is_resid:
                 x = x[0]
             f = dictionary.encode(x)
-            hidden_states_clean[submod_name] = f.save()
+            hidden_states_clean[submodule] = f.save()
             x_hat = dictionary.decode(f)
-            residuals[submod_name] = (x - x_hat).save()
+            residuals[submodule] = (x - x_hat).save()
         metric_clean = metric_fn(model).save()
-    hidden_states_clean = {k : v.value for k, v in hidden_states_clean.items()}
 
     if patch is None:
         hidden_states_patch = {
@@ -226,41 +210,39 @@ def _pe_exact(
         }
         total_effect = None
     else:
+        hidden_states_patch = {}
         with model.invoke(patch):
-            for submod_name in upstream_submodule_names:
-                submodule, dictionary = load_submodule_and_dictionary(model, submod_name, dict_cfg)
-                is_resid = False
+            for submodule, dictionary in zip(submodules, dictionaries):
                 x = submodule.output
-                if type(x.shape) == tuple:
-                    is_resid = True
+                is_resid = (type(x.shape) == tuple)
+                if is_resid:
                     x = x[0]
                 f = dictionary.encode(x)
-                hidden_states_patch[submod_name] = f.save()
+                hidden_states_patch[submodule] = f.save()
             metric_patch = metric_fn(model).save()
         total_effect = metric_patch.value - metric_clean.value
 
     effects = {}
-    for submod_name in upstream_submodule_names:
-        submodule, dictionary = load_submodule_and_dictionary(model, submod_name, dict_cfg)
+    for submodule, dictionary in zip(submodules, dictionaries):
         patch_state, clean_state, residual = \
-            hidden_states_patch[submod_name], hidden_states_clean[submod_name], residuals[submod_name]
+            hidden_states_patch[submodule], hidden_states_clean[submodule], residuals[submodule]
         effect = t.zeros_like(clean_state.value)
         
         # iterate over positions and features for which clean and patch differ
         idxs = t.nonzero(patch_state.value - clean_state.value)
         for idx in tqdm(idxs):
             with model.invoke(clean):
-                f = clean_state.clone()
-                f[tuple(idx)] = patch_state[tuple(idx)]
+                f = clean_state.value.clone()
+                f[tuple(idx)] = patch_state.value[tuple(idx)]
                 x_hat = dictionary.decode(f)
                 if is_resid:
-                    submodule.output[0][:] = x_hat + residual
+                    submodule.output[0][:] = x_hat + residual.value
                 else:
-                    submodule.output = x_hat + residual
+                    submodule.output = x_hat + residual.value
                 metric = metric_fn(model).save()
             effect[tuple(idx)] = (metric.value - metric_clean.value).sum()
         
-        effects[submod_name] = effect
+        effects[submodule] = effect
 
     return EffectOut(effects, total_effect)
 
@@ -268,19 +250,19 @@ def patching_effect(
         clean,
         patch,
         model,
-        upstream_submodule_names,
-        dict_cfg,
+        submodules,
+        dictionaries,
         metric_fn,
         method='all-folded',
         steps=10,
 ):
     if method == 'all-folded':
-        return _pe_attrib_all_folded(clean, patch, model, upstream_submodule_names, dict_cfg, metric_fn)
+        return _pe_attrib_all_folded(clean, patch, model, submodules, dictionaries, metric_fn)
     elif method == 'separate':
-        return _pe_attrib_separate(clean, patch, model, upstream_submodule_names, dict_cfg, metric_fn)
+        return _pe_attrib_separate(clean, patch, model, submodules, dictionaries, metric_fn)
     elif method == 'ig':
-        return _pe_ig(clean, patch, model, upstream_submodule_names, dict_cfg, metric_fn, steps=steps)
+        return _pe_ig(clean, patch, model, submodules, dictionaries, metric_fn, steps=steps)
     elif method == 'exact':
-        return _pe_exact(clean, patch, model, upstream_submodule_names, dict_cfg, metric_fn)
+        return _pe_exact(clean, patch, model, submodules, dictionaries, metric_fn)
     else:
         raise ValueError(f"Unknown method {method}")
