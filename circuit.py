@@ -86,46 +86,41 @@ class Circuit:
                 child = CircuitNode(us_node_name)
                 child.effect_on_parents[ds_node] = effects[us_submod_name][self.patch_token_pos, feature_idx].item()
                 ds_node.add_child(child, effect_on_parent=effects[us_submod_name][self.patch_token_pos, feature_idx].item())
-                if child not in nodes_per_submod[us_submod_layer][us_submod_name]:
-                    nodes_per_submod[us_submod_layer][us_submod_name].add(child)
-        return nodes_per_submod
+                if child not in nodes_per_submod[us_submod_name]:
+                    nodes_per_submod[us_submod_name].add(child)
 
     def locate_circuit(self, patch_method='separate'):
         num_layers = self.model.config.num_hidden_layers
-        nodes_per_submod = defaultdict(lambda: defaultdict(set))
+        nodes_per_submod = defaultdict(list)
 
         # List submodule names in order of forward pass
-        submodules_per_layer = defaultdict(list)
+        all_submodules = []
         for layer in range(num_layers):
             for submod in self.submodules_generic: # assumes components per layer (attn, mlp, resid) are ordered by call during a forward pass
-                submodules_per_layer[layer].append(submod.format(str(layer)))
+                all_submodules.append(submod.format(str(layer)))
 
         # Effects on y
-        for us_layer in sorted(submodules_per_layer, reverse=True):
-            effects_on_y = patching_on_y(self.dataset, self.model, submodules_per_layer[us_layer], self.dict_cfg, method=patch_method).effects
-            nodes_per_submod = self._evaluate_effects(effects_on_y, self.y_threshold, self.root, nodes_per_submod)
+        effects_on_y = patching_on_y(self.dataset, self.model, all_submodules, self.dict_cfg, method=patch_method).effects
+        self._evaluate_effects(effects_on_y, self.y_threshold, self.root, nodes_per_submod)
 
-            # Effects on downstream (parent) features
+        # Effects on downstream module
+        for ds_submod_idx, ds_submod in enumerate(sorted(all_submodules, reverse=True)):
+            # Effects on downstream features
             # Iterate backwards through submodules and measure causal effects.
-            for ds_layer in range(num_layers-1, us_layer, -1):
-                for ds_submod_name in tqdm(nodes_per_submod[ds_layer], desc="downstream_submodules"):
-                    # if ds_submod_name in nodes_per_submod: # If current submodule contains relevant features
-                    upstream_submodule_names = submodules_per_layer[us_layer]
-                    # if len(upstream_submodule_names) < 1:
-                    #     break # current ds_submodule is the first submodule after input, no upstream_submodules left!
-                    for ds_node in nodes_per_submod[ds_layer][ds_submod_name]:
-                        print(ds_node.name)
-                        ds_node_idx = int(ds_node.name.split("_")[1])
-                        feat_ds_effects = patching_on_downstream_feature(
-                            self.dataset,
-                            self.model, 
-                            upstream_submodule_names,
-                            ds_submod_name,
-                            downstream_feature_id=ds_node_idx,
-                            dict_cfg=self.dict_cfg,
-                            method=patch_method,
-                            ).effects
-                        nodes_per_submod = self._evaluate_effects(feat_ds_effects, self.feat_threshold, ds_node, nodes_per_submod)
+            us_submodules = all_submodules[:len(all_submodules) - ds_submod_idx - 1]
+            for ds_node in nodes_per_submod[ds_submod]:
+                print(ds_node.name)
+                ds_node_idx = int(ds_node.name.split("_")[1])
+                feat_ds_effects = patching_on_downstream_feature(
+                    self.dataset,
+                    self.model, 
+                    us_submodules,
+                    ds_submod,
+                    downstream_feature_id=ds_node_idx,
+                    dict_cfg=self.dict_cfg,
+                    method=patch_method,
+                    ).effects
+                self._evaluate_effects(feat_ds_effects, self.feat_threshold, ds_node, nodes_per_submod)
 
 
     def evaluate_faithfulness(self, eval_dataset=None, patch_type='zero'):
