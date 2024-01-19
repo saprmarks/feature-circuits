@@ -10,7 +10,7 @@ from collections import defaultdict
 from dictionary_learning.buffer import ActivationBuffer
 from dictionary_learning.dictionary import AutoEncoder
 from loading_utils import (
-    load_examples, load_submodule, submodule_type_to_name, submodule_name_to_type_layer, DictionaryCfg
+    load_examples, load_submodule_and_dictionary, submodule_name_to_type_layer, DictionaryCfg
 )
 from acdc import patching_on_y, patching_on_downstream_feature
 from subnetwork import (
@@ -64,6 +64,7 @@ class Circuit:
         self.filter_proportion = 0.25
 
         self.root = CircuitNode("y")
+        self.final_token_positions = [example["prefix_length_wo_pad"] - 1 for example in dataset]
 
     def _get_paths_to_root(self, lower_node, upper_node):
         for parent in upper_node.parents:
@@ -73,54 +74,67 @@ class Circuit:
                 for path in self._get_paths_to_root(upper_node, parent):
                     yield [lower_node] + path
 
-    def _evaluate_effects(self, effects, threshold, ds_node, nodes_per_submod):
+    def _evaluate_effects(self, effects, final_token_positions, submodule_names, threshold, ds_node, nodes_per_submod):
         """
-        Adds nodes with effect above threshold to circuit and nodes_per_submod dict if effect above.
+        Adds nodes with effect above threshold to circuit and nodes_per_submod dict.
         us: upstream
         """
-        for us_submod_name in effects:
+        for us_submod, us_submod_name in zip(effects, submodule_names):
             us_submod_layer, us_submod_type = submodule_name_to_type_layer(us_submod_name)
-            feature_indices = (effects[us_submod_name][self.patch_token_pos, :] > threshold).nonzero().flatten().tolist()
+            feature_indices = (effects[us_submod][final_token_positions, :] > threshold).nonzero().flatten().tolist() # TODO: compute IE across all examples
             for feature_idx in feature_indices:
                 us_node_name = f"{us_submod_layer}_{feature_idx}_{us_submod_type}"
                 child = CircuitNode(us_node_name)
-                child.effect_on_parents[ds_node] = effects[us_submod_name][self.patch_token_pos, feature_idx].item()
-                ds_node.add_child(child, effect_on_parent=effects[us_submod_name][self.patch_token_pos, feature_idx].item())
-                if child not in nodes_per_submod[us_submod_name]:
-                    nodes_per_submod[us_submod_name].add(child)
+                child.effect_on_parents[ds_node] = effects[us_submod][self.patch_token_pos, feature_idx].item()
+                ds_node.add_child(child, effect_on_parent=effects[us_submod][self.patch_token_pos, feature_idx].item())
+                if child not in nodes_per_submod[us_submod]:
+                    nodes_per_submod[us_submod].append(child)
 
     def locate_circuit(self, patch_method='separate'):
         num_layers = self.model.config.num_hidden_layers
         nodes_per_submod = defaultdict(list)
 
         # List submodule names in order of forward pass
-        all_submodules = []
+        all_submodule_names = []
         for layer in range(num_layers):
             for submod in self.submodules_generic: # assumes components per layer (attn, mlp, resid) are ordered by call during a forward pass
-                all_submodules.append(submod.format(str(layer)))
+                all_submodule_names.append(submod.format(str(layer)))
+
+        # Load all submodules and dictionaries
+        all_submodules = []
+        all_dictionaries = []
+        for submodule_name in all_submodule_names:
+            submodule, dictionary = load_submodule_and_dictionary(self.model, submodule_name, self.dict_cfg)
+            all_submodules.append(submodule)
+            all_dictionaries.append(dictionary)
 
         # Effects on y
-        effects_on_y = patching_on_y(self.dataset, self.model, all_submodules, self.dict_cfg, method=patch_method).effects
-        self._evaluate_effects(effects_on_y, self.y_threshold, self.root, nodes_per_submod)
+        effects_on_y = patching_on_y(self.dataset, self.model, all_submodules, all_dictionaries, method=patch_method).effects
+        self._evaluate_effects(effects_on_y, self.final_token_positions, all_submodule_names, self.y_threshold, self.root, nodes_per_submod)
 
         # Effects on downstream module
-        for ds_submod_idx, ds_submod in enumerate(sorted(all_submodules, reverse=True)):
+        for ds_idx in range(len(all_submodules) - 1, -1, -1):
+            ds_submodule = all_submodules[ds_idx]
+            ds_dictionary = all_dictionaries[ds_idx]
             # Effects on downstream features
             # Iterate backwards through submodules and measure causal effects.
-            us_submodules = all_submodules[:len(all_submodules) - ds_submod_idx - 1]
-            for ds_node in nodes_per_submod[ds_submod]:
+            us_submodules = all_submodules[:len(all_submodules) - ds_idx - 1]
+            us_dictionaries = all_dictionaries[:len(all_dictionaries) - ds_idx - 1]
+            us_submodule_names = all_submodule_names[:len(all_submodule_names) - ds_idx - 1]
+            for ds_node in nodes_per_submod[ds_submodule]:
                 print(ds_node.name)
                 ds_node_idx = int(ds_node.name.split("_")[1])
                 feat_ds_effects = patching_on_downstream_feature(
                     self.dataset,
                     self.model, 
                     us_submodules,
-                    ds_submod,
+                    us_dictionaries,
+                    ds_submodule,
+                    ds_dictionary,
                     downstream_feature_id=ds_node_idx,
-                    dict_cfg=self.dict_cfg,
                     method=patch_method,
                     ).effects
-                self._evaluate_effects(feat_ds_effects, self.feat_threshold, ds_node, nodes_per_submod)
+                self._evaluate_effects(feat_ds_effects, self.final_token_positions, us_submodule_names, self.feat_threshold, ds_node, nodes_per_submod)
 
 
     def evaluate_faithfulness(self, eval_dataset=None, patch_type='zero'):
@@ -238,7 +252,7 @@ if __name__ == "__main__":
     parser.add_argument("--dictionary_size", "-S", type=int, default=32768,
                         help="Width of trained dictionaries.")
     parser.add_argument("--dataset", "-d", type=str, default="/share/projects/dictionary_circuits/data/phenomena/simple.json")
-    parser.add_argument("--num_examples", "-n", type=int, default=100,
+    parser.add_argument("--num_examples", "-n", type=int, default=10,
                         help="Number of example pairs to use in the causal search.")
     parser.add_argument("--patch_method", "-p", type=str, choices=["all-folded", "separate", "ig", "exact"],
                         default="all-folded", help="Method to use for attribution patching.")

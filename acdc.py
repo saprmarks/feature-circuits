@@ -3,9 +3,8 @@ import torch as t
 from torch import nn
 from tqdm import tqdm
 from attribution import patching_effect, EffectOut
-from loading_utils import load_submodule_and_dictionary
 
-def consolidated_patching_on(dataset, model, upstream_submodule_names, dict_cfg, metric_fn, method='separate', steps=10):
+def consolidated_patching_on(dataset, model, upstream_submodules, upstream_dictionaries, metric_fn, method='separate', steps=10):
     clean_inputs = t.cat([example['clean_prefix'] for example in dataset], dim=0)
     patch_inputs = t.cat([example['patch_prefix'] for example in dataset], dim=0)
 
@@ -13,8 +12,8 @@ def consolidated_patching_on(dataset, model, upstream_submodule_names, dict_cfg,
         clean_inputs,
         patch_inputs,
         model,
-        upstream_submodule_names,
-        dict_cfg,
+        upstream_submodules,
+        upstream_dictionaries,
         metric_fn,
         method=method,
         steps=steps,
@@ -25,7 +24,7 @@ def consolidated_patching_on(dataset, model, upstream_submodule_names, dict_cfg,
         total_effect=total_effect.mean(dim=0),
     )
 
-def patching_on_y(dataset, model, upstream_submodule_names, dict_cfg, method='separate', steps=10):
+def patching_on_y(dataset, model, submodules, dictionaries, method='separate', steps=10):
     clean_answer_idxs, patch_answer_idxs, prefix_lengths_wo_pad = [], [], []
     for example in dataset:
         clean_answer_idxs.append(example['clean_answer'])
@@ -45,18 +44,18 @@ def patching_on_y(dataset, model, upstream_submodule_names, dict_cfg, method='se
         )
         return logit_diff.squeeze(-1)
 
-    return consolidated_patching_on(dataset, model, upstream_submodule_names, dict_cfg, metric_fn, method, steps)
+    return consolidated_patching_on(dataset, model, submodules, dictionaries, metric_fn, method, steps)
 
 def patching_on_downstream_feature(
     dataset, 
     model, 
-    upstream_submodule_names,
-    downstream_submodule_name, 
+    upstream_submodules,
+    upstream_dictionaries,
+    downstream_submodule,
+    downstream_dictionary,
     downstream_feature_id,
-    dict_cfg,
     method='separate', 
     steps=10):
-    downstream_submodule, downstream_dictionary = load_submodule_and_dictionary(model, downstream_submodule_name, dict_cfg)
     def metric_fn(model):
         x = downstream_submodule.output
         if len(x[0].shape) > 2:
@@ -68,4 +67,4 @@ def patching_on_downstream_feature(
             f = f[:, :, downstream_feature_id]
         return f.sum(dim=-1)
 
-    return consolidated_patching_on(dataset, model, upstream_submodule_names, dict_cfg, metric_fn, method, steps)
+    return consolidated_patching_on(dataset, model, upstream_submodules, upstream_dictionaries, metric_fn, method, steps)
