@@ -81,12 +81,13 @@ class Circuit:
         """
         for us_submod, us_submod_name in zip(effects, submodule_names):
             us_submod_layer, us_submod_type = submodule_name_to_type_layer(us_submod_name)
-            feature_indices = (effects[us_submod][final_token_positions, :] > threshold).nonzero().flatten().tolist() # TODO: compute IE across all examples
-            for feature_idx in feature_indices:
+            sum_indirect_effect = t.sum(effects[us_submod][final_token_positions, :], dim=0) # TODO: compute IE across all examples
+            mean_indirect_effect = sum_indirect_effect / len(self.dataset)
+            feats_above_threshold = (mean_indirect_effect > threshold).nonzero().flatten().tolist()
+            for feature_idx in feats_above_threshold:
                 us_node_name = f"{us_submod_layer}_{feature_idx}_{us_submod_type}"
                 child = CircuitNode(us_node_name)
-                child.effect_on_parents[ds_node] = effects[us_submod][self.patch_token_pos, feature_idx].item()
-                ds_node.add_child(child, effect_on_parent=effects[us_submod][self.patch_token_pos, feature_idx].item())
+                ds_node.add_child(child, effect_on_parent=mean_indirect_effect[feature_idx].item())
                 if child not in nodes_per_submod[us_submod]:
                     nodes_per_submod[us_submod].append(child)
 
@@ -246,7 +247,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", "-m", type=str, default="EleutherAI/pythia-70m-deduped",
                         help="Name of model on which dictionaries were trained.")
-    parser.add_argument("--submodules", "-s", type=str, default="model.gpt_neox.layers.{}.mlp.dense_4h_to_h",
+    parser.add_argument("--submodules", "-s", type=str, default="model.gpt_neox.layers.{}.attention.dense,model.gpt_neox.layers.{}.mlp.dense_4h_to_h",
                         help="Name of submodules on which dictionaries were trained (with `{}` where the layer number should be).")
     parser.add_argument("--dictionary_dir", "-a", type=str, default="/share/projects/dictionary_circuits/autoencoders/")
     parser.add_argument("--dictionary_size", "-S", type=int, default=32768,
