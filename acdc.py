@@ -1,7 +1,4 @@
-import random
 import torch as t
-from torch import nn
-from tqdm import tqdm
 from attribution import patching_effect, EffectOut
 
 def consolidated_patching_on(dataset, model, upstream_submodules, upstream_dictionaries, metric_fn, method='separate', steps=10):

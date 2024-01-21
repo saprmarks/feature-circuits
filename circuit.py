@@ -2,21 +2,14 @@ import argparse
 import os
 import pickle
 import torch as t
-import regex as re
 
 from nnsight import LanguageModel
 from tqdm import tqdm
 from collections import defaultdict
-from dictionary_learning.buffer import ActivationBuffer
-from dictionary_learning.dictionary import AutoEncoder
 from loading_utils import (
     load_examples, load_submodule_and_dictionary, submodule_name_to_type_layer, DictionaryCfg
 )
 from acdc import patching_on_y, patching_on_downstream_feature
-from subnetwork import (
-    Node, Subnetwork,
-)
-from patching import subnetwork_patch
 from ablation_utils import run_with_ablated_features
 
 class CircuitNode:
@@ -37,9 +30,16 @@ class CircuitNode:
     def add_child(self, child, effect_on_parent=None):
         if "_" in self.name:
             this_layer = self.name.split("_")[0]
+            this_type = self.name.split("_")[-1]
             child_layer = child.name.split("_")[0]
-            if child_layer >= this_layer:
+            child_type = child.name.split("_")[-1]
+            if child_layer > this_layer:
                 raise Exception(f"Invalid child: {self.name} -> {child.name}")
+            elif child_layer == this_layer and "attn" == this_type: # account for the fact that attn can be child of mlp in the same transformer block
+                raise Exception(f"Invalid child: {self.name} -> {child.name}")
+            elif child_layer == this_layer and "mlp" == this_type and "resid" == child_type:
+                raise Exception(f"Invalid child: {self.name} -> {child.name}")
+            
         self.children.append(child)
         child.parents.append(self)
         child.effect_on_parents[self] = effect_on_parent
@@ -110,20 +110,21 @@ class Circuit:
             all_dictionaries.append(dictionary)
 
         # Effects on y
+        print(f'ds_node: y')
         effects_on_y = patching_on_y(self.dataset, self.model, all_submodules, all_dictionaries, method=patch_method).effects
         self._evaluate_effects(effects_on_y, self.final_token_positions, all_submodule_names, self.y_threshold, self.root, nodes_per_submod)
 
         # Effects on downstream module
-        for ds_idx in range(len(all_submodules) - 1, -1, -1):
+        for ds_idx in range(len(all_submodules) - 1, 0, -1): # iterate backwards through submodules; first submodule in all_submodules cannot be downstream
             ds_submodule = all_submodules[ds_idx]
             ds_dictionary = all_dictionaries[ds_idx]
             # Effects on downstream features
             # Iterate backwards through submodules and measure causal effects.
-            us_submodules = all_submodules[:len(all_submodules) - ds_idx - 1]
-            us_dictionaries = all_dictionaries[:len(all_dictionaries) - ds_idx - 1]
-            us_submodule_names = all_submodule_names[:len(all_submodule_names) - ds_idx - 1]
+            us_submodules = all_submodules[:ds_idx]
+            us_dictionaries = all_dictionaries[:ds_idx]
+            us_submodule_names = all_submodule_names[:ds_idx]
             for ds_node in nodes_per_submod[ds_submodule]:
-                print(ds_node.name)
+                print(f'ds_node: {ds_node.name}')
                 ds_node_idx = int(ds_node.name.split("_")[1])
                 feat_ds_effects = patching_on_downstream_feature(
                     self.dataset,
@@ -256,7 +257,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_examples", "-n", type=int, default=10,
                         help="Number of example pairs to use in the causal search.")
     parser.add_argument("--patch_method", "-p", type=str, choices=["all-folded", "separate", "ig", "exact"],
-                        default="all-folded", help="Method to use for attribution patching.")
+                        default="separate", help="Method to use for attribution patching.")
     parser.add_argument("--evaluate", action="store_true", help="Load and evaluate a circuit.")
     args = parser.parse_args()
 
