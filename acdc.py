@@ -55,13 +55,14 @@ def patching_on_downstream_feature(
     steps=10):
     def metric_fn(model):
         x = downstream_submodule.output
-        if len(x[0].shape) > 2:
-            f = downstream_dictionary.encode(x[0])
-        else:
-            f = downstream_dictionary.encode(x)
-
+        is_resid = (type(x.shape) == tuple)
+        if is_resid:
+            x = x[0]
+        f = downstream_dictionary.encode(x)
         if downstream_feature_id:
             f = f[:, :, downstream_feature_id]
+        else:
+            f = f.sum(dim=-1)
         return f.sum(dim=-1)
 
     return consolidated_patching_on(dataset, model, upstream_submodules, upstream_dictionaries, metric_fn, method, steps)

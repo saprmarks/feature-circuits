@@ -4,7 +4,7 @@ import pickle
 import torch as t
 
 from nnsight import LanguageModel
-from tqdm import tqdm
+from tqdm import tqdm, trange
 from collections import defaultdict
 from loading_utils import (
     load_examples, load_submodule_and_dictionary, submodule_name_to_type_layer, DictionaryCfg
@@ -95,48 +95,51 @@ class Circuit:
         num_layers = self.model.config.num_hidden_layers
         nodes_per_submod = defaultdict(list)
 
-        # List submodule names in order of forward pass
-        all_submodule_names = []
+        # Load all submodules and dictionaries into list grouped by layer
+        all_submodule_names, all_submodules, all_dictionaries = [], [], []
         for layer in range(num_layers):
-            for submod in self.submodules_generic: # assumes components per layer (attn, mlp, resid) are ordered by call during a forward pass
-                all_submodule_names.append(submod.format(str(layer)))
+            submodule_names_layer, submodules_layer, dictionaries_layer = [], [], []
+            for submodule_name in self.submodules_generic:
+                submodule_name = submodule_name.format(str(layer))
+                submodule, dictionary = load_submodule_and_dictionary(self.model, submodule_name, self.dict_cfg)
+                submodule_names_layer.append(submodule_name)
+                submodules_layer.append(submodule)
+                dictionaries_layer.append(dictionary)
+            all_submodule_names.append(submodule_names_layer)
+            all_submodules.append(submodules_layer)
+            all_dictionaries.append(dictionaries_layer)
 
-        # Load all submodules and dictionaries
-        all_submodules = []
-        all_dictionaries = []
-        for submodule_name in all_submodule_names:
-            submodule, dictionary = load_submodule_and_dictionary(self.model, submodule_name, self.dict_cfg)
-            all_submodules.append(submodule)
-            all_dictionaries.append(dictionary)
+        # Iterate through layers
+        for layer in trange(num_layers-1, -1, -1, desc="Layers", total=num_layers):
+            submodule_names_layer, submodules_layer, dictionaries_layer = all_submodule_names[layer], all_submodules[layer], all_dictionaries[layer]
+            # Effects on y (downstream)
+            # Upstream: submodules of this layer
+            effects_on_y = patching_on_y(self.dataset, self.model, submodules_layer, dictionaries_layer, method=patch_method).effects
+            self._evaluate_effects(effects_on_y, self.final_token_positions, submodule_names_layer, self.y_threshold, self.root, nodes_per_submod)
 
-        # Effects on y
-        print(f'ds_node: y')
-        effects_on_y = patching_on_y(self.dataset, self.model, all_submodules, all_dictionaries, method=patch_method).effects
-        self._evaluate_effects(effects_on_y, self.final_token_positions, all_submodule_names, self.y_threshold, self.root, nodes_per_submod)
-
-        # Effects on downstream module
-        for ds_idx in range(len(all_submodules) - 1, 0, -1): # iterate backwards through submodules; first submodule in all_submodules cannot be downstream
-            ds_submodule = all_submodules[ds_idx]
-            ds_dictionary = all_dictionaries[ds_idx]
-            # Effects on downstream features
-            # Iterate backwards through submodules and measure causal effects.
-            us_submodules = all_submodules[:ds_idx]
-            us_dictionaries = all_dictionaries[:ds_idx]
-            us_submodule_names = all_submodule_names[:ds_idx]
-            for ds_node in nodes_per_submod[ds_submodule]:
-                print(f'ds_node: {ds_node.name}')
-                ds_node_idx = int(ds_node.name.split("_")[1])
-                feat_ds_effects = patching_on_downstream_feature(
-                    self.dataset,
-                    self.model, 
-                    us_submodules,
-                    us_dictionaries,
-                    ds_submodule,
-                    ds_dictionary,
-                    downstream_feature_id=ds_node_idx,
-                    method=patch_method,
-                    ).effects
-                self._evaluate_effects(feat_ds_effects, self.final_token_positions, us_submodule_names, self.feat_threshold, ds_node, nodes_per_submod)
+            # Effects on submodules in this layer
+            # Upstream: submodules of layers earier in the forward pass
+            if layer > 0:
+                for ds_submodule, ds_dictionary in zip(submodules_layer, dictionaries_layer): # iterate backwards through submodules; first submodule in all_submodules cannot be downstream
+                    # Effects on downstream features
+                    # Iterate backwards through submodules and measure causal effects.
+                    us_submodule_names = [n for names in all_submodule_names[:layer] for n in names] # flatten all_submodule_names[:layer]
+                    us_submodules = [s for submodules in all_submodules[:layer] for s in submodules]
+                    us_dictionaries = [d for dictionaries in all_dictionaries[:layer] for d in dictionaries]
+                    for ds_node in nodes_per_submod[ds_submodule]:
+                        print(f'ds_node: {ds_node.name}')
+                        ds_node_idx = int(ds_node.name.split("_")[1])
+                        feat_ds_effects = patching_on_downstream_feature(
+                            self.dataset,
+                            self.model, 
+                            us_submodules,
+                            us_dictionaries,
+                            ds_submodule,
+                            ds_dictionary,
+                            downstream_feature_id=ds_node_idx,
+                            method=patch_method,
+                            ).effects
+                        self._evaluate_effects(feat_ds_effects, self.final_token_positions, us_submodule_names, self.feat_threshold, ds_node, nodes_per_submod)
 
 
     def evaluate_faithfulness(self, eval_dataset=None, patch_type='zero'):
