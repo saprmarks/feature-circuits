@@ -5,14 +5,19 @@ import io
 import random
 import argparse
 from tqdm import tqdm
+from collections import defaultdict
+import numpy as np
+
+import torch as t
 from nnsight import LanguageModel
 from dictionary_learning.buffer import ActivationBuffer
 from dictionary_learning.dictionary import AutoEncoder
 from dictionary_learning.training import trainSAE
+from circuitsvis.activations import text_neuron_activations
+from circuitsvis.topk_tokens import topk_tokens
 from loading_utils import load_examples, load_submodule
 from datasets import load_dataset
 from einops import rearrange
-import torch as t
 
 # Helper functions for causal search
 def compare_probs(logits, example_dict):
