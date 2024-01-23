@@ -7,7 +7,7 @@ from nnsight import LanguageModel
 from tqdm import tqdm, trange
 from collections import defaultdict
 from loading_utils import (
-    load_examples, load_submodule_and_dictionary, submodule_name_to_type_layer, DictionaryCfg
+    load_examples, load_submodules_and_dictionaries_from_generic, submodule_name_to_type_layer, DictionaryCfg
 )
 from acdc import patching_on_y, patching_on_downstream_feature
 from ablation_utils import run_with_ablated_features
@@ -96,18 +96,9 @@ class Circuit:
         nodes_per_submod = defaultdict(list)
 
         # Load all submodules and dictionaries into list grouped by layer
-        all_submodule_names, all_submodules, all_dictionaries = [], [], []
-        for layer in range(num_layers):
-            submodule_names_layer, submodules_layer, dictionaries_layer = [], [], []
-            for submodule_name in self.submodules_generic:
-                submodule_name = submodule_name.format(str(layer))
-                submodule, dictionary = load_submodule_and_dictionary(self.model, submodule_name, self.dict_cfg)
-                submodule_names_layer.append(submodule_name)
-                submodules_layer.append(submodule)
-                dictionaries_layer.append(dictionary)
-            all_submodule_names.append(submodule_names_layer)
-            all_submodules.append(submodules_layer)
-            all_dictionaries.append(dictionaries_layer)
+        all_submodule_names, all_submodules, all_dictionaries = load_submodules_and_dictionaries_from_generic(
+            self.model, self.submodules_generic, self.dict_cfg
+        )
 
         # Iterate through layers
         for layer in trange(num_layers-1, -1, -1, desc="Layers", total=num_layers):

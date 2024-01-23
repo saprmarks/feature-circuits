@@ -4,6 +4,7 @@ import json
 import random
 import torch as t
 import torch.nn.functional as F
+from nnsight import LanguageModel
 from dictionary_learning.dictionary import AutoEncoder
 from dataclasses import dataclass
 
@@ -78,6 +79,17 @@ def submodule_type_to_name(submodule_type):
         return "model.gpt_neox.layers.{}"
     raise ValueError("Unrecognized submodule type. Please select from {mlp, attn, resid}")
 
+def submodule_name_to_type(submod_name):
+    if "attention" in submod_name:
+        submod_type = "attn"
+    elif "mlp" in submod_name:
+        submod_type = "mlp"
+    elif len(submod_name.split(".")) == 4:
+        submod_type = "resid"
+    else:
+        raise ValueError(f"No submodule type found in submodule name: {submod_name}")
+    return submod_type
+
 
 def submodule_name_to_type_layer(submod_name):
     layer_match = re.search(r"layers\.(\d+)\.", submod_name) # TODO Generalize for other models. This search string is Pythia-specific.
@@ -89,15 +101,7 @@ def submodule_name_to_type_layer(submod_name):
     else:
         raise ValueError(f"No layer number found in submodule name: {submod_name}")
     
-    if "attention" in submod_name:
-        submod_type = "attn"
-    elif "mlp" in submod_name:
-        submod_type = "mlp"
-    elif len(submod_name.split(".")) == 4:
-        submod_type = "resid"
-    else:
-        raise ValueError(f"No submodule type found in submodule name: {submod_name}")
-    
+    submod_type = submodule_name_to_type(submod_name)
     return submod_layer, submod_type
 
 
@@ -125,8 +129,24 @@ def load_dictionary(model, submodule_layer, submodule_object, submodule_type, di
         return autoencoder
 
 
-def load_submodule_and_dictionary(model, submod_name, dict_cfg: DictionaryCfg):
-    submod_layer, submod_type = submodule_name_to_type_layer(submod_name)
-    submodule = load_submodule(model, submod_name)
-    dictionary = load_dictionary(model, submod_layer, submodule, submod_type, dict_cfg)
-    return submodule, dictionary
+def load_submodule_and_dictionary(model: LanguageModel, submod_name: str, dict_cfg: DictionaryCfg):
+        submod_layer, submod_type = submodule_name_to_type_layer(submod_name)
+        submodule = load_submodule(model, submod_name)
+        dictionary = load_dictionary(model, submod_layer, submodule, submod_type, dict_cfg)
+        return submodule, dictionary
+
+def load_submodules_and_dictionaries_from_generic(model: LanguageModel, submod_names_generic: list, dict_cfg: DictionaryCfg):
+    num_layers = model.config.num_hidden_layers
+    all_submodule_names, all_submodules, all_dictionaries = [], [], []
+    for layer in range(num_layers):
+        submodule_names_layer, submodules_layer, dictionaries_layer = [], [], []
+        for submodule_name in submod_names_generic:
+            submodule_name = submodule_name.format(str(layer))
+            submodule, dictionary = load_submodule_and_dictionary(model, submodule_name, dict_cfg)
+            submodule_names_layer.append(submodule_name)
+            submodules_layer.append(submodule)
+            dictionaries_layer.append(dictionary)
+        all_submodule_names.append(submodule_names_layer)
+        all_submodules.append(submodules_layer)
+        all_dictionaries.append(dictionaries_layer)
+    return all_submodule_names, all_submodules, all_dictionaries
