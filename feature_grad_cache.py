@@ -32,7 +32,7 @@ dict_cfg = DictionaryCfg(
     dictionary_size=512 * 64,
     dictionary_dir="/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped"
 )
-submod_type_names = "_".join([submodule_name_to_type(s) for s in submodules_generic])
+submod_type_names = "-".join([submodule_name_to_type(s) for s in submodules_generic])
 
 
 # Approximate size of topk_feature_activations_per_token
@@ -163,6 +163,6 @@ for token_loss_idx in tqdm(token_loss_idxs, desc="context", total=num_tokens):
 
 # %%
 # Save results
-resultname = f"{model_name}_{loss_threshold}_{skip}_{num_tokens}_{submod_type_names}.json"
+resultname = f"{model_name}_loss-thresh{loss_threshold}_skip{skip}_num-tok{num_tokens} k{k}_{submod_type_names}.json"
 json.dump(topk_feature_activations_per_token, open(os.path.join(output_dir, f"act_{resultname}"), "w"))
 json.dump(topk_feature_gradients_per_token, open(os.path.join(output_dir, f"grad_{resultname}"), "w"))
