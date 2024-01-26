@@ -19,7 +19,7 @@ cache_dir = "/home/can/feature_clustering/model_cache/"
 pile_canonical = "/home/can/data/pile_test_tokenized_600k/"
 activations_dir = "/home/can/feature_clustering/activations/"
 
-start_token_idx = 4000
+start_token_idx = 0
 
 loss_threshold = 0.03
 num_tokens = int(1e4)
@@ -104,7 +104,7 @@ def metric_fn(model, targets, target_token_pos): # can't you do that with logits
 results = dict()
 enumerated = list(enumerate(token_loss_idxs))
 
-for i, token_loss_idx in tqdm(enumerate(enumerated[start_token_idx:]), desc="context", total=num_tokens-start_token_idx):
+for i, token_loss_idx in tqdm(enumerated[start_token_idx:], desc="context", total=num_tokens-start_token_idx):
     activations = {}
     gradients = {}
     doc, target_token_pos = get_context(token_loss_idx)
