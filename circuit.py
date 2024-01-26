@@ -61,7 +61,7 @@ class Circuit:
         self.dataset = dataset
         self.patch_token_pos = -1
         self.y_threshold = 0.02
-        self.feat_threshold = 0.01
+        self.feat_threshold = 0.02
         self.path_threshold = 0.01
         self.filter_proportion = 0.25
 
@@ -314,7 +314,7 @@ class Circuit:
         
         num_examples = len(eval_dataset)
         minimality_per_node = {}
-        macro_minimality = 0.
+        min_minimality = float("inf")
         for node in tqdm(circuit_feature_list, desc="Evaluating minimality", total=len(circuit_feature_list)):
             circuit_features_without_node = deepcopy(circuit_feature_set)
             circuit_features_without_node.remove(node)
@@ -335,11 +335,10 @@ class Circuit:
                 minimality = 1 - (circuit_without_node_diff / circuit_diff)
                 mean_minimality += minimality
             mean_minimality /= num_examples
-            minimality_per_node[node] = mean_minimality.item()
-            macro_minimality += mean_minimality
-       
-        macro_minimality /= len(circuit_feature_list)
-        return {"macro_minimality": macro_minimality.item(),
+            minimality_per_node[node] = mean_minimality.item() / len(circuit_feature_list)
+            min_minimality = min(minimality_per_node[node], min_minimality)
+
+        return {"min_minimality": min_minimality,
                 "minimality_per_node": minimality_per_node}
 
 
@@ -443,8 +442,9 @@ if __name__ == "__main__":
         print(f"Faithfulness: {faithfulness}")
         completeness = circuit.evaluate_completeness()
         print(f"Completeness: {completeness['mean_completeness']}")
-        minimality = circuit.evaluate_minimality()
-        print(f"Minimality: {minimality['macro_minimality']}")
+        # minimality = circuit.evaluate_minimality()
+        # print(f"Minimality: {minimality['min_minimality']}")
+        print(f"Minimality per node: {minimality['minimality_per_node']}")
     else:
         circuit.locate_circuit(patch_method=args.patch_method)
         print(circuit.to_dict())
