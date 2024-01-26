@@ -15,19 +15,21 @@ n_submod = 6
 n_total_feats = n_feats_per_submod * n_submod
 random_seed = 42
 
-results_dir = "/home/can/feature_clustering/results"
+activations_dir = "/home/can/feature_clustering/activations"
+clusters_dir = "/home/can/feature_clustering/clusters"
+svd_dir = "/home/can/feature_clustering/svd"
 model_name = "pythia-70m-deduped"
 loss_threshold = 0.005
 skip = 50
 num_tokens = 10000
 k = "nonzero"
 submod_type_names = "mlp"
-param_string = f"{model_name}_loss-thresh{loss_threshold}_skip{skip}_ntok{num_tokens}_{k}_{submod_type_names}"
+param_string = f"{model_name}_loss-thresh{loss_threshold}_skip{skip}_ntok{num_tokens}_{k}_pos-reduction-final_{submod_type_names}"
 
 # %%
 # Load feature activations and gradients on 1k contexts
 act_grad_filename = f"act-n-grad_{param_string}.json"
-act_per_context = json.load(open(os.path.join(results_dir, act_grad_filename), "r"))
+act_per_context = json.load(open(os.path.join(activations_dir, act_grad_filename), "r"))
 
 y_global_idx = np.array(list(act_per_context.keys()), dtype=int)
 num_y = len(act_per_context)
@@ -68,7 +70,6 @@ for score_metric in ["act", "act-grad"]:
 
             # %%
             # Save SVD results
-            svd_dir = "/home/can/feature_clustering/cache"
             svd_filename = f"svd-comp{num_svd_components}_{score_metric}_{param_string}.pkl"
             with open(os.path.join(svd_dir, svd_filename), "wb") as f:
                 pickle.dump(svd, f)
@@ -102,7 +103,7 @@ for score_metric in ["act", "act-grad"]:
             X_trunc = np.dot(X, V)
 
             # Norm
-            X_trunc_norm = normalize(X, norm='l2', axis=1)
+            X_trunc_norm = normalize(X_trunc, norm='l2', axis=1)
             X_trunc_norm_abs = np.abs(X_trunc_norm)
 
             # Dot product
@@ -146,7 +147,9 @@ for score_metric in ["act", "act-grad"]:
 
         # %%
         # Save results using json
-        results_dir = "/home/can/feature_clustering/clusters"
         results_filename = f"clusters_{score_metric}_svd-comp{truncation_dim}_{param_string}.json"
-        with open(os.path.join(results_dir, results_filename), "w") as f:
+        with open(os.path.join(clusters_dir, results_filename), "w") as f:
             json.dump(results, f)
+
+"act-n-grad_pythia-70m-deduped_loss-thresh0.005_skip50_ntok10000_nonzero_pos-reduction-final_mlp.json"
+"act-n-grad_pythia-70m-deduped_loss-thresh0.005_skip50_ntok10000_nonzero_mlp.json"

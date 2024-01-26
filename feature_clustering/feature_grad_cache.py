@@ -16,12 +16,14 @@ from loading_utils import load_submodules_and_dictionaries_from_generic, Diction
 model_name = "pythia-70m-deduped"
 device = "cuda:0"
 cache_dir = "/home/can/feature_clustering/model_cache/"
-pile_canonical = "/home/can/data/pile_test_tokenized_200k/"
+pile_canonical = "/home/can/data/pile_test_tokenized_600k/"
 activations_dir = "/home/can/feature_clustering/activations/"
 
-loss_threshold = 0.03 # For 0.03, tokens are chosen from bottom 15% of loss distribution
-num_tokens = int(1e3)
-skip = 100 # Trying to ramp this up to choose from diverse documents
+start_token_idx = 4000
+
+loss_threshold = 0.03
+num_tokens = int(1e4)
+skip = 512 # Trying to ramp this up to choose from diverse documents
 n_pos = 10 # Saving feature activations for the final n_pos positions of each context
 
 # Submodule and dictionary parameters
@@ -100,8 +102,9 @@ def metric_fn(model, targets, target_token_pos): # can't you do that with logits
 # %%
 # Cache feature activations and gradients
 results = dict()
+enumerated = list(enumerate(token_loss_idxs))
 
-for i, token_loss_idx in tqdm(enumerate(token_loss_idxs), desc="context", total=num_tokens):
+for i, token_loss_idx in tqdm(enumerate(enumerated[start_token_idx:]), desc="context", total=num_tokens-start_token_idx):
     activations = {}
     gradients = {}
     doc, target_token_pos = get_context(token_loss_idx)
