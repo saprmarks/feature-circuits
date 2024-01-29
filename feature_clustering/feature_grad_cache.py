@@ -1,28 +1,32 @@
+
 # %%
 # Imports and constants
 import os
 import torch
-import numpy as np
 from nnsight import LanguageModel
-import datasets
-from tqdm import tqdm
+from tqdm import trange
 import json
 import sys
 sys.path.append('/home/can/dictionary-circuits/')
 from loading_utils import load_submodules_and_dictionaries_from_generic, DictionaryCfg, submodule_name_to_type
+from fc_utils import LossesDataset
 
-
+# with torch.autograd.profiler.profile(use_cuda=True) as prof:
 # Experiment parameters
 model_name = "pythia-70m-deduped"
 device = "cuda:0"
-cache_dir = "/home/can/feature_clustering/model_cache/"
-pile_canonical = "/home/can/data/pile_test_tokenized_600k/"
+model_cache_dir = "/home/can/feature_clustering/model_cache/"
+tokenized_dataset_dir = "/home/can/data/pile_test_tokenized_600k/"
 activations_dir = "/home/can/feature_clustering/activations/"
 
+num_tokens = int(1e4)
+batch_size = 500
+n_batches = num_tokens // batch_size
+
 start_token_idx = 0
+save_every = 100
 
 loss_threshold = 0.03
-num_tokens = int(1e4)
 skip = 512 # Trying to ramp this up to choose from diverse documents
 n_pos = 10 # Saving feature activations for the final n_pos positions of each context
 
@@ -36,7 +40,6 @@ submod_type_names = "-".join([submodule_name_to_type(s) for s in submodules_gene
 param_summary = f"{model_name}_tloss{loss_threshold}_ntok{num_tokens}_skip{skip}_npos{n_pos}_{submod_type_names}"
 
 
-# %%
 # Approximate size of topk_feature_activations_per_token
 # results will be saved as dict d where d[token_loss_idx] = {"sum": [[feat_idx, act, grad], ...], "pos": {-1: [feat_idx, act, grad], ...], -2: ...}
 pos_size = (4 + 4 + 4) * 300 * n_pos 
@@ -45,22 +48,6 @@ total_size = (pos_size + sum_size) * num_tokens
 print(f"Total size of generated data (feature activations): {total_size / 1024**3} GB")
 
 
-# %%
-# Load losses data
-particular_model_cache_dir = os.path.join(cache_dir, model_name)
-losses_cached = [f for f in os.listdir(particular_model_cache_dir) if f.endswith("losses.pt")]
-max_i = max(list(range(len(losses_cached))), key=lambda i: int(losses_cached[i].split("_")[0]))
-docs, tokens = int(losses_cached[max_i].split("_")[0]), int(losses_cached[max_i].split("_")[2])
-losses = torch.load(os.path.join(particular_model_cache_dir, f"{docs}_docs_{tokens}_tokens_losses.pt"))
-c = 1 / np.log(2) # for nats to bits conversion
-
-token_loss_idxs = (losses < (loss_threshold / c)).nonzero().flatten()
-token_loss_idxs = token_loss_idxs[::skip]
-token_loss_idxs = token_loss_idxs[:num_tokens].tolist()
-assert len(token_loss_idxs) == num_tokens, "not enough tokens to analyze"
-
-
-# %%
 # Load model an dictionaries
 model = LanguageModel("EleutherAI/"+model_name, device_map=device)
 submodule_names, submodules, dictionaries = load_submodules_and_dictionaries_from_generic(
@@ -68,28 +55,8 @@ submodule_names, submodules, dictionaries = load_submodules_and_dictionaries_fro
 )
 
 
-# %%
-# Load dataset and helper functions
-dataset = datasets.load_from_disk(pile_canonical)
-starting_indexes = np.array([0] + list(np.cumsum(dataset["preds_len"])))
+#%%
 
-def loss_idx_to_dataset_idx(idx):
-    """given an idx in range(0, 10658635), return
-    a sample index in range(0, 20000) and pred-in-sample
-    index in range(0, 1023). Note token-in-sample idx is
-    exactly pred-in-sample + 1"""
-    sample_index = np.searchsorted(starting_indexes, idx, side="right") - 1
-    pred_in_sample_index = idx - starting_indexes[sample_index]
-    return int(sample_index), int(pred_in_sample_index)
-
-def get_context(idx):
-    """given idx in range(0, 10658635), return dataset sample
-    and predicted token index within sample, in range(1, 1024)."""
-    sample_index, pred_index = loss_idx_to_dataset_idx(idx)
-    return dataset[sample_index], pred_index+1
-
-
-# %%
 # Metric
 def metric_fn(model, targets, target_token_pos): # can't you do that with logits[:, target_token_idx, :]?
     logits = model.embed_out.output
@@ -98,18 +65,26 @@ def metric_fn(model, targets, target_token_pos): # can't you do that with logits
     target_token_id = targets[0, target_token_pos]
     return m[target_token_pos-1, target_token_id]
 
+generator_tokenized = LossesDataset(
+    model,
+    model_name, 
+    model_cache_dir, 
+    tokenized_dataset_dir, 
+    loss_threshold, 
+    num_tokens, skip, 
+    batch_size).generator()
 
-# %%
 # Cache feature activations and gradients
 results = dict()
-enumerated = list(enumerate(token_loss_idxs))
 
-for i, token_loss_idx in tqdm(enumerated[start_token_idx:], desc="context", total=num_tokens-start_token_idx):
+# Question: Why is quanta-discovery tokenizing within the loop for gradient caching, although its already tokenized?
+
+for batch_idx in trange(n_batches, desc="context", total=num_tokens-start_token_idx):
     activations = {}
     gradients = {}
-    doc, target_token_pos = get_context(token_loss_idx)
-    token_ids = torch.tensor(doc['input_ids']).to(device)
-    with model.invoke(token_ids, fwd_args={'inference': False}) as invoker:
+    contexts, ys = next(generator_tokenized)
+    contexts, ys = contexts.to(device), ys.to(device)
+    with model.invoke(contexts, fwd_args={'inference': False}) as invoker:
         for layer in range(model.config.num_hidden_layers):
             for name, sm, ae in zip(submodule_names[layer], submodules[layer], dictionaries[layer]):
                 x = sm.output
@@ -126,7 +101,7 @@ for i, token_loss_idx in tqdm(enumerated[start_token_idx:], desc="context", tota
                     sm.output[0][:] = x_hat + residual
                 else:
                     sm.output = x_hat + residual   
-        metric_fn(model, targets=token_ids, target_token_pos=target_token_pos).backward()
+        metric_fn(model, targets=contexts, target_token_pos=ys).backward()
 
 
     # Convert to 1D feature vector
@@ -138,7 +113,7 @@ for i, token_loss_idx in tqdm(enumerated[start_token_idx:], desc="context", tota
         sum_activation_feat_idxs.int(), # feature idx
         sum_feature_activation_vector[sum_activation_feat_idxs], 
         sum_feature_gradient_vector[sum_activation_feat_idxs]),
-        dim=-1).tolist() # Idx are stored as floats in torch tensors
+        dim=-1).cpu().tolist() # Idx are stored as floats in torch tensors
     
     pos_feature_activation_vector = torch.cat([v.value[0][-n_pos:] for v in activations.values()], dim=1) # shape (n_pos, n_features)
     pos_feature_gradient_vector = torch.cat([v.value[0][:-n_pos] for v in gradients.values()], dim=1)
@@ -148,14 +123,16 @@ for i, token_loss_idx in tqdm(enumerated[start_token_idx:], desc="context", tota
         pos_activation_feat_idxs[:, 1].int(), # feature idx
         pos_feature_activation_vector[pos_activation_feat_idxs[:, 0], pos_activation_feat_idxs[:, 1]],
         pos_feature_gradient_vector[pos_activation_feat_idxs[:, 0], pos_activation_feat_idxs[:, 1]]),
-        dim=-1).tolist() # Idx are stored as floats in torch tensors
+        dim=-1).cpu().tolist() # Idx are stored as floats in torch tensors
     
+    torch.cuda.empty_cache()
     results[token_loss_idx] = dict(sum=sum_stack, pos=pos_stack)
 
-    # Save results
-    if i % 1000 == 999:
-        json.dump(results, open(os.path.join(activations_dir, f"act-n-grad-{i}_{param_summary}.json"), "w"))
-        torch.cuda.empty_cache()
-        feature_act_grad_per_token = {}
+    # if i % 10 == 4:
+    #     print(f"Allocated memory: {torch.cuda.memory_allocated(device)/1024**2 :.2f} MB")
+    #     print(f"Cached memory: {torch.cuda.memory_reserved(device)/1024**2 :.2f} MB")
 
-json.dump(feature_act_grad_per_token, open(os.path.join(activations_dir, f"act-n-grad-last_{param_summary}.json"), "w"))
+    # Save results
+    if i % save_every == save_every-1:
+        json.dump(results, open(os.path.join(activations_dir, f"act-n-grad-{i}_{param_summary}.json"), "w"))
+        results = dict()

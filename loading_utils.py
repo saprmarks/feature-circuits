@@ -25,14 +25,10 @@ def load_examples(dataset, num_examples, model, seed=12, pad_to_length=16):
         random.shuffle(dataset_items)
         for line in dataset_items:
             data = json.loads(line)
-            clean_prefix = model.tokenizer(data["clean_prefix"], return_tensors="pt",
-                                           padding=False).input_ids
-            patch_prefix = model.tokenizer(data["patch_prefix"], return_tensors="pt",
-                                           padding=False).input_ids
-            clean_answer = model.tokenizer(data["clean_answer"], return_tensors="pt",
-                                           padding=False).input_ids
-            patch_answer = model.tokenizer(data["patch_answer"], return_tensors="pt",
-                                           padding=False).input_ids
+            clean_prefix = model.tokenizer(data["clean_prefix"], return_tensors="pt", padding=False).input_ids
+            patch_prefix = model.tokenizer(data["patch_prefix"], return_tensors="pt", padding=False).input_ids
+            clean_answer = model.tokenizer(data["clean_answer"], return_tensors="pt", padding=False).input_ids
+            patch_answer = model.tokenizer(data["patch_answer"], return_tensors="pt", padding=False).input_ids
             if clean_prefix.shape[1] != patch_prefix.shape[1]:
                 continue
             if clean_answer.shape[1] != 1 or patch_answer.shape[1] != 1:
