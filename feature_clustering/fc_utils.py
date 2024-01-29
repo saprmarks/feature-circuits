@@ -58,10 +58,10 @@ class LossesDataset():
             padded_context = F.pad(context, (self.left_pad_to_length - len(context), 0), value=self.model.tokenizer.pad_token_id) # Left padding
             contexts[i] = padded_context
             ys[i] = self.dataset[sample_index]['input_ids'][0][pred_index+1]
-        return contexts, ys
+        return contexts, ys, idxs
     
     def generator(self):
         for i in range(self.n_batches):
             idxs = self.token_loss_idxs[i*self.batch_size:(i+1)*self.batch_size]
-            contexts, ys = self._get_tokenized_contexts_y(idxs)
-            yield contexts, ys
+            contexts, ys, idxs = self._get_tokenized_contexts_y(idxs)
+            yield contexts, ys, idxs

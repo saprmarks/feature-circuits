@@ -31,7 +31,7 @@ param_summary = f"{model_name}_tloss{loss_threshold}_ntok{num_tokens}_skip{skip}
 
 # %%
 # Load feature activations and gradients on 1k contexts
-act_grad_filename = f"act-n-grad-999_{param_summary}.json"
+act_grad_filename = f"act-n-grad-99_{param_summary}.json"
 act_per_context = json.load(open(os.path.join(activations_dir, act_grad_filename), "r"))
 
 y_global_idx = np.array(list(act_per_context.keys()), dtype=int)
