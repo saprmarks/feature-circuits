@@ -2,7 +2,6 @@
 import json
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 import torch as t
 from tqdm import tqdm
 from sklearn.cluster import SpectralClustering
@@ -29,9 +28,8 @@ n_pos = 10
 submod_type_names = "mlp"
 param_summary = f"{model_name}_tloss{loss_threshold}_ntok{num_tokens}_skip{skip}_npos{n_pos}_{submod_type_names}"
 
-# %%
 # Load feature activations and gradients on 1k contexts
-act_grad_filename = f"act-n-grad-99_{param_summary}.json"
+act_grad_filename = f"act-n-grad-cat_{param_summary}.json"
 act_per_context = json.load(open(os.path.join(activations_dir, act_grad_filename), "r"))
 
 y_global_idx = np.array(list(act_per_context.keys()), dtype=int)
@@ -147,4 +145,3 @@ for score_metric in ["act", "act-grad"]:
         results_filename = f"clusters_{score_metric}_svd-comp{truncation_dim}-cut{singular_value_cutoff}_{param_summary}.json"
         with open(os.path.join(clusters_dir, results_filename), "w") as f:
             json.dump(results, f)
-# %%
