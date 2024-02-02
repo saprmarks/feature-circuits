@@ -12,11 +12,17 @@ from dataclasses import dataclass
 class DictionaryCfg(): # TODO Move to dictionary_learning repo?
     def __init__(
         self,
-        dictionary_dir,
-        dictionary_size
+        dictionary_dir = '/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/',
+        dictionary_size = 512 * 64,
+        dict_id_attn_out = 0,
+        dict_id_mlp_out = 1,
+        dict_id_resid_out = 1,
         ) -> None:
         self.dir = dictionary_dir
         self.size = dictionary_size
+        self.dict_id_attn_out = dict_id_attn_out
+        self.dict_id_mlp_out = dict_id_mlp_out
+        self.dict_id_resid_out = dict_id_resid_out
 
 def load_examples(dataset, num_examples, model, seed=12, pad_to_length=16):
         examples = []

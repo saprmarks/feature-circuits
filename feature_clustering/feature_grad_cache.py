@@ -9,7 +9,7 @@ import json
 import sys
 sys.path.append('/home/can/dictionary-circuits/')
 from loading_utils import load_submodules_and_dictionaries_from_generic, DictionaryCfg, submodule_name_to_type
-from fc_utils import LossesDataset
+from cluster_utils import LossesDataset
 
 # with torch.autograd.profiler.profile(use_cuda=True) as prof:
 # Experiment parameters
@@ -133,3 +133,8 @@ for batch_idx in trange(n_batches, desc="context", total=num_tokens-start_token_
     if batch_idx % save_every_n_batches == save_every_n_batches-1:
         json.dump(results, open(os.path.join(activations_dir, f"act-n-grad-{batch_idx}_{param_summary}.json"), "w"))
         results = dict()
+
+#%%
+1e4 * 6 * 10 * 512 / 1024**3
+
+# %%

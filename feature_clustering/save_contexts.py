@@ -8,8 +8,13 @@ sys.path.append("/home/can/")
 from feature_clustering.streamlit.cluster_exploration import *
 
 results_dir = "/home/can/feature_clustering/activations/"
-context_dir = "/home/can/feature_clustering/contexts"
-def load_act_n_grad_results(filename = "act-n-grad_pythia-70m-deduped_loss-thresh0.005_skip50_ntok10000_nonzero_pos-reduction-final_mlp.json"):
+context_dir = "/home/can/feature_clustering/contexts/"
+
+activation_filename = "act-n-grad-cat_pythia-70m-deduped_tloss0.03_ntok10000_skip512_npos10_mlp.json"
+# Saving context to following file
+context_filename = "contexts_pythia-70m-deduped_tloss0.03_ntok10000_skip512_npos10_mlp.json"
+
+def load_act_n_grad_results(filename = activation_filename):
     path = os.path.join(results_dir, filename)
     act_per_context = json.loads(open(path).read())
     y_global_idx = np.array(list(act_per_context.keys()), dtype=int)
@@ -28,15 +33,11 @@ for global_idx in tqdm(act_per_context, total=num_y, desc="Saving contexts"):
     # get true token y and the preceding context of at most 100 tokens
     y = document["split_by_token"][token_idx]
     context = document["split_by_token"][max(0, token_idx-100):token_idx]
-    context = "".join(context)
+    # context = "".join(context)
     y_contexts[global_idx] = dict(y=y, context=context, document_idx=doc_idx)
 
 # Save to file
-context_filename = "contexts_pythia-70m-deduped_loss-thresh0.005_skip50_ntok10000_nonzero_pos-reduction-final_mlp.json"
 context_path = os.path.join(context_dir, context_filename)
 with open(context_path, "w") as f:
     json.dump(y_contexts, f)
-
-# %%
-y_contexts[5896934]
 # %%

@@ -20,7 +20,7 @@ n_pos = 10 # Saving feature activations for the final n_pos positions of each co
 num_tokens = int(1e4)
 batch_size = 1
 save_every_n_batches = 100
-batch_idxs = torch.arange(save_every_n_batches, 1e4, save_every_n_batches, dtype=torch.int)
+batch_idxs = torch.arange(save_every_n_batches, 1e3+1, save_every_n_batches, dtype=torch.int)
 batch_idxs -= 1
 
 
@@ -43,5 +43,5 @@ for batch_idx in tqdm(batch_idxs, desc="Result batch read", total=len(batch_idxs
     for k in act_per_context:
         results[k] = act_per_context[k]
 
-json.dump(results, open(os.path.join(activations_dir, f"act-n-grad-cat_{param_summary}.json"), "w"))
+json.dump(results, open(os.path.join(activations_dir, f"act-n-grad-1k_{param_summary}.json"), "w"))
 # %%
