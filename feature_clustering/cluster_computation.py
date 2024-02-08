@@ -104,22 +104,3 @@ for n_clusters in tqdm(CLUSTER_COUNTS):
 results_filename = f"clusters_{score_metric}_{param_summary}.json"
 with open(os.path.join(clusters_dir, results_filename), "w") as f:
     json.dump(results, f)
-
-
-
-#%%
-
-X1 = t.zeros((num_y, n_total_feats))
-for row, context in tqdm(enumerate(act_per_context), desc="Loading into matrix, Row", total=num_y):
-    for col, act, grad in act_per_context[context][feature_pattern_reduction_across_positions]:
-        col = int(col)
-        X1[row, col] = act * grad
-X1.to_sparse().to(device)
-
-
-X2 = t.zeros((num_y, n_total_feats))
-for row, context in tqdm(enumerate(act_per_context), desc="Loading into matrix, Row", total=num_y):
-    for col, act, grad in act_per_context[context][feature_pattern_reduction_across_positions]:
-        col = int(col)
-        X2[row, col] = act
-X2.to_sparse().to(device)
