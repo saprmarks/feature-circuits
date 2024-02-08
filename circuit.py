@@ -15,9 +15,10 @@ from acdc import patching_on_y, patching_on_downstream_feature
 from ablation_utils import run_with_ablated_features
 
 class CircuitNode:
-    def __init__(self, name, data = None, children = None, parents = None):
+    def __init__(self, name, accumulated_gradient, data = None, children = None, parents = None):
         self.name = name    # format: `{layer}_{idx}_{submodule_type}` OR `y`
         self.data = data    # TODO: 10 sentences w/ activated tokens?
+        self.accumulated_gradient = accumulated_gradient # Accumulated gradient of y w.r.t. this node via paths in the circuit
         if not children:
             self.children = []
         else:
@@ -28,6 +29,7 @@ class CircuitNode:
             self.parents = parents
         
         self.effect_on_parents = {}
+
 
     def add_child(self, child, effect_on_parent=None):
         if "_" in self.name:
@@ -142,6 +144,87 @@ class Circuit:
                             method=patch_method,
                             ).effects
                         self._evaluate_effects(feat_ds_effects, self.final_token_positions, us_submodule_names, self.feat_threshold, ds_node, nodes_per_submod)
+
+
+    def _evaluate_effects_chainrule(self, effects, final_token_positions, submodule_names, threshold, ds_node, nodes_per_submod, grads_y_wrt_us_features):
+        """
+        Adds nodes with effect above threshold to circuit and nodes_per_submod dict.
+        us: upstream, the nodes where outputs are patched
+        """
+        for us_submod, us_submod_name in zip(effects, submodule_names):
+            us_submod_layer, us_submod_type = submodule_name_to_type_layer(us_submod_name)
+            sum_indirect_effect = t.sum(effects[us_submod][final_token_positions, :], dim=0) # TODO: compute IE across all examples
+            mean_indirect_effect = sum_indirect_effect / len(self.dataset)
+            feats_above_threshold = (mean_indirect_effect > threshold).nonzero().flatten().tolist()
+            for feature_idx in feats_above_threshold:
+                us_node_name = f"{us_submod_layer}_{feature_idx}_{us_submod_type}"
+
+                # check whether node already exists in circuit
+                node_exists = False
+                for us_node in nodes_per_submod[us_submod]:
+                    if us_node.name == us_node_name:
+                        node_exists = True
+                        us_node.accumulated_gradient += grads_y_wrt_us_features[feature_idx]
+                        ds_node.add_child(us_node, effect_on_parent=mean_indirect_effect[feature_idx].item())
+                        break
+                if not node_exists:
+                    us_node = CircuitNode(name=us_node_name, accumulated_gradient=grads_y_wrt_us_features[feature_idx])
+                    ds_node.add_child(us_node, effect_on_parent=mean_indirect_effect[feature_idx].item())
+                    nodes_per_submod[us_submod].append(us_node)
+
+
+    def locate_circuit_chainrule(self, patch_method='separate'):
+        num_layers = self.model.config.num_hidden_layers
+        nodes_per_submod = defaultdict(list)
+
+        # Load all submodules and dictionaries into list grouped by layer
+        all_submodule_names, all_submodules, all_dictionaries = [], [], []
+        for layer in range(num_layers):
+            submodule_names_layer, submodules_layer, dictionaries_layer = [], [], []
+            for submodule_name in self.submodules_generic:
+                submodule_name = submodule_name.format(str(layer))
+                submodule, dictionary = load_submodule_and_dictionary(self.model, submodule_name, self.dict_cfg)
+                submodule_names_layer.append(submodule_name)
+                submodules_layer.append(submodule)
+                dictionaries_layer.append(dictionary)
+            all_submodule_names.append(submodule_names_layer)
+            all_submodules.append(submodules_layer)
+            all_dictionaries.append(dictionaries_layer)
+
+        # Iterate through layers
+        for layer in trange(num_layers-1, -1, -1, desc="Layers", total=num_layers):
+            submodule_names_layer, submodules_layer, dictionaries_layer = all_submodule_names[layer], all_submodules[layer], all_dictionaries[layer]
+            # Effects on y (downstream)
+            # Upstream: submodules of this layer
+            effects_on_y, grads_y_wrt_us_features = patching_on_y(self.dataset, self.model, submodules_layer, dictionaries_layer, method=patch_method)
+            effects_on_y = effects_on_y.effects
+            self._evaluate_effects_chainrule(effects_on_y, self.final_token_positions, submodule_names_layer, self.y_threshold, self.root, nodes_per_submod, grads_y_wrt_us_features)
+
+            # Effects on submodules in this layer
+            # Upstream: submodules of layers earier in the forward pass
+            if layer > 0:
+                for ds_submodule, ds_dictionary in zip(submodules_layer, dictionaries_layer): # iterate backwards through submodules; first submodule in all_submodules cannot be downstream
+                    # Effects on downstream features
+                    # Iterate backwards through submodules and measure causal effects.
+                    us_submodule_names = [n for names in all_submodule_names[:layer] for n in names] # flatten all_submodule_names[:layer]
+                    us_submodules = [s for submodules in all_submodules[:layer] for s in submodules]
+                    us_dictionaries = [d for dictionaries in all_dictionaries[:layer] for d in dictionaries]
+                    for ds_node in nodes_per_submod[ds_submodule]:
+                        # print(f'ds_node: {ds_node.name}')
+                        ds_node_idx = int(ds_node.name.split("_")[1])
+                        feat_ds_effects, grads_y_wrt_us_features = patching_on_downstream_feature(
+                            self.dataset,
+                            self.model, 
+                            us_submodules,
+                            us_dictionaries,
+                            ds_submodule,
+                            ds_dictionary,
+                            downstream_feature_id=ds_node_idx,
+                            grad_y_wrt_downstream=ds_node.accumulated_gradient,
+                            method=patch_method,
+                            )
+                        feat_ds_effects = feat_ds_effects.effects
+                        self._evaluate_effects(feat_ds_effects, self.final_token_positions, us_submodule_names, self.feat_threshold, ds_node, nodes_per_submod, grads_y_wrt_us_features)
 
 
     def evaluate_faithfulness(self, eval_dataset=None, patch_type='zero'):

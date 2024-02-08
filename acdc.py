@@ -1,11 +1,11 @@
 import torch as t
 from attribution import patching_effect, EffectOut
 
-def consolidated_patching_on(dataset, model, upstream_submodules, upstream_dictionaries, metric_fn, method='separate', steps=10):
+def consolidated_patching_on(dataset, model, upstream_submodules, upstream_dictionaries, metric_fn, grad_y_wrt_downstream, method='separate', steps=10):
     clean_inputs = t.cat([example['clean_prefix'] for example in dataset], dim=0)
     patch_inputs = t.cat([example['patch_prefix'] for example in dataset], dim=0)
 
-    effects, total_effect = patching_effect(
+    effects, total_effect, grads_y_wrt_us_features = patching_effect(
         clean_inputs,
         patch_inputs,
         model,
@@ -14,14 +14,15 @@ def consolidated_patching_on(dataset, model, upstream_submodules, upstream_dicti
         metric_fn,
         method=method,
         steps=steps,
+        grad_y_wrt_downstream=grad_y_wrt_downstream,
     )
 
     return EffectOut(
         effects={k : v.mean(dim=0) for k, v in effects.items()},
         total_effect=total_effect.mean(dim=0),
-    )
+    ), grads_y_wrt_us_features
 
-def patching_on_y(dataset, model, submodules, dictionaries, method='separate', steps=10):
+def patching_on_y(dataset, model, submodules, dictionaries, method='separate', steps=10, grad_y_wrt_downstream=1): # grad of y wrt y is 1.
     clean_answer_idxs, patch_answer_idxs, prefix_lengths_wo_pad = [], [], []
     for example in dataset:
         clean_answer_idxs.append(example['clean_answer'])
@@ -41,7 +42,7 @@ def patching_on_y(dataset, model, submodules, dictionaries, method='separate', s
         )
         return logit_diff.squeeze(-1)
 
-    return consolidated_patching_on(dataset, model, submodules, dictionaries, metric_fn, method, steps)
+    return consolidated_patching_on(dataset, model, submodules, dictionaries, metric_fn, method, steps, grad_y_wrt_downstream)
 
 def patching_on_downstream_feature(
     dataset, 
@@ -51,8 +52,9 @@ def patching_on_downstream_feature(
     downstream_submodule,
     downstream_dictionary,
     downstream_feature_id,
+    grad_y_wrt_downstream,
     method='separate', 
-    steps=10):
+    steps=10,):
     def metric_fn(model):
         x = downstream_submodule.output
         is_resid = (type(x.shape) == tuple)
@@ -65,4 +67,4 @@ def patching_on_downstream_feature(
             f = f.sum(dim=-1)
         return f.sum(dim=-1)
 
-    return consolidated_patching_on(dataset, model, upstream_submodules, upstream_dictionaries, metric_fn, method, steps)
+    return consolidated_patching_on(dataset, model, upstream_submodules, upstream_dictionaries, metric_fn, method, steps, grad_y_wrt_downstream)
