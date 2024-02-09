@@ -67,8 +67,7 @@ class Circuit:
         self.path_threshold = 0.01
         self.filter_proportion = 0.25
 
-        self.root = CircuitNode("y")
-        self.final_token_positions = [example["prefix_length_wo_pad"] - 1 for example in dataset]
+        self.root = CircuitNode("y", accumulated_gradient=1) # (d/dy)y = 1
 
     def _get_paths_to_root(self, lower_node, upper_node):
         for parent in upper_node.parents:
@@ -78,20 +77,18 @@ class Circuit:
                 for path in self._get_paths_to_root(upper_node, parent):
                     yield [lower_node] + path
 
-    def _evaluate_effects(self, effects, final_token_positions, submodule_names, threshold, ds_node, nodes_per_submod):
+    def _evaluate_effects(self, effects, submodule_names, threshold, ds_node, nodes_per_submod):
         """
         Adds nodes with effect above threshold to circuit and nodes_per_submod dict.
         us: upstream
         """
         for us_submod, us_submod_name in zip(effects, submodule_names):
             us_submod_layer, us_submod_type = submodule_name_to_type_layer(us_submod_name)
-            sum_indirect_effect = t.sum(effects[us_submod][final_token_positions, :], dim=0) # TODO: compute IE across all examples
-            mean_indirect_effect = sum_indirect_effect / len(self.dataset)
-            feats_above_threshold = (mean_indirect_effect > threshold).nonzero().flatten().tolist()
+            feats_above_threshold = (effects[us_submod] > threshold).nonzero().flatten().tolist()
             for feature_idx in feats_above_threshold:
                 us_node_name = f"{us_submod_layer}_{feature_idx}_{us_submod_type}"
-                child = CircuitNode(us_node_name)
-                ds_node.add_child(child, effect_on_parent=mean_indirect_effect[feature_idx].item())
+                child = CircuitNode(us_node_name, accumulated_gradient=None)
+                ds_node.add_child(child, effect_on_parent=effects[us_submod][feature_idx].item())
                 if child not in nodes_per_submod[us_submod]:
                     nodes_per_submod[us_submod].append(child)
 
@@ -118,8 +115,9 @@ class Circuit:
             submodule_names_layer, submodules_layer, dictionaries_layer = all_submodule_names[layer], all_submodules[layer], all_dictionaries[layer]
             # Effects on y (downstream)
             # Upstream: submodules of this layer
-            effects_on_y = patching_on_y(self.dataset, self.model, submodules_layer, dictionaries_layer, method=patch_method).effects
-            self._evaluate_effects(effects_on_y, self.final_token_positions, submodule_names_layer, self.y_threshold, self.root, nodes_per_submod)
+            effects_on_y, _ = patching_on_y(self.model, self.dataset, submodules_layer, dictionaries_layer, method=patch_method)
+            effects_on_y = effects_on_y.effects
+            self._evaluate_effects(effects_on_y, submodule_names_layer, self.y_threshold, self.root, nodes_per_submod)
 
             # Effects on submodules in this layer
             # Upstream: submodules of layers earier in the forward pass
@@ -133,29 +131,28 @@ class Circuit:
                     for ds_node in nodes_per_submod[ds_submodule]:
                         # print(f'ds_node: {ds_node.name}')
                         ds_node_idx = int(ds_node.name.split("_")[1])
-                        feat_ds_effects = patching_on_downstream_feature(
-                            self.dataset,
+                        feat_ds_effects, _ = patching_on_downstream_feature(
                             self.model, 
+                            self.dataset,
                             us_submodules,
                             us_dictionaries,
                             ds_submodule,
                             ds_dictionary,
                             downstream_feature_id=ds_node_idx,
                             method=patch_method,
-                            ).effects
-                        self._evaluate_effects(feat_ds_effects, self.final_token_positions, us_submodule_names, self.feat_threshold, ds_node, nodes_per_submod)
+                            )
+                        feat_ds_effects = feat_ds_effects.effects
+                        self._evaluate_effects(feat_ds_effects, us_submodule_names, self.feat_threshold, ds_node, nodes_per_submod)
 
 
-    def _evaluate_effects_chainrule(self, effects, final_token_positions, submodule_names, threshold, ds_node, nodes_per_submod, grads_y_wrt_us_features):
+    def _evaluate_effects_chainrule(self, effects, submodule_names, threshold, ds_node, nodes_per_submod, grads_y_wrt_us_features):
         """
         Adds nodes with effect above threshold to circuit and nodes_per_submod dict.
         us: upstream, the nodes where outputs are patched
         """
         for us_submod, us_submod_name in zip(effects, submodule_names):
             us_submod_layer, us_submod_type = submodule_name_to_type_layer(us_submod_name)
-            sum_indirect_effect = t.sum(effects[us_submod][final_token_positions, :], dim=0) # TODO: compute IE across all examples
-            mean_indirect_effect = sum_indirect_effect / len(self.dataset)
-            feats_above_threshold = (mean_indirect_effect > threshold).nonzero().flatten().tolist()
+            feats_above_threshold = (effects[us_submod] > threshold).nonzero().flatten().tolist()
             for feature_idx in feats_above_threshold:
                 us_node_name = f"{us_submod_layer}_{feature_idx}_{us_submod_type}"
 
@@ -165,11 +162,11 @@ class Circuit:
                     if us_node.name == us_node_name:
                         node_exists = True
                         us_node.accumulated_gradient += grads_y_wrt_us_features[feature_idx]
-                        ds_node.add_child(us_node, effect_on_parent=mean_indirect_effect[feature_idx].item())
+                        ds_node.add_child(us_node, effect_on_parent=effects[us_submod][feature_idx].item())
                         break
                 if not node_exists:
                     us_node = CircuitNode(name=us_node_name, accumulated_gradient=grads_y_wrt_us_features[feature_idx])
-                    ds_node.add_child(us_node, effect_on_parent=mean_indirect_effect[feature_idx].item())
+                    ds_node.add_child(us_node, effect_on_parent=effects[us_submod][feature_idx].item())
                     nodes_per_submod[us_submod].append(us_node)
 
 
@@ -196,9 +193,9 @@ class Circuit:
             submodule_names_layer, submodules_layer, dictionaries_layer = all_submodule_names[layer], all_submodules[layer], all_dictionaries[layer]
             # Effects on y (downstream)
             # Upstream: submodules of this layer
-            effects_on_y, grads_y_wrt_us_features = patching_on_y(self.dataset, self.model, submodules_layer, dictionaries_layer, method=patch_method)
+            effects_on_y, grads_y_wrt_us_features = patching_on_y(self.model, self.dataset, submodules_layer, dictionaries_layer, method=patch_method, grad_y_wrt_downstream=1) # (d/dy)y = 1
             effects_on_y = effects_on_y.effects
-            self._evaluate_effects_chainrule(effects_on_y, self.final_token_positions, submodule_names_layer, self.y_threshold, self.root, nodes_per_submod, grads_y_wrt_us_features)
+            self._evaluate_effects_chainrule(effects_on_y, submodule_names_layer, self.y_threshold, self.root, nodes_per_submod, grads_y_wrt_us_features)
 
             # Effects on submodules in this layer
             # Upstream: submodules of layers earier in the forward pass
@@ -213,8 +210,8 @@ class Circuit:
                         # print(f'ds_node: {ds_node.name}')
                         ds_node_idx = int(ds_node.name.split("_")[1])
                         feat_ds_effects, grads_y_wrt_us_features = patching_on_downstream_feature(
-                            self.dataset,
                             self.model, 
+                            self.dataset,
                             us_submodules,
                             us_dictionaries,
                             ds_submodule,
@@ -224,7 +221,7 @@ class Circuit:
                             method=patch_method,
                             )
                         feat_ds_effects = feat_ds_effects.effects
-                        self._evaluate_effects(feat_ds_effects, self.final_token_positions, us_submodule_names, self.feat_threshold, ds_node, nodes_per_submod, grads_y_wrt_us_features)
+                        self._evaluate_effects_chainrule(feat_ds_effects, us_submodule_names, self.feat_threshold, ds_node, nodes_per_submod, grads_y_wrt_us_features)
 
 
     def evaluate_faithfulness(self, eval_dataset=None, patch_type='zero'):
@@ -503,7 +500,7 @@ if __name__ == "__main__":
                         help="Number of example pairs to use in the causal search.")
     parser.add_argument("--patch_method", "-p", type=str, choices=["all-folded", "separate", "ig", "exact"],
                         default="separate", help="Method to use for attribution patching.")
-    parser.add_argument("--evaluate", action="store_true", help="Load and evaluate a circuit.")
+    parser.add_argument("--evaluate", action="store_true", help="Load and evaluate a circuit.", default=False)
     args = parser.parse_args()
 
     submodules = args.submodules
@@ -516,7 +513,8 @@ if __name__ == "__main__":
     model.local_model.requires_grad_(True)
     dataset = load_examples(args.dataset, args.num_examples, model, pad_to_length=16)
     dictionary_dir = os.path.join(args.dictionary_dir, args.model.split("/")[-1])
-    save_path = args.dataset.split("/")[-1].split(".json")[0] + "_circuit.pkl"
+    # save_path = args.dataset.split("/")[-1].split(".json")[0] + "_circuit.pkl"
+    save_path = "/home/can/dictionary-circuits/phenomena/circuits/simple_circuit_chainrule_sum.pkl"
 
     circuit = Circuit(model, submodules, dictionary_dir, args.dictionary_size, dataset)
     if args.evaluate:
@@ -527,9 +525,14 @@ if __name__ == "__main__":
         print(f"Completeness: {completeness['mean_completeness']}")
         # minimality = circuit.evaluate_minimality()
         # print(f"Minimality: {minimality['min_minimality']}")
-        print(f"Minimality per node: {minimality['minimality_per_node']}")
+        # print(f"Minimality per node: {minimality['minimality_per_node']}")
     else:
-        circuit.locate_circuit(patch_method=args.patch_method)
+        circuit.locate_circuit_chainrule(patch_method=args.patch_method)
         print(circuit.to_dict())
         with open(save_path, 'wb') as pickle_file:
             pickle.dump(circuit.to_dict(), pickle_file)
+
+#%%
+s1 = "{'y': [('5_17460_attn', 0.5552520751953125), ('5_19654_attn', 0.13185305893421173), ('5_28904_attn', 0.13310346007347107), ('5_5580_mlp', 0.03739768639206886), ('5_10880_mlp', 0.04965902119874954), ('5_13505_mlp', 0.0545474998652935), ('5_14747_mlp', 0.03838435187935829), ('5_19033_mlp', 0.05125142261385918), ('5_22167_mlp', 0.11901502311229706), ('5_31716_mlp', 0.020991679280996323), ('4_4375_mlp', 0.031149838119745255), ('4_16301_mlp', 0.027388159185647964), ('4_18797_mlp', 0.6406739354133606), ('4_25647_mlp', 0.12302893400192261), ('4_27244_mlp', 0.04392228648066521), ('4_28275_mlp', 0.027300048619508743), ('3_5552_attn', 0.030445074662566185), ('3_24126_mlp', 0.03391225263476372), ('2_2164_attn', 0.09174977242946625), ('2_6697_attn', 0.067122682929039), ('1_16149_mlp', 0.13706234097480774), ('0_1127_mlp', 0.038649652153253555), ('0_6659_mlp', 0.0666920468211174), ('0_9409_mlp', 0.4671623706817627), ('0_12212_mlp', 0.04717830941081047), ('0_20987_mlp', 0.03856801986694336), ('0_23335_mlp', 0.021645085886120796), ('0_24554_mlp', 0.23530156910419464), ('0_26082_mlp', 0.02262563444674015), ('0_28204_mlp', 0.021498801186680794)], '5_17460_attn': [('0_344_mlp', 0.036070916801691055), ('0_5887_mlp', 0.06325675547122955), ('0_28327_mlp', 0.13905489444732666), ('2_32079_mlp', 0.02400648593902588), ('3_6805_mlp', 0.022417152300477028), ('3_26928_mlp', 0.04095916450023651), ('4_1327_mlp', 0.02712508663535118), ('4_4375_mlp', 0.06161575764417648), ('4_14614_mlp', 0.0509306900203228)], '0_344_mlp': [], '0_5887_mlp': [], '0_28327_mlp': [], '2_32079_mlp': [], '0_9409_mlp': [], '3_6805_mlp': [('0_24554_mlp', 0.023785388097167015)], '0_24554_mlp': [], '3_26928_mlp': [], '0_4178_attn': [], '2_6697_attn': [], '4_1327_mlp': [], '3_24126_mlp': [], '4_4375_mlp': [], '2_2164_attn': [], '0_28204_mlp': [], '4_14614_mlp': [], '5_19654_attn': [], '5_28904_attn': [], '5_5580_mlp': [('0_344_mlp', 0.026576224714517593), ('2_6697_attn', 0.030260782688856125), ('3_26928_mlp', 0.028204262256622314), ('4_4375_mlp', 0.050885118544101715), ('4_16301_mlp', 0.03663405403494835)], '4_16301_mlp': [], '5_10880_mlp': [('4_1327_mlp', 0.037624292075634)], '5_13505_mlp': [('0_9849_attn', 0.03923684358596802), ('0_344_mlp', 0.03484112769365311), ('0_1127_mlp', 0.030190318822860718), ('0_28327_mlp', 0.050803638994693756)], '0_9849_attn': [], '0_1127_mlp': [], '5_14747_mlp': [('0_4111_mlp', 0.043865494430065155), ('0_24554_mlp', 0.030751939862966537)], '0_4111_mlp': [], '5_19033_mlp': [('0_5887_mlp', 0.053421150892972946), ('0_28327_mlp', 0.029095659032464027), ('2_4770_mlp', 0.030233215540647507), ('3_26928_mlp', 0.03731096163392067), ('4_16301_mlp', 0.02680986188352108)], '2_4770_mlp': [], '5_22167_mlp': [], '5_31716_mlp': [('0_5887_mlp', 0.08901671320199966), ('0_9409_mlp', 0.042368315160274506), ('0_28327_mlp', 0.1631995439529419)], '4_18797_mlp': [('0_344_mlp', 0.030891919508576393), ('0_5887_mlp', 0.022394105792045593), ('2_4770_mlp', 0.021059926599264145), ('2_32079_mlp', 0.047188468277454376)], '4_25647_mlp': [('0_344_mlp', 0.1178671270608902), ('0_5887_mlp', 0.04896540194749832), ('0_20987_mlp', 0.02709883823990822), ('0_28327_mlp', 0.09898333251476288)], '0_20987_mlp': [], '4_27244_mlp': [], '4_28275_mlp': [('0_5887_mlp', 0.04417329654097557), ('0_9409_mlp', 0.02112496830523014), ('0_24554_mlp', 0.023677507415413857), ('0_28327_mlp', 0.10823535919189453)], '3_5552_attn': [('0_1127_mlp', 0.02010926976799965), ('0_9409_mlp', 0.037965331226587296), ('0_24554_mlp', 0.04659894481301308)], '1_16149_mlp': [('0_4178_attn', 0.05631507188081741)], '0_6659_mlp': [], '0_12212_mlp': [], '0_23335_mlp': [], '0_26082_mlp': []}"
+s2 = "{'y': [('5_17460_attn', 0.5552520751953125), ('5_19654_attn', 0.13185307383537292), ('5_28904_attn', 0.13310347497463226), ('5_5580_mlp', 0.03739768639206886), ('5_10880_mlp', 0.049659017473459244), ('5_13505_mlp', 0.054547496140003204), ('5_14747_mlp', 0.03838435187935829), ('5_19033_mlp', 0.05125141888856888), ('5_22167_mlp', 0.11901502311229706), ('5_31716_mlp', 0.020991681143641472), ('4_4375_mlp', 0.031149838119745255), ('4_16301_mlp', 0.027388159185647964), ('4_18797_mlp', 0.6406739950180054), ('4_25647_mlp', 0.1230289489030838), ('4_27244_mlp', 0.04392228275537491), ('4_28275_mlp', 0.027300048619508743), ('3_5552_attn', 0.030445072799921036), ('3_24126_mlp', 0.03391224890947342), ('2_2164_attn', 0.09174977988004684), ('2_6697_attn', 0.0671226903796196), ('1_16149_mlp', 0.13706232607364655), ('0_1127_mlp', 0.038649652153253555), ('0_6659_mlp', 0.0666920468211174), ('0_9409_mlp', 0.4671623110771179), ('0_12212_mlp', 0.04717830568552017), ('0_20987_mlp', 0.03856801986694336), ('0_23335_mlp', 0.021645085886120796), ('0_24554_mlp', 0.23530156910419464), ('0_26082_mlp', 0.0226256363093853), ('0_28204_mlp', 0.021498801186680794)], '5_17460_attn': [('0_344_mlp', 0.036070916801691055), ('0_5887_mlp', 0.06325674802064896), ('0_28327_mlp', 0.13905489444732666), ('2_32079_mlp', 0.02400648593902588), ('3_6805_mlp', 0.022417154163122177), ('3_26928_mlp', 0.04095916822552681), ('4_1327_mlp', 0.02712508663535118), ('4_4375_mlp', 0.06161575764417648), ('4_14614_mlp', 0.0509306862950325)], '0_344_mlp': [], '0_5887_mlp': [], '0_28327_mlp': [], '2_32079_mlp': [], '0_9409_mlp': [], '3_6805_mlp': [('0_24554_mlp', 0.023785386234521866)], '0_24554_mlp': [], '3_26928_mlp': [], '0_4178_attn': [], '2_6697_attn': [], '4_1327_mlp': [], '3_24126_mlp': [], '4_4375_mlp': [], '2_2164_attn': [], '0_28204_mlp': [], '4_14614_mlp': [], '5_19654_attn': [], '5_28904_attn': [], '5_5580_mlp': [('0_344_mlp', 0.026576224714517593), ('2_6697_attn', 0.030260782688856125), ('3_26928_mlp', 0.028204262256622314), ('4_4375_mlp', 0.050885118544101715), ('4_16301_mlp', 0.03663405403494835)], '4_16301_mlp': [], '5_10880_mlp': [('4_1327_mlp', 0.0376242958009243)], '5_13505_mlp': [('0_9849_attn', 0.03923684358596802), ('0_344_mlp', 0.03484112396836281), ('0_1127_mlp', 0.030190318822860718), ('0_28327_mlp', 0.050803638994693756)], '0_9849_attn': [], '0_1127_mlp': [], '5_14747_mlp': [('0_4111_mlp', 0.043865498155355453), ('0_24554_mlp', 0.030751939862966537)], '0_4111_mlp': [], '5_19033_mlp': [('0_5887_mlp', 0.05342114716768265), ('0_28327_mlp', 0.029095659032464027), ('2_4770_mlp', 0.030233215540647507), ('3_26928_mlp', 0.03731096163392067), ('4_16301_mlp', 0.02680986002087593)], '2_4770_mlp': [], '5_22167_mlp': [], '5_31716_mlp': [('0_5887_mlp', 0.08901672065258026), ('0_9409_mlp', 0.042368318885564804), ('0_28327_mlp', 0.1631995439529419)], '4_18797_mlp': [('0_344_mlp', 0.030891921371221542), ('0_5887_mlp', 0.022394105792045593), ('2_4770_mlp', 0.021059928461909294), ('2_32079_mlp', 0.04718846455216408)], '4_25647_mlp': [('0_344_mlp', 0.1178671270608902), ('0_5887_mlp', 0.04896539822220802), ('0_20987_mlp', 0.02709883823990822), ('0_28327_mlp', 0.09898333996534348)], '0_20987_mlp': [], '4_27244_mlp': [], '4_28275_mlp': [('0_5887_mlp', 0.04417329654097557), ('0_9409_mlp', 0.02112497016787529), ('0_24554_mlp', 0.023677509278059006), ('0_28327_mlp', 0.10823535919189453)], '3_5552_attn': [('0_1127_mlp', 0.0201092679053545), ('0_9409_mlp', 0.037965331226587296), ('0_24554_mlp', 0.04659894481301308)], '1_16149_mlp': [('0_4178_attn', 0.05631507188081741)], '0_6659_mlp': [], '0_12212_mlp': [], '0_23335_mlp': [], '0_26082_mlp': []}"
+s3 = "{'y': [('5_17460_attn', 0.5552520751953125), ('5_19654_attn', 0.13185305893421173), ('5_28904_attn', 0.13310346007347107), ('5_5580_mlp', 0.03739768639206886), ('5_10880_mlp', 0.04965902119874954), ('5_13505_mlp', 0.0545474998652935), ('5_14747_mlp', 0.03838435187935829), ('5_19033_mlp', 0.05125142261385918), ('5_22167_mlp', 0.11901502311229706), ('5_31716_mlp', 0.020991679280996323), ('4_4375_mlp', 0.031149838119745255), ('4_16301_mlp', 0.027388159185647964), ('4_18797_mlp', 0.6406739354133606), ('4_25647_mlp', 0.12302893400192261), ('4_27244_mlp', 0.04392228648066521), ('4_28275_mlp', 0.027300048619508743), ('3_5552_attn', 0.030445074662566185), ('3_24126_mlp', 0.03391225263476372), ('2_2164_attn', 0.09174977242946625), ('2_6697_attn', 0.067122682929039), ('1_16149_mlp', 0.13706234097480774), ('0_1127_mlp', 0.038649652153253555), ('0_6659_mlp', 0.0666920468211174), ('0_9409_mlp', 0.4671623706817627), ('0_12212_mlp', 0.04717830941081047), ('0_20987_mlp', 0.03856801986694336), ('0_23335_mlp', 0.021645085886120796), ('0_24554_mlp', 0.23530156910419464), ('0_26082_mlp', 0.02262563444674015), ('0_28204_mlp', 0.021498801186680794)], '5_17460_attn': [('0_28668_attn', 0.02851388417184353), ('0_344_mlp', 0.036070916801691055), ('0_5887_mlp', 0.06325675547122955), ('0_28327_mlp', 0.13905489444732666), ('2_32079_mlp', 0.02400648593902588), ('3_6805_mlp', 0.022417152300477028), ('3_24092_mlp', 0.021361518651247025), ('3_26928_mlp', 0.04095916450023651), ('4_1327_mlp', 0.02712508663535118), ('4_4375_mlp', 0.06161575764417648), ('4_14614_mlp', 0.05072528123855591), ('4_16301_mlp', 0.024296237155795097)], '0_28668_attn': [], '0_344_mlp': [], '0_5887_mlp': [], '0_28327_mlp': [], '2_32079_mlp': [], '0_9409_mlp': [], '3_6805_mlp': [('0_24554_mlp', 0.023785388097167015)], '0_24554_mlp': [], '3_24092_mlp': [('0_24554_mlp', 0.027842488139867783)], '3_26928_mlp': [], '0_4178_attn': [], '2_6697_attn': [], '4_1327_mlp': [], '3_24126_mlp': [], '4_4375_mlp': [], '2_2164_attn': [], '0_28204_mlp': [], '4_14614_mlp': [], '4_16301_mlp': [], '5_19654_attn': [], '5_28904_attn': [], '5_5580_mlp': [('0_344_mlp', 0.026576224714517593), ('2_6697_attn', 0.030260782688856125), ('3_26928_mlp', 0.028204262256622314), ('4_4375_mlp', 0.050885118544101715), ('4_16301_mlp', 0.03663405403494835)], '5_10880_mlp': [('4_1327_mlp', 0.037624292075634)], '5_13505_mlp': [('0_9849_attn', 0.03923684358596802), ('0_344_mlp', 0.03484112769365311), ('0_1127_mlp', 0.030190318822860718), ('0_28327_mlp', 0.050803638994693756), ('2_15200_attn', 0.020206019282341003), ('3_577_attn', 0.03455338627099991)], '0_9849_attn': [], '0_1127_mlp': [], '2_15200_attn': [], '3_577_attn': [], '5_14747_mlp': [('0_4111_mlp', 0.043865494430065155), ('0_24554_mlp', 0.030751939862966537)], '0_4111_mlp': [], '5_19033_mlp': [('0_5887_mlp', 0.053421150892972946), ('0_28327_mlp', 0.029095659032464027), ('2_4770_mlp', 0.030233215540647507), ('3_26928_mlp', 0.03731096163392067), ('4_16301_mlp', 0.02680986188352108)], '2_4770_mlp': [], '5_22167_mlp': [], '5_31716_mlp': [('0_5887_mlp', 0.08901671320199966), ('0_9409_mlp', 0.042368315160274506), ('0_28327_mlp', 0.1631995439529419), ('3_577_attn', 0.04156925156712532)], '4_18797_mlp': [('0_344_mlp', 0.030891919508576393), ('0_5887_mlp', 0.022394105792045593), ('2_4770_mlp', 0.021059926599264145), ('2_32079_mlp', 0.047188468277454376)], '4_25647_mlp': [('0_344_mlp', 0.1178671270608902), ('0_5887_mlp', 0.04896540194749832), ('0_20987_mlp', 0.02709883823990822), ('0_28327_mlp', 0.09898333251476288)], '0_20987_mlp': [], '4_27244_mlp': [], '4_28275_mlp': [('0_5887_mlp', 0.04417329654097557), ('0_9409_mlp', 0.02112496830523014), ('0_24554_mlp', 0.023677507415413857), ('0_28327_mlp', 0.10823535919189453)], '3_5552_attn': [('0_1127_mlp', 0.02010926976799965), ('0_9409_mlp', 0.037965331226587296), ('0_24554_mlp', 0.04659894481301308)], '1_16149_mlp': [('0_4178_attn', 0.05631507188081741)], '0_6659_mlp': [], '0_12212_mlp': [], '0_23335_mlp': [], '0_26082_mlp': []}"
