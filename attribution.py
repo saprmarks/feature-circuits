@@ -68,7 +68,7 @@ def _pe_attrib_separate(
         submodules,
         dictionaries,
         metric_fn,
-        grad_y_wrt_downstream=None,
+        grad_y_wrt_downstream=1,
 ):
     hidden_states_clean = {}
     for submodule, dictionary in zip(submodules, dictionaries):
@@ -107,20 +107,13 @@ def _pe_attrib_separate(
                 hidden_states_patch[submodule] = f.save()
             metric_patch = metric_fn(model).save()
         total_effect = metric_patch.value - metric_clean.value
-    
-    if grad_y_wrt_downstream is not None:
-        effects = {}
-        for submodule in submodules:
-            patch_state, clean_state = hidden_states_patch[submodule], hidden_states_clean[submodule]
-            effects[submodule] = (patch_state.value - clean_state.value) * clean_state.value.grad * grad_y_wrt_downstream
-        grads_y_wrt_us_features = clean_state.value.grad * grad_y_wrt_downstream
-        return EffectOut(effects, total_effect), grads_y_wrt_us_features
-    else:
-        effects = {}
-        for submodule in submodules:
-            patch_state, clean_state = hidden_states_patch[submodule], hidden_states_clean[submodule]
-            effects[submodule] = (patch_state.value - clean_state.value) * clean_state.value.grad
-        return EffectOut(effects, total_effect), None
+
+    effects = {}
+    for submodule in submodules:
+        patch_state, clean_state = hidden_states_patch[submodule], hidden_states_clean[submodule]
+        effects[submodule] = (patch_state.value - clean_state.value) * clean_state.value.grad * grad_y_wrt_downstream
+    grads_y_wrt_us_features = clean_state.value.grad * grad_y_wrt_downstream 
+    return EffectOut(effects, total_effect), grads_y_wrt_us_features # returns clean_state.value.grad if grad_y_wrt_downstream == 1
 
 def _pe_ig(
         clean,
