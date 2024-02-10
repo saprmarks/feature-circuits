@@ -161,3 +161,4 @@ cython_debug/
 #.idea/
 
 phenomena/vocab/*.json
+phenomena/circuits/*

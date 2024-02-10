@@ -68,6 +68,7 @@ def _pe_attrib_separate(
         submodules,
         dictionaries,
         metric_fn,
+        grad_y_wrt_downstream=1,
 ):
     hidden_states_clean = {}
     for submodule, dictionary in zip(submodules, dictionaries):
@@ -106,13 +107,13 @@ def _pe_attrib_separate(
                 hidden_states_patch[submodule] = f.save()
             metric_patch = metric_fn(model).save()
         total_effect = metric_patch.value - metric_clean.value
-    
+
     effects = {}
     for submodule in submodules:
         patch_state, clean_state = hidden_states_patch[submodule], hidden_states_clean[submodule]
-        effects[submodule] = (patch_state.value - clean_state.value) * clean_state.value.grad
-
-    return EffectOut(effects, total_effect)
+        effects[submodule] = (patch_state.value - clean_state.value) * clean_state.value.grad * grad_y_wrt_downstream
+    grads_y_wrt_us_features = clean_state.value.grad * grad_y_wrt_downstream 
+    return EffectOut(effects, total_effect), grads_y_wrt_us_features # returns clean_state.value.grad if grad_y_wrt_downstream == 1
 
 def _pe_ig(
         clean,
@@ -255,11 +256,12 @@ def patching_effect(
         metric_fn,
         method='all-folded',
         steps=10,
+        grad_y_wrt_downstream=None, # currently only used in circuit discovery, thus only implemented for separate method
 ):
     if method == 'all-folded':
         return _pe_attrib_all_folded(clean, patch, model, submodules, dictionaries, metric_fn)
     elif method == 'separate':
-        return _pe_attrib_separate(clean, patch, model, submodules, dictionaries, metric_fn)
+        return _pe_attrib_separate(clean, patch, model, submodules, dictionaries, metric_fn, grad_y_wrt_downstream)
     elif method == 'ig':
         return _pe_ig(clean, patch, model, submodules, dictionaries, metric_fn, steps=steps)
     elif method == 'exact':
