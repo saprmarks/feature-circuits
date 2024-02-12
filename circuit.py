@@ -60,9 +60,9 @@ class Circuit:
         self.dict_cfg = DictionaryCfg(dictionary_dir, dictionary_size)
         self.dataset = dataset
         self.patch_token_pos = -1
-        self.y_threshold = 0.02
-        self.feat_threshold = 0.02
-        self.path_threshold = 0.01
+        self.y_threshold = 0.2
+        self.feat_threshold = 0.1
+        self.path_threshold = 0.02
         self.filter_proportion = 0.25
 
         self.root = CircuitNode("y")
@@ -421,6 +421,8 @@ if __name__ == "__main__":
     parser.add_argument("--patch_method", "-p", type=str, choices=["all-folded", "separate", "ig", "exact"],
                         default="separate", help="Method to use for attribution patching.")
     parser.add_argument("--evaluate", action="store_true", help="Load and evaluate a circuit.")
+    parser.add_argument("--circuit_path", type=str, default=None, help="Path to circuit to load.")
+    parser.add_argument("--seed", type=int, default=12, help="Random seed.")
     args = parser.parse_args()
 
     submodules = args.submodules
@@ -431,9 +433,12 @@ if __name__ == "__main__":
 
     model = LanguageModel(args.model, dispatch=True)
     model.local_model.requires_grad_(True)
-    dataset = load_examples(args.dataset, args.num_examples, model, pad_to_length=16)
+    dataset = load_examples(args.dataset, args.num_examples, model, seed=args.seed, pad_to_length=16)
     dictionary_dir = os.path.join(args.dictionary_dir, args.model.split("/")[-1])
-    save_path = args.dataset.split("/")[-1].split(".json")[0] + "_circuit.pkl"
+    if args.circuit_path is None:
+        save_path = args.dataset.split("/")[-1].split(".json")[0] + "_circuit.pkl"
+    else:
+        save_path = args.circuit_path
 
     circuit = Circuit(model, submodules, dictionary_dir, args.dictionary_size, dataset)
     if args.evaluate:
@@ -444,7 +449,7 @@ if __name__ == "__main__":
         print(f"Completeness: {completeness['mean_completeness']}")
         # minimality = circuit.evaluate_minimality()
         # print(f"Minimality: {minimality['min_minimality']}")
-        print(f"Minimality per node: {minimality['minimality_per_node']}")
+        # print(f"Minimality per node: {minimality['minimality_per_node']}")
     else:
         circuit.locate_circuit(patch_method=args.patch_method)
         print(circuit.to_dict())
