@@ -57,7 +57,7 @@ def _pe_attrib_all_folded(
     effects = {}
     for submodule in submodules:
         patch_state, clean_state = hidden_states_patch[submodule], hidden_states_clean[submodule]
-        effects[submodule] = (patch_state.value - clean_state.value) * clean_state.value.grad
+        effects[submodule] = (patch_state.value - clean_state.value).detach() * clean_state.value.grad
 
     return EffectOut(effects, total_effect)
 
@@ -70,8 +70,9 @@ def _pe_attrib_separate(
         metric_fn,
 ):
     hidden_states_clean = {}
+
     for submodule, dictionary in zip(submodules, dictionaries):
-        with model.invoke(clean, fwd_args={'inference' : False}) as invoker:
+        with model.invoke(clean, fwd_args={'inference' : False}):
             x = submodule.output
             is_resid = (type(x.shape) == tuple)
             if is_resid:
@@ -110,7 +111,7 @@ def _pe_attrib_separate(
     effects = {}
     for submodule in submodules:
         patch_state, clean_state = hidden_states_patch[submodule], hidden_states_clean[submodule]
-        effects[submodule] = (patch_state.value - clean_state.value) * clean_state.value.grad
+        effects[submodule] = (patch_state.value - clean_state.value).detach() * clean_state.value.grad
 
     return EffectOut(effects, total_effect)
 
