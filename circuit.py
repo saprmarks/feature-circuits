@@ -242,7 +242,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", "-m", type=str, default="EleutherAI/pythia-70m-deduped",
                         help="Name of model on which dictionaries were trained.")
-    parser.add_argument("--submodules", "-s", type=str, default="model.gpt_neox.layers.{}.attention.dense,model.gpt_neox.layers.{}.mlp.dense_4h_to_h",
+    parser.add_argument("--submodules", "-s", type=str, default="model.gpt_neox.layers.{}.attention.dense, model.gpt_neox.layers.{}.mlp.dense_4h_to_h, model.gpt_neox.layers.{}",
                         help="Name of submodules on which dictionaries were trained (with `{}` where the layer number should be).")
     parser.add_argument("--dictionary_dir", "-a", type=str, default="/share/projects/dictionary_circuits/autoencoders/")
     parser.add_argument("--dictionary_size", "-S", type=int, default=32768,
@@ -265,7 +265,8 @@ if __name__ == "__main__":
     model.local_model.requires_grad_(True)
     dataset = load_examples(args.dataset, args.num_examples, model, pad_to_length=3)
     dictionary_dir = os.path.join(args.dictionary_dir, args.model.split("/")[-1])
-    save_path = args.dataset.split("/")[-1].split(".json")[0] + "_circuit.pkl"
+    save_path = args.dataset.split("/")[-1].split(".json")[0] + "_mlp-attn-resid_circuit.pkl"
+    save_path = "/home/can/dictionary-circuits/phenomena/circuits/rc_mlp-attn-resid_circuit.pkl"
 
     circuit = Circuit(model, submodules, dictionary_dir, args.dictionary_size, dataset)
     if args.evaluate:

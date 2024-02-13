@@ -16,8 +16,8 @@ from cluster_utils import ClusterConfig, get_tokenized_context_y
 
 # Set enviroment specific constants
 device = "cuda:0"
-batch_size = 16
-results_dir = "/home/can/feature_clustering/clustering_pythia-70m-deduped_tloss0.03_ntok16384_skip256_npos256_mlp"
+batch_size = 32
+results_dir = "/home/can/feature_clustering/clustering_pythia-70m-deduped_tloss0.1_nsamples8192_npos64_filtered-induction_mlp-attn-resid"
 dictionary_dir="/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped"
 tokenized_dataset_dir = "/home/can/data/pile_test_tokenized_600k/"
 
@@ -28,13 +28,17 @@ dataset = datasets.load_from_disk(tokenized_dataset_dir)
 model = LanguageModel("EleutherAI/"+ccfg.model_name, device_map=device)
 dict_cfg = DictionaryCfg(dictionary_size=ccfg.dictionary_size, dictionary_dir=dictionary_dir)
 submodule_names, submodules, dictionaries = load_submodules_and_dictionaries_from_generic(model, ccfg.submodules_generic, dict_cfg)
-n_batches = ccfg.num_samples // batch_size
+n_batches = ccfg.num_samples // batch_size # Not achieving the exact number of samples if num_samples is not divisible by batch_size
+ccfg.n_submodules = len(submodule_names[0]) * model.config.num_hidden_layers
+# save the config
+with open(os.path.join(results_dir, "config.json"), "w") as f:
+    json.dump(ccfg.__dict__, f)
 
-# Approximate size of topk_feature_activations_per_token
-# results will be saved as dict d where d[token_loss_idx] = {"sum": [[feat_idx, act, grad], ...], "pos": {pos_idx(negative): [[feat_idx, act, grad], ...], ...}
-pos_size = (4 + 4 + 4) * 300 * ccfg.n_pos # 300 is an estimate for the number of nonzero feature activations per position
-sum_size = (4 + 4 + 4) * 15000 # is an estimate for the number of nonzero feature activations across all positions
-total_size = (pos_size + sum_size) * ccfg.num_samples
+# Approximate size of activation_results_cpu and lin_effect_results_cpu 
+# Sparse activations
+n_bytes_per_nonzero = 4 # using float32: 4 bytes per non-zero value
+n_nonzero_per_sample = ccfg.n_pos * ccfg.dictionary_size * ccfg.n_submodules
+total_size = n_nonzero_per_sample * n_batches * batch_size * n_bytes_per_nonzero
 print(f"Total size of generated data (feature activations): {total_size / 1024**3} GB")
 
 # Data loader
@@ -60,16 +64,31 @@ def metric_fn(logits, target_token_id): # logits shape: (batch_size, seq_len, vo
     return m.sum()
 
 # Cache feature activations and gradients
-for batch_idx in trange(n_batches, desc="Caching activations", total=n_batches):
+
+## Dense format on cpu
+# activation_results_cpu = t.zeros((n_batches * batch_size, ccfg.n_pos, ccfg.dictionary_size * n_submodules), dtype=torch.float32, device='cpu')
+# lin_effect_results_cpu = t.zeros((n_batches * batch_size, ccfg.n_pos, ccfg.dictionary_size * n_submodules), dtype=torch.float32, device='cpu')
+
+## Sparse format on cpu
+activation_results_cpu = t.sparse_coo_tensor(
+    size=(0, ccfg.n_pos, ccfg.dictionary_size * ccfg.n_submodules), 
+    dtype=torch.float32, 
+    device='cpu'
+    )
+lin_effect_results_cpu = t.sparse_coo_tensor(
+    size=(0, ccfg.n_pos, ccfg.dictionary_size * ccfg.n_submodules), 
+    dtype=torch.float32, 
+    device='cpu'
+    )
+
+for batch_idx in trange(n_batches, desc="Caching activations in batches", total=n_batches):
+    print(f"GPU Allocated memory: {torch.cuda.memory_allocated(device)/1024**2 :.2f} MB")
+    print(f"GPU Cached memory: {torch.cuda.memory_reserved(device)/1024**2 :.2f} MB")
+
     contexts, ys = next(loader) # for batch_size=1
     contexts, ys = contexts.to(device), ys.to(device)
-
-    print(f"Allocated memory: {torch.cuda.memory_allocated(device)/1024**2 :.2f} MB")
-    print(f"Cached memory: {torch.cuda.memory_reserved(device)/1024**2 :.2f} MB")
-
     activations = defaultdict(list)
     gradients = defaultdict(list)
-
 
     with model.invoke(contexts, fwd_args={'inference': False}) as invoker:
         for layer in range(model.config.num_hidden_layers):
@@ -93,21 +112,27 @@ for batch_idx in trange(n_batches, desc="Caching activations", total=n_batches):
         metric_fn(logits=logits, target_token_id=ys).backward()
     
     # Flatten activations and gradients
-    n_submodules = len(submodule_names[0]) * model.config.num_hidden_layers
-    activations_flat = torch.zeros((n_submodules, batch_size, ccfg.n_pos, ccfg.dictionary_size), dtype=torch.float32, device=device)
-    gradients_flat = torch.zeros((n_submodules, batch_size, ccfg.n_pos, ccfg.dictionary_size), dtype=torch.float32, device=device)
+    activations_flat = torch.zeros((batch_size, ccfg.n_pos, ccfg.dictionary_size * ccfg.n_submodules), dtype=torch.float32, device=device)
+    gradients_flat = torch.zeros((batch_size, ccfg.n_pos, ccfg.dictionary_size * ccfg.n_submodules), dtype=torch.float32, device=device)
     for i, name in enumerate(activations.keys()):
-        activations_flat[i] = activations[name]
-        gradients_flat[i] = gradients[name]
+        # Calculate the start and end indices for the current submodule in the flat tensor, assign to flat tensors
+        feature_start_idx = i * ccfg.dictionary_size
+        feature_end_idx = feature_start_idx + ccfg.dictionary_size
+        activations_flat[:, :, feature_start_idx:feature_end_idx] = activations[name]
+        gradients_flat[:, :, feature_start_idx:feature_end_idx] = gradients[name]
     
     # Calculate linear effects
     lin_effects = (activations_flat * gradients_flat) # This elementwise mult would not be faster when setting activations to sparse, as gradients are dense.
-    activations_flat.to_sparse()
-    lin_effects.to_sparse()
 
-    # Save results
-    t.save(activations_flat, os.path.join(results_dir, f"activations_batch{batch_idx}of{n_batches}.pt"))
-    t.save(lin_effects, os.path.join(results_dir, f"lin_effects_batch{batch_idx}of{n_batches}.pt"))
+    # Move to cpu
+    ## Dense format on cpu
+    # batch_start_idx = batch_idx * batch_size
+    # results_end_idx = batch_start_idx + batch_size
+    # activation_results_cpu[batch_start_idx:results_end_idx] = activations_flat.to_sparse().cpu()
+    # lin_effect_results_cpu[batch_start_idx:results_end_idx] = lin_effects.to_sparse().cpu()
+    ## Sparse format on cpu
+    activation_results_cpu = t.cat([activation_results_cpu, activations_flat.to_sparse().cpu()], dim=0)
+    lin_effect_results_cpu = t.cat([lin_effect_results_cpu, lin_effects.to_sparse().cpu()], dim=0)
 
     del activations_flat
     del gradients_flat
@@ -115,35 +140,9 @@ for batch_idx in trange(n_batches, desc="Caching activations", total=n_batches):
     torch.cuda.empty_cache()
     gc.collect()
 
-
-
-
- # Conversion and saving activations currently only works for batch_size=1
-    # Convert to 1D feature vector
-    # sum_feature_activation_vector = torch.cat([v.value[0].sum(dim=0) for v in activations.values()])
-    # sum_feature_gradient_vector = torch.cat([v.value[0].sum(dim=0) for v in gradients.values()])
-    # sum_activation_feat_idxs = torch.nonzero(sum_feature_activation_vector).flatten() # using this index for both activations and gradients
-    # print(f'\nnumber of nonzero feature activations in sum: {len(sum_activation_feat_idxs)}')
-    
-    # sum_stack = torch.stack((
-    #     sum_activation_feat_idxs.int(), # feature idx
-    #     sum_feature_activation_vector[sum_activation_feat_idxs], 
-    #     sum_feature_gradient_vector[sum_activation_feat_idxs]),
-    #     dim=-1).cpu().tolist() # Idx are stored as floats in torch tensors
-
-
-# pos_feature_activation_vector = torch.cat([v.value[0][-n_pos:] for v in activations.values()], dim=1) # shape (n_pos, n_features)
-    # pos_feature_gradient_vector = torch.cat([v.value[0][:-n_pos] for v in gradients.values()], dim=1)
-    # pos_activation_feat_idxs = torch.nonzero(pos_feature_activation_vector)
-    # pos_stack = torch.stack((
-    #     pos_activation_feat_idxs[:, 0].int()-n_pos, # position idx, converted to final indices
-    #     pos_activation_feat_idxs[:, 1].int(), # feature idx
-    #     pos_feature_activation_vector[pos_activation_feat_idxs[:, 0], pos_activation_feat_idxs[:, 1]],
-    #     pos_feature_gradient_vector[pos_activation_feat_idxs[:, 0], pos_activation_feat_idxs[:, 1]]),
-    #     dim=-1).cpu().tolist() # Idx are stored as floats in torch tensors
-
-    # results[token_loss_idxs] = dict(sum=sum_stack, pos=pos_stack)
-
-    # if i % 10 == 4:
-    #     print(f"Allocated memory: {torch.cuda.memory_allocated(device)/1024**2 :.2f} MB")
-    #     print(f"Cached memory: {torch.cuda.memory_reserved(device)/1024**2 :.2f} MB")
+# Save results in sparse format
+## Dense format on cpu
+# activation_results_cpu = activation_results_cpu.to_sparse()
+# lin_effect_results_cpu = lin_effect_results_cpu.to_sparse()
+t.save(activation_results_cpu, os.path.join(results_dir, f"activations.pt"))
+t.save(lin_effect_results_cpu, os.path.join(results_dir, f"lin_effects.pt"))
