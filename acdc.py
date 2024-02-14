@@ -21,8 +21,8 @@ def consolidated_patching_on(model, dataset, upstream_submodules, upstream_dicti
 
     # Aggregate over sequence
     if sequence_aggregation == 'final_pos_only':
-        effects={k : v[t.arange(len(final_token_positions)), final_token_positions-1] for k, v in effects.items()}
-        grads_y_wrt_us_features = grads_y_wrt_us_features[t.arange(len(final_token_positions)), final_token_positions-1]
+        effects = {k : v[t.arange(len(final_token_positions)), final_token_positions-1] for k, v in effects.items()}
+        grads_y_wrt_us_features = {k : v[t.arange(len(final_token_positions)), final_token_positions-1] for k, v in grads_y_wrt_us_features.items()}
     elif sequence_aggregation == 'max':
         for k, v in effects.items(): # k: submodule, v: (batch_size, sequence_length, feature_dim)
             max_values, max_indices = v.max(dim=1)
@@ -36,8 +36,8 @@ def consolidated_patching_on(model, dataset, upstream_submodules, upstream_dicti
                 selected_grads[batch_idx] = grads_rearranged[batch_idx, t.arange(v.shape[2]), max_indices[batch_idx]]
             grads_y_wrt_us_features[k] = selected_grads                       
     elif sequence_aggregation == 'sum':
-        effects={k : v.sum(dim=1) for k, v in effects.items()}
-        grads_y_wrt_us_features = grads_y_wrt_us_features.sum(dim=1)
+        effects = {k : v.sum(dim=1) for k, v in effects.items()}
+        grads_y_wrt_us_features = {k : v.sum(dim=1) for k, v in grads_y_wrt_us_features.items()}
     else:
         raise ValueError(f"Unknown sequence_aggregation: {sequence_aggregation}")
 

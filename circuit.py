@@ -15,7 +15,7 @@ from acdc import patching_on_y, patching_on_downstream_feature
 from ablation_utils import run_with_ablated_features
 
 class CircuitNode:
-    def __init__(self, name, accumulated_gradient, data = None, children = None, parents = None):
+    def __init__(self, name, accumulated_gradient = None, data = None, children = None, parents = None):
         self.name = name    # format: `{layer}_{idx}_{submodule_type}` OR `y`
         self.data = data    # TODO: 10 sentences w/ activated tokens?
         self.accumulated_gradient = accumulated_gradient # Accumulated gradient of y w.r.t. this node via paths in the circuit
@@ -56,16 +56,16 @@ class CircuitNode:
 
 
 class Circuit:
-    def __init__(self, model, submodules, dictionary_dir, dictionary_size, dataset):
+    def __init__(self, model, submodules, dictionary_dir, dictionary_size, dataset,
+                 threshold=0.05, ):
         self.model = model
         self.submodules_generic = submodules
         self.dict_cfg = DictionaryCfg(dictionary_dir, dictionary_size)
         self.dataset = dataset
         self.patch_token_pos = -1
-        self.y_threshold = 0.2
-        self.feat_threshold = 0.1
-        self.path_threshold = 0.02
-        self.filter_proportion = 0.25
+        self.y_threshold = threshold
+        self.feat_threshold = threshold
+        self.path_threshold = threshold
 
         self.root = CircuitNode("y", accumulated_gradient=1) # (d/dy)y = 1
 
@@ -76,6 +76,12 @@ class Circuit:
             else:
                 for path in self._get_paths_to_root(upper_node, parent):
                     yield [lower_node] + path
+    
+    
+    def _normalize_name(self, name):
+        layer, feat_idx, submodule_type = name.split("_")
+        return f"{submodule_type}_{layer}/{feat_idx}"
+
 
     def _evaluate_effects(self, effects, submodule_names, threshold, ds_node, nodes_per_submod):
         """
@@ -91,6 +97,7 @@ class Circuit:
                 ds_node.add_child(child, effect_on_parent=effects[us_submod][feature_idx].item())
                 if child not in nodes_per_submod[us_submod]:
                     nodes_per_submod[us_submod].append(child)
+
 
     def locate_circuit(self, patch_method='separate'):
         num_layers = self.model.config.num_hidden_layers
@@ -155,15 +162,21 @@ class Circuit:
             feats_above_threshold = (effects[us_submod] > threshold).nonzero().flatten().tolist()
             for feature_idx in feats_above_threshold:
                 us_node_name = f"{us_submod_layer}_{feature_idx}_{us_submod_type}"
+                this_node = CircuitNode(name=us_node_name, accumulated_gradient=grads_y_wrt_us_features[us_submod][feature_idx])
 
                 # check whether node already exists in circuit
-                if us_node_name in nodes_per_submod[us_submod]:
-                    us_node = nodes_per_submod[us_submod][us_node.name]
+                if this_node in nodes_per_submod[us_submod]:
+                    for node in nodes_per_submod[us_submod]:    # TODO: make more efficient. can't index sets (use dict?)
+                        if node.name == this_node.name:
+                            us_node = node
+                            break
+                    # us_node = nodes_per_submod[us_submod][this_node.name]
                     us_node.accumulated_gradient += grads_y_wrt_us_features[us_submod][feature_idx]
                 else:
-                    us_node = CircuitNode(name=us_node_name, accumulated_gradient=grads_y_wrt_us_features[us_submod][feature_idx])
+                    us_node = this_node
                     nodes_per_submod[us_submod].add(us_node)
                 ds_node.add_child(us_node, effect_on_parent=effects[us_submod][feature_idx].item())
+
 
     def locate_circuit_chainrule(self, patch_method='separate', sequence_aggregation='final_pos_only'):
         num_layers = self.model.config.num_hidden_layers
@@ -259,6 +272,7 @@ class Circuit:
         
         mean_faithfulness = 0.
         num_examples = len(eval_dataset)
+        faithfulness_by_example = {}
         for example in tqdm(eval_dataset, desc="Evaluating faithfulness", total=len(eval_dataset)):
             with self.model.invoke(example["clean_prefix"]) as invoker:
                 pass
@@ -271,8 +285,16 @@ class Circuit:
             circuit_logit_diff = circuit_out.logits[:, -1, example["clean_answer"]] - \
                                     circuit_out.logits[:, -1, example["patch_answer"]]
             faithfulness = circuit_logit_diff / model_logit_diff
+
+            # print(example["clean_prefix"], example["clean_answer"])
+            # example_sent = self.model.tokenizer.decode(example["clean_prefix"][0]) + " " + self.model.tokenizer.decode(example["clean_answer"])
+            # faithfulness_by_example[example_sent] = faithfulness
             mean_faithfulness += faithfulness
         
+        # sorted_faithfulness = {k: v for k, v in sorted(faithfulness_by_example.items(), key=lambda x: x[1])}
+        # for example in sorted_faithfulness:
+        #     print(f"{example}: {sorted_faithfulness[example]}")
+
         mean_faithfulness /= num_examples
         return mean_faithfulness.item()
 
@@ -312,47 +334,63 @@ class Circuit:
         total = 0
         K = set()
         num_examples = len(eval_dataset)
-        for _ in tqdm(range(K_size), desc="Evaluating completeness", total=K_size):
-        # for example in tqdm(eval_dataset, desc="Evaluating completeness", total=len(eval_dataset)):
-            # sample nodes greedily from circuit
-            # for _ in range(len(circuit_feature_set)):
-            # for example in eval_dataset:
-            circuit_features_no_K = circuit_feature_set.difference(K)
-            subsample_size = min(sample_size, len(circuit_features_no_K))
-            feature_subsample = random.choices(list(circuit_features_no_K), k=subsample_size)
-            max_incompleteness_feature = None
-            final_circuit_no_K_diff = None
-            max_incompleteness = float("-inf")
+        curr_parent = self.root
+        next_parents = []      # queue
+        for _ in tqdm(range(K_size), desc="Building K", total=K_size):
+            curr_node = None
+            while True:     # do-while loop
+                max_effect = float("-inf")
+                for child in curr_parent.children:
+                    next_parents.append(child)
+                    if self._normalize_name(child.name) in K:
+                        continue
+                    if child.effect_on_parents[curr_parent] > max_effect:
+                        max_effect = child.effect_on_parents[curr_parent]
+                        curr_node = child
+                if curr_node is None:
+                    curr_parent = next_parents.pop(0)
+                if not (curr_node is None and len(next_parents) != 0):
+                    break
+            if curr_node is None:
+                print(f"No more nodes to add. Exiting loop w/ |K|={len(K)}")
+            else:
+                K.add(self._normalize_name(curr_node.name))
+            
+            # subsample_size = min(sample_size, len(circuit_features_no_K))
+            # feature_subsample = random.choices(list(circuit_features_no_K), k=subsample_size)
+            # max_incompleteness_feature = None
+            # final_circuit_no_K_diff = None
+            # max_incompleteness = float("-inf")
             # greedily locate feature in subsample that maximizes incompleteness score
-            for feature in feature_subsample:
-                circuit_features_no_K_v = deepcopy(circuit_features_no_K)
-                circuit_features_no_K_v.remove(feature)
-                mean_change_in_diff = 0.
-                for example in eval_dataset:
-                    circuit_no_K_out = run_with_ablated_features(self.model, example["clean_prefix"],
-                                                                    self.dict_cfg.dir, self.dict_cfg.size,
-                                                                    list(circuit_features_no_K), submodule_to_autoencoder,
-                                                                    patch_vector=patch_vector, inverse=True)["model"]
-                    circuit_no_K_v_out = run_with_ablated_features(self.model, example["clean_prefix"],
-                                                                    self.dict_cfg.dir, self.dict_cfg.size,
-                                                                    list(circuit_features_no_K_v), submodule_to_autoencoder, 
-                                                                    patch_vector=patch_vector, inverse=True)["model"]
-                    circuit_no_K_diff = circuit_no_K_out.logits[:, -1, example["clean_answer"]] - \
-                                        circuit_no_K_out.logits[:, -1, example["patch_answer"]]
-                    circuit_no_K_v_diff = circuit_no_K_v_out.logits[:, -1, example["clean_answer"]] - \
-                                            circuit_no_K_v_out.logits[:, -1, example["patch_answer"]]
-                    mean_change_in_diff += abs(circuit_no_K_v_diff - circuit_no_K_diff)
-                mean_change_in_diff /= num_examples
-                if mean_change_in_diff > max_incompleteness:
-                    max_incompleteness = mean_change_in_diff
-                    max_incompleteness_feature = feature
-            K.add(max_incompleteness_feature)
+            # for feature in feature_subsample:
+            #     circuit_features_no_K_v = deepcopy(circuit_features_no_K)
+            #     circuit_features_no_K_v.remove(feature)
+            #     mean_change_in_diff = 0.
+            #     for example in eval_dataset:
+            #         circuit_no_K_out = run_with_ablated_features(self.model, example["clean_prefix"],
+            #                                                         self.dict_cfg.dir, self.dict_cfg.size,
+            #                                                         list(circuit_features_no_K), submodule_to_autoencoder,
+            #                                                         patch_vector=patch_vector, inverse=True)["model"]
+            #         circuit_no_K_v_out = run_with_ablated_features(self.model, example["clean_prefix"],
+            #                                                         self.dict_cfg.dir, self.dict_cfg.size,
+            #                                                         list(circuit_features_no_K_v), submodule_to_autoencoder, 
+            #                                                         patch_vector=patch_vector, inverse=True)["model"]
+            #         circuit_no_K_diff = circuit_no_K_out.logits[:, -1, example["clean_answer"]] - \
+            #                             circuit_no_K_out.logits[:, -1, example["patch_answer"]]
+            #         circuit_no_K_v_diff = circuit_no_K_v_out.logits[:, -1, example["clean_answer"]] - \
+            #                                 circuit_no_K_v_out.logits[:, -1, example["patch_answer"]]
+            #         mean_change_in_diff += abs(circuit_no_K_v_diff - circuit_no_K_diff)
+            #     mean_change_in_diff /= num_examples
+            #     if mean_change_in_diff > max_incompleteness:
+            #         max_incompleteness = mean_change_in_diff
+            #         max_incompleteness_feature = feature
+            # K.add(max_incompleteness_feature)
 
         # compute incompleteness
         model_no_K_diff = 0.
         circuit_features_no_K = circuit_feature_set.difference(K)
         completeness = 0.
-        for example in eval_dataset:
+        for example in tqdm(eval_dataset, desc="Evaluating completeness", total=len(eval_dataset)):
             model_no_K_out = run_with_ablated_features(self.model, example["clean_prefix"],
                                         self.dict_cfg.dir, self.dict_cfg.size,
                                         K, submodule_to_autoencoder, 
@@ -425,20 +463,15 @@ class Circuit:
         return {"min_minimality": min_minimality,
                 "minimality_per_node": minimality_per_node}
 
-
     def get_feature_list(self):
-        def _normalize_name(name):
-            layer, feat_idx, submodule_type = name.split("_")
-            return f"{submodule_type}_{layer}/{feat_idx}"
-
         feature_set = set()
         # Depth-first search
         def _dfs(curr_node):
             if curr_node.name != "y":
-                feature_set.add(_normalize_name(curr_node.name))
+                feature_set.add(self._normalize_name(curr_node.name))
             # if children, go through each
             for child in curr_node.children:
-                feature_set.add(_normalize_name(child.name))
+                feature_set.add(self._normalize_name(child.name))
                 _dfs(child)
 
         _dfs(self.root)
@@ -502,11 +535,13 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", "-d", type=str, default="/share/projects/dictionary_circuits/data/phenomena/simple.json")
     parser.add_argument("--num_examples", "-n", type=int, default=10,
                         help="Number of example pairs to use in the causal search.")
+    parser.add_argument("--threshold", "-t", type=float, default=0.05)
     parser.add_argument("--patch_method", "-p", type=str, choices=["all-folded", "separate", "ig", "exact"],
                         default="separate", help="Method to use for attribution patching.")
     parser.add_argument("--sequence_aggregation", type=str, choices=["final_pos_only", "sum", "max"], default="final_pos_only",)
-    parser.add_argument("--chainrule", action="store_true", help="Use chainrule to evaluate circuit.", default=True)
-    parser.add_argument("--evaluate", action="store_true", help="Load and evaluate a circuit.", default=False)
+    parser.add_argument("--chainrule", action="store_true", help="Use chainrule to evaluate circuit.")
+
+    parser.add_argument("--evaluate", action="store_true", help="Load and evaluate a circuit.")
     parser.add_argument("--circuit_path", type=str, default=None, help="Path to circuit to load.")
     parser.add_argument("--seed", type=int, default=12, help="Random seed.")
     args = parser.parse_args()
@@ -521,12 +556,20 @@ if __name__ == "__main__":
     model.local_model.requires_grad_(True)
     dataset = load_examples(args.dataset, args.num_examples, model, seed=args.seed, pad_to_length=16)
     dictionary_dir = os.path.join(args.dictionary_dir, args.model.split("/")[-1])
+
     if args.circuit_path is None:
-        save_path = args.dataset.split("/")[-1].split(".json")[0] + "_circuit.pkl"
+        save_path = "circuits/"     # save directory
+        save_path += os.path.splitext(os.path.basename(args.dataset))[0]   # basename (without extension) of dataset file
+        save_path += f"_circuit_threshold{args.threshold}_agg{args.sequence_aggregation.replace('_', '-')}_patch{args.patch_method}_seed{args.seed}"
+        if args.chainrule:
+            save_path += "_chain"
+        save_path += ".pkl"
     else:
         save_path = args.circuit_path
+    if not os.path.exists(os.path.dirname(save_path)):
+        os.makedirs(save_path)
 
-    circuit = Circuit(model, submodules, dictionary_dir, args.dictionary_size, dataset)
+    circuit = Circuit(model, submodules, dictionary_dir, args.dictionary_size, dataset, threshold=args.threshold)
     if args.evaluate:
         circuit.from_dict(save_path)
         faithfulness = circuit.evaluate_faithfulness()
