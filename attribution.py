@@ -110,11 +110,12 @@ def _pe_attrib_separate(
         total_effect = metric_patch.value - metric_clean.value
 
     effects = {}
+    grads_y_wrt_us_features = {}
     for submodule in submodules:
         patch_state, clean_state = hidden_states_patch[submodule], hidden_states_clean[submodule]
         effects[submodule] = (patch_state.value - clean_state.value).detach() * clean_state.value.grad * grad_y_wrt_downstream
-    grads_y_wrt_us_features = clean_state.value.grad * grad_y_wrt_downstream 
-    return EffectOut(effects, total_effect), grads_y_wrt_us_features # returns clean_state.value.grad if grad_y_wrt_downstream == 1
+        grads_y_wrt_us_features[submodule] = clean_state.value.grad * grad_y_wrt_downstream 
+    return EffectOut(effects, total_effect), grads_y_wrt_us_features
 
 def _pe_ig(
         clean,

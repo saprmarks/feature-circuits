@@ -159,10 +159,9 @@ class Circuit:
                 # check whether node already exists in circuit
                 if us_node_name in nodes_per_submod[us_submod]:
                     us_node = nodes_per_submod[us_submod][us_node.name]
-                    us_node.accumulated_gradient += grads_y_wrt_us_features[feature_idx]
-                    
+                    us_node.accumulated_gradient += grads_y_wrt_us_features[us_submod][feature_idx]
                 else:
-                    us_node = CircuitNode(name=us_node_name, accumulated_gradient=grads_y_wrt_us_features[feature_idx])
+                    us_node = CircuitNode(name=us_node_name, accumulated_gradient=grads_y_wrt_us_features[us_submod][feature_idx])
                     nodes_per_submod[us_submod].add(us_node)
                 ds_node.add_child(us_node, effect_on_parent=effects[us_submod][feature_idx].item())
 
