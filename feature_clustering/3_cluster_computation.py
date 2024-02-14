@@ -28,10 +28,10 @@ def run_clustering(X, ccfg):
 
 if __name__ == "__main__":
 
-    results_dir = "/home/can/feature_clustering/clustering_pythia-70m-deduped_tloss0.1_nsamples8192_npos64_filtered-induction_mlp-attn-resid"
+    results_dir = "/home/can/feature_clustering/clustering_pythia-70m-deduped_tloss0.1_nsamples1024_npos32_filtered-induction_mlp-attn-resid"
     data_source = "lin_effects" # activations or lin_effects
     device = "cuda:0"
-    CLUSTER_COUNTS = [10, 50, 100, 500, 1000]
+    CLUSTER_COUNTS = [10, 50, 75, 100, 200, 350, 500, 750, 1000]
 
     # Load config
     ccfg = ClusterConfig(**json.load(open(os.path.join(results_dir, "config.json"), "r")))

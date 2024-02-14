@@ -39,7 +39,8 @@ def pos_filter_sparse(X, ccfg, pos_idxs):
 
     ## Sparse X
     # Find the positions in indices[1] that are in pos_idxs
-    selected_positions = t.tensor([pos in pos_idxs for pos in X._indices()[1]])
+    pos_idxs = t.tensor(pos_idxs)
+    selected_positions = t.isin(X._indices()[1], pos_idxs)
 
     # Filter the indices and values
     filtered_indices = X._indices()[:, selected_positions]
@@ -51,7 +52,6 @@ def pos_filter_sparse(X, ccfg, pos_idxs):
 
     # Create the new sparse tensor
     new_size = t.Size([X.size(0), len(pos_idxs), ccfg.dictionary_size * ccfg.n_submodules])
-    print(f"Copying into new tensor: {new_size}")
     return t.sparse_coo_tensor(filtered_indices, filtered_values, new_size)
 
 def loss_idx_to_dataset_idx(idx, starting_indexes):

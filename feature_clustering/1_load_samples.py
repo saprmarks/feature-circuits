@@ -86,7 +86,7 @@ if __name__ == "__main__":
         loss_threshold=0.1,
         num_samples=2**13, # 8192
         n_pos=64,
-        submodules_generic = ['model.gpt_neox.layers.{}.mlp.dense_4h_to_h', 'model.gpt_neox.layers.{}.attention.dense', 'model.gpt_neox.layers.{}'],
+        submodules_generic = ['model.gpt_neox.layers.{}.mlp.dense_4h_to_h'],
         dictionary_size=512*64
         )
     
