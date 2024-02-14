@@ -1,5 +1,4 @@
 import torch as t
-import einops
 from attribution import patching_effect, EffectOut
 
 def consolidated_patching_on(model, dataset, upstream_submodules, upstream_dictionaries, metric_fn, method='separate', steps=10, grad_y_wrt_downstream=1, sequence_aggregation='final_pos_only'):
@@ -25,16 +24,9 @@ def consolidated_patching_on(model, dataset, upstream_submodules, upstream_dicti
         grads_y_wrt_us_features = {k : v[t.arange(len(final_token_positions)), final_token_positions-1] for k, v in grads_y_wrt_us_features.items()}
     elif sequence_aggregation == 'max':
         for k, v in effects.items(): # k: submodule, v: (batch_size, sequence_length, feature_dim)
-            max_values, max_indices = v.max(dim=1)
+            max_values, max_indices = v.max(dim=1, keepdim=True) # max_indices shape (batch_size, 1, feature_dim)
             effects[k] = max_values
-            # Indexing gradients directly as commented out below kills the process
-            # batch_indices = torch.arange(batch_size).view(-1, 1).expand_as(max_indices)
-            # selected_grads = grads_y_wrt_us_features[batch_indices, max_indices, :]
-            grads_rearranged = einops.rearrange(grads_y_wrt_us_features[k], 'batch seq d_feat -> batch d_feat seq')
-            selected_grads = t.zeros_like(max_values)
-            for batch_idx in range(v.shape[0]):
-                selected_grads[batch_idx] = grads_rearranged[batch_idx, t.arange(v.shape[2]), max_indices[batch_idx]]
-            grads_y_wrt_us_features[k] = selected_grads                       
+            grads_y_wrt_us_features[k] = t.gather(grads_y_wrt_us_features[k], dim=1, index=max_indices).squeeze(1)                      
     elif sequence_aggregation == 'sum':
         effects = {k : v.sum(dim=1) for k, v in effects.items()}
         grads_y_wrt_us_features = {k : v.sum(dim=1) for k, v in grads_y_wrt_us_features.items()}
