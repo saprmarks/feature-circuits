@@ -66,6 +66,8 @@ def loss_idx_to_dataset_idx(idx, starting_indexes):
 def get_tokenized_context_y(ccfg, dataset, doc_idx, final_token_in_context_index):
     """The length of idxs determines the batch size. Given idx in range(0, 10658635)
     and predicted token within sample, in range(1, 1024)."""
+    doc_idx = int(doc_idx)
+    final_token_in_context_index = int(final_token_in_context_index)
     y_idx = final_token_in_context_index + 1
     context_start_idx = y_idx - ccfg.n_pos
     context = dataset[doc_idx]['input_ids'][0][context_start_idx:y_idx]
