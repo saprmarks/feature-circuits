@@ -14,7 +14,7 @@ class Node:
         elif type(node) == tuple:
             submodule, feature = node
         else:
-            submodule, feat = node, None
+            submodule, feature = node, None
         self.submodule = submodule
         self.feature = feature
         

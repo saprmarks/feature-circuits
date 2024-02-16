@@ -1,8 +1,9 @@
 from collections import namedtuple
 import torch as t
 from tqdm import tqdm
+from tensordict import TensorDict
 
-EffectOut = namedtuple('EffectOut', ['effects', 'total_effect'])
+EffectOut = namedtuple('EffectOut', ['effects', 'deltas', 'grads', 'total_effect'])
 
 
 def _pe_attrib_all_folded(
@@ -55,11 +56,19 @@ def _pe_attrib_all_folded(
         total_effect = metric_patch.value - metric_clean.value
 
     effects = {}
+    deltas = {}
+    grads = {}
     for submodule in submodules:
         patch_state, clean_state = hidden_states_patch[submodule], hidden_states_clean[submodule]
-        effects[submodule] = (patch_state.value - clean_state.value).detach() * clean_state.value.grad
+        delta = (patch_state.value - clean_state.value).detach()
+        grad = clean_state.value.grad
+        effect = delta * grad
+        effects[submodule] = effect
+        deltas[submodule] = delta
+        grads[submodule] = grad
+        
 
-    return EffectOut(effects, total_effect)
+    return EffectOut(effects, deltas, grads, total_effect)
 
 def _pe_attrib_separate(
         clean,
@@ -68,7 +77,6 @@ def _pe_attrib_separate(
         submodules,
         dictionaries,
         metric_fn,
-        grad_y_wrt_downstream=1,
 ):
     hidden_states_clean = {}
 
@@ -110,11 +118,18 @@ def _pe_attrib_separate(
         total_effect = metric_patch.value - metric_clean.value
 
     effects = {}
+    deltas = {}
+    grads = {}
     for submodule in submodules:
         patch_state, clean_state = hidden_states_patch[submodule], hidden_states_clean[submodule]
-        effects[submodule] = (patch_state.value - clean_state.value).detach() * clean_state.value.grad * grad_y_wrt_downstream
-    grads_y_wrt_us_features = clean_state.value.grad * grad_y_wrt_downstream 
-    return EffectOut(effects, total_effect), grads_y_wrt_us_features # returns clean_state.value.grad if grad_y_wrt_downstream == 1
+        delta = (patch_state.value - clean_state.value).detach()
+        grad = clean_state.value.grad
+        effect = delta * grad
+        effects[submodule] = effect
+        deltas[submodule] = delta
+        grads[submodule] = grad
+
+    return EffectOut(effects, deltas, grads, total_effect)
 
 def _pe_ig(
         clean,
@@ -159,6 +174,8 @@ def _pe_ig(
         total_effect = metric_patch.value - metric_clean.value
 
     effects = {}
+    deltas = {}
+    grads = {}
     for submodule, dictionary in zip(submodules, dictionaries):
         patch_state, clean_state, residual = \
             hidden_states_patch[submodule], hidden_states_clean[submodule], residuals[submodule]
@@ -178,10 +195,14 @@ def _pe_ig(
                     metrics.append(metric_fn(model).save())
         metric = sum([m.value for m in metrics])
         metric.sum().backward()
-        grad = sum([f.grad for f in fs])
-        effects[submodule] = grad * (patch_state.value - clean_state.value) / steps
+        grad = sum([f.grad for f in fs]) / steps
+        delta = (patch_state.value - clean_state.value).detach()
+        effect = grad * delta
+        effects[submodule] = effect
+        deltas[submodule] = delta
+        grads[submodule] = grad
 
-    return EffectOut(effects, total_effect)
+    return EffectOut(effects, deltas, grads, total_effect)
 
 def _pe_exact(
         clean,
@@ -225,6 +246,7 @@ def _pe_exact(
         total_effect = metric_patch.value - metric_clean.value
 
     effects = {}
+    deltas = {}
     for submodule, dictionary in zip(submodules, dictionaries):
         patch_state, clean_state, residual = \
             hidden_states_patch[submodule], hidden_states_clean[submodule], residuals[submodule]
@@ -242,11 +264,13 @@ def _pe_exact(
                 else:
                     submodule.output = x_hat + residual.value
                 metric = metric_fn(model).save()
-            effect[tuple(idx)] = (metric.value - metric_clean.value).sum()
+            effect[idx] = (metric.value - metric_clean.value).sum()
+        delta = patch_state.value - clean_state.value
         
         effects[submodule] = effect
+        deltas[submodule] = delta
 
-    return EffectOut(effects, total_effect)
+    return EffectOut(effects, deltas, None, total_effect)
 
 def patching_effect(
         clean,
@@ -257,15 +281,41 @@ def patching_effect(
         metric_fn,
         method='all-folded',
         steps=10,
-        grad_y_wrt_downstream=None, # currently only used in circuit discovery, thus only implemented for separate method
 ):
     if method == 'all-folded':
         return _pe_attrib_all_folded(clean, patch, model, submodules, dictionaries, metric_fn)
     elif method == 'separate':
-        return _pe_attrib_separate(clean, patch, model, submodules, dictionaries, metric_fn, grad_y_wrt_downstream)
+        return _pe_attrib_separate(clean, patch, model, submodules, dictionaries, metric_fn)
     elif method == 'ig':
         return _pe_ig(clean, patch, model, submodules, dictionaries, metric_fn, steps=steps)
     elif method == 'exact':
         return _pe_exact(clean, patch, model, submodules, dictionaries, metric_fn)
     else:
         raise ValueError(f"Unknown method {method}")
+    
+def get_grad(clean, patch, model, upstream_submod, upstream_dictionary, downstream_submod, downstream_dictionary, downstream_features):
+    with model.invoke(clean, fwd_args={'inference' : False}):
+        x = upstream_submod.output
+        is_resid = (type(x.shape) == tuple)
+        if is_resid:
+            x = x[0]
+        x_hat, f = upstream_dictionary(x, output_features=True)
+        grad = f.grad.save()
+        residual = (x - x_hat).detach()
+        if is_resid:
+            upstream_submod.output[0][:] = x_hat + residual
+        else:
+            upstream_submod.output = x_hat + residual
+        
+        y = downstream_submod.output
+        is_resid = (type(y.shape) == tuple)
+        if is_resid:
+            y = y[0]
+        f_downstream = downstream_dictionary.encode(y).save()
+    
+    grads = TensorDict()
+    for feature_idx in downstream_features:
+        f_downstream.value[tuple(feature_idx)].backward(retain_graph=True)
+        grads[feature_idx] = grad.value
+    return grads
+
