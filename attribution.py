@@ -17,7 +17,8 @@ def _pe_attrib_all_folded(
     # get clean states
     hidden_states_clean = {}
     with model.invoke(clean, fwd_args={'inference' : False}) as invoker:
-        for submodule, dictionary in zip(submodules, dictionaries):
+        for submodule in submodules:
+            dictionary = dictionaries[submodule]
             x = submodule.output
             is_resid = (type(x.shape) == tuple)
             if is_resid:
@@ -45,7 +46,8 @@ def _pe_attrib_all_folded(
     else:
         hidden_states_patch = {}
         with model.invoke(patch):
-            for submodule, dictionary in zip(submodules, dictionaries):
+            for submodule in submodules:
+                dictionary = dictionaries[submodule]
                 x = submodule.output
                 is_resid = (type(x.shape) == tuple)
                 if is_resid:
@@ -53,7 +55,7 @@ def _pe_attrib_all_folded(
                 f = dictionary.encode(x)
                 hidden_states_patch[submodule] = f.save()
             metric_patch = metric_fn(model).save()
-        total_effect = metric_patch.value - metric_clean.value
+        total_effect = (metric_patch.value - metric_clean.value).detach()
 
     effects = {}
     deltas = {}
@@ -80,7 +82,8 @@ def _pe_attrib_separate(
 ):
     hidden_states_clean = {}
 
-    for submodule, dictionary in zip(submodules, dictionaries):
+    for submodule in submodules:
+        dictionary = dictionaries[submodule]
         with model.invoke(clean, fwd_args={'inference' : False}):
             x = submodule.output
             is_resid = (type(x.shape) == tuple)
@@ -107,7 +110,8 @@ def _pe_attrib_separate(
     else:
         hidden_states_patch = {}
         with model.invoke(patch):
-            for submodule, dictionary in zip(submodules, dictionaries):
+            for submodule in submodules:
+                dictionary = dictionaries[submodule]
                 x = submodule.output
                 is_resid = (type(x.shape) == tuple)
                 if is_resid:
@@ -115,7 +119,7 @@ def _pe_attrib_separate(
                 f = dictionary.encode(x)
                 hidden_states_patch[submodule] = f.save()
             metric_patch = metric_fn(model).save()
-        total_effect = metric_patch.value - metric_clean.value
+        total_effect = (metric_patch.value - metric_clean.value).detach()
 
     effects = {}
     deltas = {}
@@ -145,7 +149,8 @@ def _pe_ig(
     residuals = {}
     is_resids = {}
     with model.invoke(clean):
-        for submodule, dictionary in zip(submodules, dictionaries):
+        for submodule in submodules:
+            dictionary = dictionaries[submodule]
             x = submodule.output
             is_resids[submodule] = (type(x.shape) == tuple)
             if is_resids[submodule]:
@@ -164,19 +169,21 @@ def _pe_ig(
         total_effect = None
     else:
         with model.invoke(patch):
-            for submodule, dictionary in zip(submodules, dictionaries):
+            for submodule in submodules:
+                dictionary = dictionaries[submodule]
                 x = submodule.output
                 if is_resids[submodule]:
                     x = x[0]
                 f = dictionary.encode(x)
                 hidden_states_patch[submodule] = f.save()
             metric_patch = metric_fn(model).save()
-        total_effect = metric_patch.value - metric_clean.value
+        total_effect = (metric_patch.value - metric_clean.value).detach()
 
     effects = {}
     deltas = {}
     grads = {}
-    for submodule, dictionary in zip(submodules, dictionaries):
+    for submodule in submodules:
+        dictionary = dictionaries[submodule]
         patch_state, clean_state, residual = \
             hidden_states_patch[submodule], hidden_states_clean[submodule], residuals[submodule]
         with model.forward(inference=False) as runner:
@@ -216,7 +223,8 @@ def _pe_exact(
     hidden_states_clean = {}
     residuals = {}
     with model.invoke(clean):
-        for submodule, dictionary in zip(submodules, dictionaries):
+        for submodule in submodules:
+            dictionary = dictionaries[submodule]
             x = submodule.output
             is_resid = (type(x.shape) == tuple)
             if is_resid:
@@ -235,7 +243,8 @@ def _pe_exact(
     else:
         hidden_states_patch = {}
         with model.invoke(patch):
-            for submodule, dictionary in zip(submodules, dictionaries):
+            for submodule in submodules:
+                dictionary = dictionaries[submodule]
                 x = submodule.output
                 is_resid = (type(x.shape) == tuple)
                 if is_resid:
@@ -247,7 +256,8 @@ def _pe_exact(
 
     effects = {}
     deltas = {}
-    for submodule, dictionary in zip(submodules, dictionaries):
+    for submodule in submodules:
+        dictionary = dictionaries[submodule]
         patch_state, clean_state, residual = \
             hidden_states_patch[submodule], hidden_states_clean[submodule], residuals[submodule]
         effect = t.zeros_like(clean_state.value)
