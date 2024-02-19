@@ -152,3 +152,15 @@ def load_submodules_and_dictionaries_from_generic(model: LanguageModel, submod_n
         all_submodules.append(submodules_layer)
         all_dictionaries.append(dictionaries_layer)
     return all_submodule_names, all_submodules, all_dictionaries
+
+def load_submodules_from_generic(model: LanguageModel, submod_names_generic: list):
+    num_layers = model.config.num_hidden_layers
+    all_submodules = []
+    for layer in range(num_layers):
+        submodules_layer = []
+        for submodule_name in submod_names_generic:
+            submodule_name = submodule_name.format(str(layer))
+            submodule = load_submodule(model, submodule_name)
+            submodules_layer.append(submodule)
+        all_submodules.append(submodules_layer)
+    return all_submodules

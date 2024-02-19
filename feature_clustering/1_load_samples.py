@@ -11,7 +11,7 @@ from transformers import AutoTokenizer
 import sys
 sys.path.append("/home/can/")
 sys.path.append("/home/can/dictionary-circuits/")
-from cluster_utils import ClusterConfig, get_tokenized_context_y, get_string_context_y, loss_idx_to_dataset_idx
+from cluster_utils import ClusterConfig, get_tokenized_context_y
 from loading_utils import submodule_name_to_type
 
 
@@ -85,8 +85,8 @@ if __name__ == "__main__":
         model_name="pythia-70m-deduped",
         loss_threshold=0.1,
         num_samples=2**13, # 8192
-        n_pos=64,
-        submodules_generic = ['model.gpt_neox.layers.{}.mlp.dense_4h_to_h'],
+        n_pos=128,
+        submodules_generic = ["model.gpt_neox.layers.{}.attention.dense", 'model.gpt_neox.layers.{}.mlp.dense_4h_to_h', "model.gpt_neox.layers.{}"],
         dictionary_size=512*64
         )
     

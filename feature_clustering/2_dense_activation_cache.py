@@ -11,14 +11,12 @@ import einops
 
 import sys
 sys.path.append('/home/can/dictionary-circuits/')
-from loading_utils import load_submodules_and_dictionaries_from_generic, DictionaryCfg, submodule_name_to_type
+from loading_utils import load_submodules_from_generic
 from cluster_utils import ClusterConfig, get_tokenized_context_y
 
 # Set enviroment specific constants
-dense_activations = False # If true, caching dense activations and gradients from model component output, else caching sparse dictionaries activations and gradients
-batch_size = 8
-results_dir = "/home/can/feature_clustering/clustering_pythia-70m-deduped_tloss0.1_nsamples8192_npos128_filtered-induction_mlp-attn-resid"
-dictionary_dir="/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped"
+batch_size = 64
+results_dir = "/home/can/feature_clustering/clustering_pythia-70m-deduped_tloss0.1_nsamples8192_npos64_filtered-induction_mlp-attn-resid"
 tokenized_dataset_dir = "/home/can/data/pile_test_tokenized_600k/"
 device = "cuda:0"
 
@@ -27,10 +25,9 @@ ccfg = ClusterConfig(**json.load(open(os.path.join(results_dir, "config.json"), 
 final_token_idxs = torch.load(os.path.join(results_dir, "final_token_idxs.pt"))
 dataset = datasets.load_from_disk(tokenized_dataset_dir)
 model = LanguageModel("EleutherAI/"+ccfg.model_name, device_map=device)
-dict_cfg = DictionaryCfg(dictionary_size=ccfg.dictionary_size, dictionary_dir=dictionary_dir)
-submodule_names, submodules, dictionaries = load_submodules_and_dictionaries_from_generic(model, ccfg.submodules_generic, dict_cfg)
+submodules = load_submodules_from_generic(model, ccfg.submodules_generic)
 n_batches = ccfg.num_samples // batch_size # Not achieving the exact number of samples if num_samples is not divisible by batch_size
-ccfg.n_submodules = len(submodule_names[0]) * model.config.num_hidden_layers
+ccfg.n_submodules = len(submodules[0]) * model.config.num_hidden_layers
 # save n_submodules to the config
 with open(os.path.join(results_dir, "config.json"), "w") as f:
     json.dump(ccfg.__dict__, f)
@@ -38,7 +35,7 @@ with open(os.path.join(results_dir, "config.json"), "w") as f:
 # Approximate size of activation_results_cpu and lin_effect_results_cpu 
 # Sparse activations
 n_bytes_per_nonzero = 4 # using float32: 4 bytes per non-zero value
-n_nonzero_per_sample = ccfg.n_pos * ccfg.dictionary_size * ccfg.n_submodules # upper bound if dense activations
+n_nonzero_per_sample = ccfg.n_pos * model.config.hidden_size * ccfg.n_submodules
 total_size = n_nonzero_per_sample * n_batches * batch_size * n_bytes_per_nonzero
 print(f"Total size of generated data (feature activations): {total_size / 1024**3} GB")
 
@@ -66,17 +63,9 @@ def metric_fn(logits, target_token_id): # logits shape: (batch_size, seq_len, vo
     return m.sum()
 
 # Cache feature activations and gradients
-## Sparse format on cpu, using COO bc it allows concatenation
-activation_results_cpu = t.sparse_coo_tensor(
-    size=(0, ccfg.n_pos, ccfg.dictionary_size * ccfg.n_submodules), 
-    dtype=torch.float32, 
-    device='cpu'
-    )
-lin_effect_results_cpu = t.sparse_coo_tensor(
-    size=(0, ccfg.n_pos, ccfg.dictionary_size * ccfg.n_submodules), 
-    dtype=torch.float32, 
-    device='cpu'
-    )
+## Dense format on cpu
+activation_results_cpu = t.zeros((n_batches * batch_size, ccfg.n_pos, model.config.hidden_size * ccfg.n_submodules), dtype=torch.float16, device='cpu')
+lin_effect_results_cpu = t.zeros_like(activation_results_cpu)
 
 for batch_idx in trange(n_batches, desc="Caching activations in batches", total=n_batches):
     print(f"GPU Allocated memory: {torch.cuda.memory_allocated(device)/1024**2 :.2f} MB")
@@ -84,42 +73,36 @@ for batch_idx in trange(n_batches, desc="Caching activations in batches", total=
 
     contexts, ys = next(loader)
     contexts, ys = contexts.to(device), ys.to(device)
-    activations = t.zeros((ccfg.n_submodules, batch_size, ccfg.n_pos, ccfg.dictionary_size), dtype=t.float32, device=device)
-    gradients = t.zeros((ccfg.n_submodules, batch_size, ccfg.n_pos, ccfg.dictionary_size), dtype=t.float32, device=device)
+    activations = t.zeros((ccfg.n_submodules, batch_size, ccfg.n_pos, model.config.hidden_size), dtype=t.float32, device=device)
+    gradients = t.zeros((ccfg.n_submodules, batch_size, ccfg.n_pos, model.config.hidden_size), dtype=t.float32, device=device)
 
     with model.invoke(contexts, fwd_args={'inference': False}) as invoker:
         for layer in range(model.config.num_hidden_layers):
-            for i, (sm, ae) in enumerate(zip(submodules[layer], dictionaries[layer])):
+            for i, sm in enumerate(submodules[layer]):
                 x = sm.output
                 is_resid = (type(x.shape) == tuple)
                 if is_resid:
                     x = x[0]
-                f = ae.encode(x)
-                activations[i] = f.detach().save()
-                gradients[i] = f.grad.detach().save() # [batch_size, seq_len, vocab_size]
-
-                x_hat = ae.decode(f)
-                residual = (x - x_hat).detach()
-                if is_resid:
-                    sm.output[0][:] = x_hat + residual
-                else:
-                    sm.output = x_hat + residual
+                activations[i] = x.detach().save()
+                gradients[i] = x.grad.detach().save() # [batch_size, seq_len, vocab_size]
         logits = model.embed_out.output # [batch_size, seq_len, vocab_size]
         metric_fn(logits=logits, target_token_id=ys).backward()
         
-    activations = einops.rearrange(activations, 'n_submodules batch_size n_pos dictionary_size -> batch_size n_pos (n_submodules dictionary_size)')
-    gradients = einops.rearrange(gradients, 'n_submodules batch_size n_pos dictionary_size -> batch_size n_pos (n_submodules dictionary_size)')
+    activations = einops.rearrange(activations, 'n_submodules batch_size n_pos hidden_size -> batch_size n_pos (n_submodules hidden_size)')
+    gradients = einops.rearrange(gradients, 'n_submodules batch_size n_pos hidden_size -> batch_size n_pos (n_submodules hidden_size)')
     
     # Calculate linear effects
     lin_effects = (activations * gradients) # This elementwise mult would not be faster when setting activations to sparse, as gradients are dense.
 
-    ## Sparse format on cpu
-    activation_results_cpu = t.cat([activation_results_cpu, activations.to_sparse().cpu()], dim=0)
-    lin_effect_results_cpu = t.cat([lin_effect_results_cpu, lin_effects.to_sparse().cpu()], dim=0)
+    # Move to cpu
+    ## Dense format on cpu
+    batch_start_idx = batch_idx * batch_size
+    results_end_idx = batch_start_idx + batch_size
+    activation_results_cpu[batch_start_idx:results_end_idx] = activations.cpu()
+    lin_effect_results_cpu[batch_start_idx:results_end_idx] = lin_effects.cpu()
 
     torch.cuda.empty_cache()
     gc.collect()
 
-# Save results in sparse format
-t.save(activation_results_cpu, os.path.join(results_dir, f"activations.pt"))
-t.save(lin_effect_results_cpu, os.path.join(results_dir, f"lin_effects.pt"))
+t.save(activation_results_cpu, os.path.join(results_dir, f"dense_activations.pt"))
+t.save(lin_effect_results_cpu, os.path.join(results_dir, f"dense_lin_effects.pt"))
