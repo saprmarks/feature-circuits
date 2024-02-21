@@ -125,14 +125,15 @@ def compute_similarity_matrix(X1, X2, angular=False):
 def compute_similarity_matrix_blockwise(angular=False, absolute=False, block_length=4, device="cuda:0"):
     torch.cuda.empty_cache()
     gc.collect()
-    print(f"GPU Allocated memory: {torch.cuda.memory_allocated(device)/1024**2 :.2f} MB")
-    print(f"GPU Cached memory: {torch.cuda.memory_reserved(device)/1024**2 :.2f} MB")
 
     C_act = t.zeros(ccfg.num_samples, ccfg.num_samples, device=device, dtype=t.float32)
     C_lin = t.zeros_like(C_act)
     n_blocks = ccfg.num_samples // block_length
     for i in trange(n_blocks, desc="Computing similarity blockwise, ROWS"):
         for j in trange(n_blocks, desc="COLS"):
+            
+            print(f"GPU Allocated memory: {torch.cuda.memory_allocated(device)/1024**2 :.2f} MB")
+            print(f"GPU Cached memory: {torch.cuda.memory_reserved(device)/1024**2 :.2f} MB")
             X_row_act, X_row_lin = cache_activations_and_effects(contexts[i], ys[i])
             X_col_act, X_col_lin = cache_activations_and_effects(contexts[j], ys[j])
             C_block_act = compute_similarity_matrix(X_row_act, X_col_act, angular=angular)
