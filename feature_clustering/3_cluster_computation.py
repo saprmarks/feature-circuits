@@ -56,12 +56,12 @@ def run_clustering(X, ccfg, block_length=1024, device="cuda:0", aggregation_desc
 if __name__ == "__main__":
 
     # Define Experiment variables
-    results_dir = "/home/can/feature_clustering/clustering_pythia-70m-deduped_tloss0.1_nsamples8192_npos64_filtered-induction_mlp-attn-resid"
-    CLUSTER_COUNTS = [10, 50, 100, 200, 350, 500, 750, 1000, 1250]
-    is_dense = True
+    results_dir = "/home/can/feature_clustering/clustering_pythia-70m-deduped_tloss0.1_nsamples16384_npos128_filtered-induction_attn-mlp-resid"
+    CLUSTER_COUNTS = [100, 500, 1000, 2500, 5000, 7500, 10000]#[10, 50, 100, 200, 350, 500, 750, 1000, 1250]
+    is_dense = False
     data_source = "activations" # activations or lin_effects
-    pos_aggregation = "sum" # "sum" or int x for final x positions
-    block_length = 64
+    pos_aggregation = "1" # "sum" or int x for final x positions
+    block_length = 512
     device = "cuda:0"
 
     # Add cluster counts to config and save
@@ -75,8 +75,9 @@ if __name__ == "__main__":
         dense_name = ""
 
     # Load data and perform aggregation over positions
-    X = t.load(os.path.join(results_dir, dense_name + data_source + ".pt"))
-    X_pos_aggregated, aggregation_description = pattern_matrix_pos_aggregated(X, ccfg, pos_aggregation)
+    X_pos_aggregated = t.load(os.path.join(results_dir, dense_name + data_source + ".pt"))
+    aggregation_description = "finalpos"
+    # X_pos_aggregated, aggregation_description = pattern_matrix_pos_aggregated(X, ccfg, pos_aggregation)
     print(f"Loaded {data_source} of shape {X_pos_aggregated.shape}")
 
     # Run clustering

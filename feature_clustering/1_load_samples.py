@@ -37,13 +37,16 @@ def contains_skip_trigram(context_ids, answer_id):
 def fill_sample_dict(tokenizer, ccfg, losses_dir, dataset, starting_indexes, n_docs=600000):
     # Load indices of tokens with low loss
     losses = t.load(losses_dir) # Loss for predicting the next token
-    token_loss_idxs = (losses < ccfg.loss_threshold).nonzero().flatten() # Indices of final tokens in context with low loss on the next token prediction
+    if ccfg.loss_threshold == "inf":
+        token_loss_idxs = t.arange(losses.flatten().size(0))
+    else:
+        token_loss_idxs = (losses < ccfg.loss_threshold).nonzero().flatten() # Indices of final tokens in context with low loss on the next token prediction
 
     # Find final tokens with 
     # 1. loss lower than ccfg.loss_threshold
     # 2. a context longer or equal to ccfg.n_pos
     # 3. not containing skip trigrams
-    valid_final_token_idxs = t.zeros((ccfg.num_samples, 2)) # document index, token in doc index
+    valid_final_token_idxs = t.zeros((ccfg.num_samples, 2), dtype=t.int64) # document index, token in doc index
     valid_cnt = 0
     sample_dict = defaultdict(list) # Populate dictionary with samples of (context, y)
     progress_bar = tqdm(total=ccfg.num_samples, desc="Loading samples")
@@ -61,7 +64,7 @@ def fill_sample_dict(tokenizer, ccfg, losses_dir, dataset, starting_indexes, n_d
             if not contains_skip_trigram(context_ids, answer_id):
                 valid_final_token_idxs[valid_cnt] = t.tensor([doc_idx, final_token_idx], dtype=t.int64)
                 sample_dict[valid_cnt] = dict(
-                    context=tokenizer.decode(context_ids), 
+                    context=[tokenizer.decode(tok_id) for tok_id in context_ids], 
                     answer=tokenizer.decode(answer_id), 
                     document_idx=doc_idx
                     )
@@ -84,7 +87,7 @@ if __name__ == "__main__":
     ccfg = ClusterConfig(
         model_name="pythia-70m-deduped",
         loss_threshold=0.1,
-        num_samples=2**13, # 8192
+        num_samples=2**14, # 32k
         n_pos=128,
         submodules_generic = ["model.gpt_neox.layers.{}.attention.dense", 'model.gpt_neox.layers.{}.mlp.dense_4h_to_h', "model.gpt_neox.layers.{}"],
         dictionary_size=512*64
@@ -110,11 +113,11 @@ if __name__ == "__main__":
     sample_dict, final_token_idxs= fill_sample_dict(tokenizer, ccfg, losses_dir, dataset, starting_indexes, n_docs=600000)
 
     ## Save samples in string format for displaying 
-    sample_dict_path = os.path.join(results_dir, "samples.json")
+    sample_dict_path = os.path.join(results_dir, f"samples-tloss{ccfg.loss_threshold}-nsamples{ccfg.num_samples}-nctx{ccfg.n_pos}.json")
     with open(sample_dict_path, "w") as f:
         json.dump(sample_dict, f)
     
     ## Save final_token_idxs to torch tensor for data loading in feature cache
     # final token idx have shape (num_samples, 2) where the first column is the document index and the second column is the index of the token in the document
-    final_token_idxs_path = os.path.join(results_dir, "final_token_idxs.pt")
+    final_token_idxs_path = os.path.join(results_dir, f"final_token_idxs-tloss{ccfg.loss_threshold}-nsamples{ccfg.num_samples}-nctx{ccfg.n_pos}.pt")
     t.save(final_token_idxs, final_token_idxs_path)

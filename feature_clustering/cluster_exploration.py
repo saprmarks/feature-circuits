@@ -67,18 +67,18 @@ def find_centroids(X, clusters, n_clusters):
 #%%
 ########## Analysis of Clusters ##########
 
-data_source = "lin_effects" # activations or lin_effects
-pos_aggregation = "sum" # "sum" or int x for final x positions
-nsamples = 1024
-nctx = 32
-is_dense = True
+data_source = "activations" # activations or lin_effects
+pos_aggregation = 1 # "sum" or int x for final x positions
+nsamples = 8192
+nctx = 64
+is_dense = False
 
 if is_dense:
     dense_name = "dense_"
 else:
     dense_name = ""
 
-results_dir = f"/home/can/feature_clustering/clustering_pythia-70m-deduped_tloss0.1_nsamples{nsamples}_npos{nctx}_filtered-induction_mlp-attn-resid"
+results_dir = f"/home/can/feature_clustering/clustering_pythia-70m-deduped_tloss0.1_nsamples{nsamples}_npos{nctx}_filtered-induction_attn-mlp-resid"
 ccfg = ClusterConfig(**json.load(open(os.path.join(results_dir, "config.json"), "r")))
 X = t.load(os.path.join(results_dir, dense_name + data_source + ".pt"))
 X, aggregation_name = pattern_matrix_pos_aggregated(X, ccfg, pos_aggregation)
