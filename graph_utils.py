@@ -11,7 +11,11 @@ class WeightedDAG:
     # edges : a dict of the form {node1: {node2: weight, ...}, ...}
     # we assume no parallel edges
     # if weight is None, treat the edge weight as unknown
-    def __init__(self, nodes={}, edges={}):
+    def __init__(self, nodes=None, edges=None):
+        if nodes is None:
+            nodes = {}
+        if edges is None:
+            edges = {}
         self._nodes = nodes
         self._edges = defaultdict(dict, edges)
         for node in edges.keys():
@@ -45,6 +49,9 @@ class WeightedDAG:
 
     def remove_node(self, node):
         del self._nodes[node]
+        del self._edges[node]
+        for nd in self.get_parents(node):
+            del self._edges[nd][node]
     
     # add an edge from node1 to node2 with weight, or update the weight if the edge already exists
     def add_edge(self, node1, node2, weight=None):
@@ -97,6 +104,12 @@ class WeightedDAG:
                 if random.random() < p:
                     dag.add_edge(nu, nd, random.uniform(*weight_range))
         return dag
+    
+    def copy(self):
+        out = WeightedDAG()
+        out._nodes = self._nodes.copy()
+        out._edges = self._edges.copy()
+        return out
 
     
 def deduce_edge_weights(dag, oomphs):
@@ -125,7 +138,7 @@ def deduce_edge_weights(dag, oomphs):
 
 if __name__ == "__main__":
 
-    random_dag = WeightedDAG.random(100, p=0.5, weight_range=(0, 1))
+    random_dag = WeightedDAG.random(100, p=0.5, weight_range=(-1, 1))
     topo_order = random_dag.topological_sort()
     # check that topo_order is a valid topological order
     for idxu, nu in enumerate(topo_order):
