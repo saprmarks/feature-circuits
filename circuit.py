@@ -86,10 +86,9 @@ def get_circuit(
             clean,
             patch,
             model,
+            dictionaries,
             upstream_submods,
-            upstream_dictionaries,
             downstream_submod,
-            dictionaries[downstream_submod],
             feat_idxs[downstream_submod],
         )
         for downstream_node in nodes_by_component[downstream_submod]:

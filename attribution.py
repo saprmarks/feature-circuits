@@ -302,24 +302,26 @@ def patching_effect(
         return _pe_exact(clean, patch, model, submodules, dictionaries, metric_fn)
     else:
         raise ValueError(f"Unknown method {method}")
-    
-def get_grad(clean, patch, model, upstream_submods, upstream_dictionaries, downstream_submod, downstream_dictionary, downstream_features):
+
+def get_grad(clean, patch, model, dictionaries, upstream_submods, downstream_submod, downstream_features):
     grad = TensorDict()
     with model.invoke(clean, fwd_args={'inference' : False}):
-        for upstream_submod, upstream_dictionary in zip(upstream_submods, upstream_dictionaries):
+        for upstream_submod in upstream_submods:
+            upstream_dictionary = dictionaries[upstream_submod]
             x = upstream_submod.output
             is_resid = (type(x.shape) == tuple)
             if is_resid:
                 x = x[0]
             x_hat, f = upstream_dictionary(x, output_features=True)
             grad[upstream_submod] = f.grad.save()
-            residual = (x - x_hat)
+            residual = x - upstream_dictionary(x)
             if is_resid:
                 upstream_submod.output[0][:] = x_hat + residual
             else:
                 upstream_submod.output = x_hat + residual
         
         y = downstream_submod.output
+        downstream_dictionary = dictionaries[downstream_submod]
         is_resid = (type(y.shape) == tuple)
         if is_resid:
             y = y[0]
