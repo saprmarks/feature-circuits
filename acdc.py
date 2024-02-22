@@ -52,8 +52,8 @@ def patching_on_y(model, dataset, submodules, dictionaries, method='separate', s
     prefix_lengths_wo_pad = t.Tensor(prefix_lengths_wo_pad).int()
 
     def metric_fn(model):
-        indices_first_dim = t.arange(clean_answer_idxs.shape[0])
-        logits = model.embed_out.output[indices_first_dim, prefix_lengths_wo_pad-1, :]
+        indices_batch_dim = t.arange(clean_answer_idxs.shape[0])
+        logits = model.embed_out.output[indices_batch_dim, prefix_lengths_wo_pad-1, :]
         logit_diff = t.gather(
             logits, dim=-1, index=patch_answer_idxs.unsqueeze(-1)
         ) - t.gather(

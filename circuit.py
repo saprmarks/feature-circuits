@@ -263,6 +263,19 @@ def mean_dag(dag, dim, crosses=True):
         for e in new_dag.edges:
             new_dag.add_edge(e[0], e[1], weight=new_dag.edge_weight(e) / dim_size)
         return new_dag
+    
+def split_dataset(dataset):
+    clean_inputs = t.cat([example['clean_prefix'] for example in dataset], dim=0)
+    patch_inputs = t.cat([example['patch_prefix'] for example in dataset], dim=0)
+    final_token_positions = t.tensor([example['prefix_length_wo_pad'] for example in dataset]).int() # token position before padding, 1-indexed
+    clean_answer_idxs, patch_answer_idxs = [], []
+    for example in dataset:
+        clean_answer_idxs.append(example['clean_answer'])
+        patch_answer_idxs.append(example['patch_answer'])
+    clean_answer_idxs = t.Tensor(clean_answer_idxs).long()
+    patch_answer_idxs = t.Tensor(patch_answer_idxs).long()
+    print(clean_inputs.shape, patch_inputs.shape, clean_answer_idxs.shape, patch_answer_idxs.shape, final_token_positions.shape)
+    return clean_inputs, patch_inputs, clean_answer_idxs, patch_answer_idxs, final_token_positions
 
 
 if __name__ == "__main__":
@@ -270,7 +283,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", "-m", type=str, help="Name of model on which dictionaries were trained.",
                         default="EleutherAI/pythia-70m-deduped")
     parser.add_argument("--use_attn", type=bool, help="Whether to include attention features.",
-                        default=False)
+                        default=False) # TODO: Using attn and MLP simultaneously is not supported, bc they are passed in submodule array in hierarchy (i.e. the algorithm assumes output of attn is the innput to MLP in the same layer), but they run in parallel so have no gradients onto each other. We have to implement layer hierarchy (insetead of submodule hierarchy) across this scircuit discovery method.
     parser.add_argument("--use_mlp", type=bool, help="Whether to include MLP features.",
                         default=True)
     parser.add_argument("--use_resid", type=bool, help="Whether to include residual stream features.",
@@ -282,7 +295,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", "-d", type=str,
                         default="/share/projects/dictionary_circuits/data/phenomena/simple.json")
     parser.add_argument("--num_examples", "-n", type=int, help="Number of example pairs to use in the causal search.",
-                        default=10)
+                        default=1)
     parser.add_argument("--node_threshold", "-nt", type=float, help="Threshold for node inclusion.",
                         default=0.1)
     parser.add_argument("--edge_threshold", "-et", type=float, help="Threshold for edge inclusion.",
@@ -291,13 +304,17 @@ if __name__ == "__main__":
                         default="separate", choices=["all-folded", "separate", "ig", "exact"])
     parser.add_argument("--sequence_aggregation", type=str, 
                         default="final_pos_only", choices=["final_pos_only", "sum", "max"])
-    parser.add_argument("--evaluate", action="store_true", help="Load and evaluate a circuit.") # extra file
-    parser.add_argument("--circuit_path", type=str, default=None, help="Path to circuit to load.") # extra file
-    parser.add_argument("--seed", type=int, default=12, help="Random seed.")
+    parser.add_argument("--seed", type=int, help="Random seed.",
+                        default=12)
     parser.add_argument("--device", type=str, help="Device to use for computation.",
                         default="cuda:0")
     parser.add_argument("--pad_to_length", type=int, help="Pad examples to this length.",
                         default=16)
+    parser.add_argument("--circuit_path", type=str, help="Path to save circuit to.",
+                        default=None)
+    # Arguments for circuit evaluation which have been moved to circuit_evaluation.py
+    # parser.add_argument("--evaluate", action="store_true", help="Load and evaluate a circuit.") # extra file
+    # parser.add_argument("--circuit_path", type=str, default=None, help="Path to circuit to load.") # extra file
     args = parser.parse_args()
 
     # Create directory to save circuit
@@ -319,18 +336,30 @@ if __name__ == "__main__":
         model, use_attn=args.use_attn, use_mlp=args.use_mlp, use_resid=args.use_resid,
         dict_path=dictionary_dir, dict_size=args.dictionary_size, device=args.device)
 
-    # Test for now
-    clean_idx = model.tokenizer(" is").input_ids[-1]
-    patch_idx = model.tokenizer(" are").input_ids[-1]
+    # # Simple test case
+    # clean_idx = model.tokenizer(" is").input_ids[-1]
+    # patch_idx = model.tokenizer(" are").input_ids[-1]
 
-    # Define metric: logit diff patch-clean
+    # # Define metric: logit diff patch-clean
+    # def metric_fn(model):
+    #     return model.embed_out.output[:,-1,patch_idx] - model.embed_out.output[:,-1,clean_idx]
+
+    clean_inputs, patch_inputs, clean_answer_idxs, patch_answer_idxs, final_token_positions = split_dataset(dataset)
+
     def metric_fn(model):
-        return model.embed_out.output[:,-1,patch_idx] - model.embed_out.output[:,-1,clean_idx]
+        indices_batch_dim = t.arange(clean_answer_idxs.shape[0])
+        logits = model.embed_out.output[indices_batch_dim, final_token_positions-1, :]
+        logit_diff = t.gather(
+            logits, dim=-1, index=patch_answer_idxs.unsqueeze(-1)
+        ) - t.gather(
+            logits, dim=-1, index=clean_answer_idxs.unsqueeze(-1)
+        )
+        return logit_diff.squeeze(-1)
 
     # Run circuit discovery
     dag = get_circuit(
-        ["The man", "The tall boy"],
-        ["The men", "The tall boys"],
+        clean_inputs, # ["The man", "The tall boy"],
+        patch_inputs, # ["The men", "The tall boys"],
         model,
         submodules,
         submodule_names,
@@ -342,5 +371,15 @@ if __name__ == "__main__":
     )
 
     print(dag)
-    with open(save_path, 'wb') as pickle_file:
-        pickle.dump(dag, pickle_file)
+
+    # TODO: Solve CUDA out of memory error, that occurs when setting --num_examples to 10
+
+    # TODO: Using attn and MLP simultaneously is not supported, bc they are passed in submodule array in hierarchy (i.e. the algorithm assumes output of attn is the innput to MLP in the same layer), but they run in parallel so have no gradients onto each other. We have to implement layer hierarchy (insetead of submodule hierarchy) across this scircuit discovery method.
+
+    # TODO: Connect Sam's implementation of sliced, mean, sum DAGs to the sequence aggregation argument in the argparser
+
+    # TODO: Convert DAG to a lightweight object which enables pickling
+    # with open(save_path, 'wb') as pickle_file:
+    #     pickle.dump(dag, pickle_file)
+
+    # TODO: Adapt circuit evaluation in circuit_evaluation.py to use the lightweight object
