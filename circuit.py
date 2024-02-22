@@ -77,23 +77,26 @@ def get_circuit(
             grads[(y, n)] = grads_to_y[submodule][n.feat_idx]
             for n_old in old_nodes:
                 dag.add_edge(n, n_old)
-
-    # compute the gradients of the upstream features wrt the downstream features
+    
+    # alternative caching gradients for all upstream nodes at once
     for downstream_idx, downstream_submod in reversed(list(enumerate(submodules))):
-        for upstream_submod in submodules[:downstream_idx]:
-            upstream_grads = get_grad(
-                clean,
-                patch,
-                model,
-                upstream_submod,
-                dictionaries[upstream_submod],
-                downstream_submod,
-                dictionaries[downstream_submod],
-                feat_idxs[downstream_submod],
-            )
-            for downstream_node in nodes_by_component[downstream_submod]:
+        upstream_submods = submodules[:downstream_idx]
+        upstream_dictionaries = [dictionaries[upstream_submod] for upstream_submod in upstream_submods]
+        upstream_grads = get_grad(
+            clean,
+            patch,
+            model,
+            upstream_submods,
+            upstream_dictionaries,
+            downstream_submod,
+            dictionaries[downstream_submod],
+            feat_idxs[downstream_submod],
+        )
+        for downstream_node in nodes_by_component[downstream_submod]:
+            for upstream_submod in upstream_submods:
                 for upstream_node in nodes_by_component[upstream_submod]:
-                    grads[(downstream_node, upstream_node)] = upstream_grads[downstream_node.feat_idx][tuple(upstream_node.feat_idx)]
+                    grads[(downstream_node, upstream_node)] = upstream_grads[downstream_node.feat_idx][upstream_submod][tuple(upstream_node.feat_idx)]
+
 
     # compute the edge weights
     dag = deduce_edge_weights(dag, grads)
