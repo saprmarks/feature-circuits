@@ -130,3 +130,49 @@ def load_submodule_and_dictionary(model, submod_name, dict_cfg: DictionaryCfg):
     submodule = load_submodule(model, submod_name)
     dictionary = load_dictionary(model, submod_layer, submodule, submod_type, dict_cfg)
     return submodule, dictionary
+
+def load_submodules_and_dictionaries(
+    model,
+    use_attn,
+    use_mlp,
+    use_resid,
+    dict_path="/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped",
+    dict_size=512 * 64,
+    device="cuda:0",
+    ):
+    """
+    Load submodules and dictionaries from a model and dictionary path.
+    Respect topolological order of submodules.
+    We do not use from functions above for readability.
+    """
+    submodules = []
+    submodule_names = {}
+    dictionaries = {}
+    for layer in range(len(model.gpt_neox.layers)):
+        if use_attn:    
+            submodule = model.gpt_neox.layers[layer].attention
+            submodule_names[submodule] = f'attn{layer}'
+            submodules.append(submodule)
+            ae = AutoEncoder(model.config.hidden_size, dict_size).to(device)
+            path = os.path.join(dict_path, f"attn_out_layer{layer}/5_32768/ae.pt")
+            ae.load_state_dict(t.load(path))
+            dictionaries[submodule] = ae
+
+        if use_mlp:    
+            submodule = model.gpt_neox.layers[layer].mlp
+            submodule_names[submodule] = f'mlp{layer}'
+            submodules.append(submodule)
+            ae = AutoEncoder(model.config.hidden_size, dict_size).to(device)
+            path = os.path.join(dict_path, f"mlp_out_layer{layer}/5_32768/ae.pt")
+            ae.load_state_dict(t.load(path))
+            dictionaries[submodule] = ae
+
+        if use_resid:
+            submodule = model.gpt_neox.layers[layer]
+            submodule_names[submodule] = f'resid{layer}'
+            submodules.append(submodule)
+            ae = AutoEncoder(model.config.hidden_size, dict_size).to(device)
+            path = os.path.join(dict_path, f"resid_out_layer{layer}/5_32768/ae.pt")
+            ae.load_state_dict(t.load(path))
+            dictionaries[submodule] = ae
+    return submodules, submodule_names, dictionaries
