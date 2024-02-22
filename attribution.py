@@ -303,33 +303,7 @@ def patching_effect(
     else:
         raise ValueError(f"Unknown method {method}")
     
-def get_grad(clean, patch, model, upstream_submod, upstream_dictionary, downstream_submod, downstream_dictionary, downstream_features):
-    with model.invoke(clean, fwd_args={'inference' : False}):
-        x = upstream_submod.output
-        is_resid = (type(x.shape) == tuple)
-        if is_resid:
-            x = x[0]
-        x_hat, f = upstream_dictionary(x, output_features=True)
-        grad = f.grad.save()
-        residual = (x - x_hat).detach()
-        if is_resid:
-            upstream_submod.output[0][:] = x_hat + residual
-        else:
-            upstream_submod.output = x_hat + residual
-        
-        y = downstream_submod.output
-        is_resid = (type(y.shape) == tuple)
-        if is_resid:
-            y = y[0]
-        f_downstream = downstream_dictionary.encode(y).save()
-    
-    grads = TensorDict()
-    for feature_idx in downstream_features:
-        f_downstream.value[tuple(feature_idx)].backward(retain_graph=True)
-        grads[feature_idx] = grad.value
-    return grads
-
-def get_grad_multiple_upstream_submodules(clean, patch, model, upstream_submods, upstream_dictionaries, downstream_submod, downstream_dictionary, downstream_features):
+def get_grad(clean, patch, model, upstream_submods, upstream_dictionaries, downstream_submod, downstream_dictionary, downstream_features):
     grad = TensorDict()
     with model.invoke(clean, fwd_args={'inference' : False}):
         for upstream_submod, upstream_dictionary in zip(upstream_submods, upstream_dictionaries):

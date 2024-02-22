@@ -4,7 +4,7 @@ import pickle
 import random
 import torch as t
 from graph_utils import WeightedDAG, deduce_edge_weights
-from attribution import patching_effect, get_grad, get_grad_multiple_upstream_submodules
+from attribution import patching_effect, get_grad
 from tensordict import TensorDict
 
 from nnsight import LanguageModel
@@ -57,7 +57,6 @@ def get_circuit(
     # construct DAG
     dag = WeightedDAG()
     grads = {} # stores grads between any two pairs of nodes
-    grads_multiple_upstream_submodules = {}
 
     y = CircuitNode("y", None, None, None)
     dag.add_node(y, total_effect)
@@ -76,32 +75,14 @@ def get_circuit(
         for n in nodes:
             dag.add_node(n, weight=deltas[submodule][tuple(n.feat_idx)])
             grads[(y, n)] = grads_to_y[submodule][n.feat_idx]
-            grads_multiple_upstream_submodules[(y, n)] = grads_to_y[submodule][n.feat_idx]
             for n_old in old_nodes:
                 dag.add_edge(n, n_old)
-
-    # compute the gradients of the upstream features wrt the downstream features
-    for downstream_idx, downstream_submod in reversed(list(enumerate(submodules))):
-        for upstream_submod in submodules[:downstream_idx]:
-            upstream_grads = get_grad(
-                clean,
-                patch,
-                model,
-                upstream_submod,
-                dictionaries[upstream_submod],
-                downstream_submod,
-                dictionaries[downstream_submod],
-                feat_idxs[downstream_submod],
-            )
-            for downstream_node in nodes_by_component[downstream_submod]:
-                for upstream_node in nodes_by_component[upstream_submod]:
-                    grads[(downstream_node, upstream_node)] = upstream_grads[downstream_node.feat_idx][tuple(upstream_node.feat_idx)]
     
     # alternative caching gradients for all upstream nodes at once
     for downstream_idx, downstream_submod in reversed(list(enumerate(submodules))):
         upstream_submods = submodules[:downstream_idx]
         upstream_dictionaries = [dictionaries[upstream_submod] for upstream_submod in upstream_submods]
-        upstream_grads = get_grad_multiple_upstream_submodules(
+        upstream_grads = get_grad(
             clean,
             patch,
             model,
@@ -114,14 +95,10 @@ def get_circuit(
         for downstream_node in nodes_by_component[downstream_submod]:
             for upstream_submod in upstream_submods:
                 for upstream_node in nodes_by_component[upstream_submod]:
-                    grads_multiple_upstream_submodules[(downstream_node, upstream_node)] = upstream_grads[downstream_node.feat_idx][upstream_submod][tuple(upstream_node.feat_idx)]
-                    t.allclose(grads_multiple_upstream_submodules[(downstream_node, upstream_node)], grads[(downstream_node, upstream_node)])
-                    print(f'passed one test')
-
+                    grads[(downstream_node, upstream_node)] = upstream_grads[downstream_node.feat_idx][upstream_submod][tuple(upstream_node.feat_idx)]
 
 
     # compute the edge weights
-    print(f'deduce_edge_weights')
     dag = deduce_edge_weights(dag, grads)
 
     # reassign weights to represent attribution scores
@@ -288,12 +265,7 @@ def mean_dag(dag, dim, crosses=True):
         return new_dag
 
 if __name__ == "__main__":
-    from nnsight import LanguageModel
-    from circuit import get_circuit, slice_dag, CircuitNode, sum_dag, mean_dag
-    import torch as t
     from dictionary_learning import AutoEncoder
-    from attribution import patching_effect, get_grad
-    from graph_utils import WeightedDAG
 
     model = LanguageModel('EleutherAI/pythia-70m-deduped', device_map='cuda:0')
     submodules = []
