@@ -221,8 +221,6 @@ def patching_effect(
 ):
     if method == 'all-folded':
         return _pe_attrib_all_folded(clean, patch, model, submodules, dictionaries, metric_fn)
-    elif method == 'separate':
-        return _pe_attrib_separate(clean, patch, model, submodules, dictionaries, metric_fn)
     elif method == 'ig':
         return _pe_ig(clean, patch, model, submodules, dictionaries, metric_fn, steps=steps)
     elif method == 'exact':
