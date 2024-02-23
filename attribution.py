@@ -5,7 +5,6 @@ from tensordict import TensorDict
 
 EffectOut = namedtuple('EffectOut', ['effects', 'deltas', 'grads', 'total_effect'])
 
-
 def _pe_attrib_all_folded(
         clean,
         patch,
@@ -14,9 +13,30 @@ def _pe_attrib_all_folded(
         dictionaries,
         metric_fn,
 ):
-    # get clean states
     hidden_states_clean = {}
-    with model.invoke(clean, fwd_args={'inference' : False}) as invoker:
+    grads = {}
+    with model.invoke(clean, fwd_args={'inference' : False}):
+        for submodule in submodules:
+            dictionary = dictionaries[submodule]
+            x = submodule.output
+            is_resid = (type(x.shape) == tuple)
+            if is_resid:
+                x = x[0]
+            x_hat, f = dictionary(x, output_features=True) # x_hat implicitly depends on f
+            residual = (x - x_hat).detach()
+            x_recon = x_hat + residual
+            hidden_states_clean[submodule] = f.save()
+            grads[submodule] = f.grad.save()
+            if is_resid:
+                submodule.output[0][:] = x_recon
+            else:
+                submodule.output = x_recon
+            x.grad = x_recon.grad
+        metric_clean = metric_fn(model).save()
+    metric_clean.value.sum().backward()
+
+    hidden_states_patch = {}
+    with model.invoke(patch):
         for submodule in submodules:
             dictionary = dictionaries[submodule]
             x = submodule.output
@@ -24,116 +44,23 @@ def _pe_attrib_all_folded(
             if is_resid:
                 x = x[0]
             f = dictionary.encode(x)
-            f.retain_grad()
-            hidden_states_clean[submodule] = f.save()
+            hidden_states_patch[submodule] = f.save()
+        metric_patch = metric_fn(model).save()
+    total_effect = (metric_patch.value - metric_clean.value).detach()
 
-            x_hat = dictionary.decode(f)
-            residual = (x - x_hat).detach()
-            if is_resid:
-                submodule.output[0][:] = x_hat + residual
-            else:
-                submodule.output = x_hat + residual
-        metric_clean = metric_fn(model).save()
-
-    # backprop to get gradients for features
-    metric_clean.value.sum().backward()
+    effects = {}
+    deltas = {}
+    for submodule in submodules:
+        patch_state, clean_state = hidden_states_patch[submodule].value, hidden_states_clean[submodule].value.detach()
+        delta = patch_state - clean_state
+        grad = grads[submodule].value
+        effect = delta * grad
+        effects[submodule] = effect
+        deltas[submodule] = delta
+        grads[submodule] = grad
     
-    if patch is None:
-        hidden_states_patch = {
-            k : t.zeros_like(v) for k, v in hidden_states_clean.items()
-        }
-        total_effect = None
-    else:
-        hidden_states_patch = {}
-        with model.invoke(patch):
-            for submodule in submodules:
-                dictionary = dictionaries[submodule]
-                x = submodule.output
-                is_resid = (type(x.shape) == tuple)
-                if is_resid:
-                    x = x[0]
-                f = dictionary.encode(x)
-                hidden_states_patch[submodule] = f.save()
-            metric_patch = metric_fn(model).save()
-        total_effect = (metric_patch.value - metric_clean.value).detach()
-
-    effects = {}
-    deltas = {}
-    grads = {}
-    for submodule in submodules:
-        patch_state, clean_state = hidden_states_patch[submodule], hidden_states_clean[submodule]
-        delta = (patch_state.value - clean_state.value).detach()
-        grad = clean_state.value.grad
-        effect = delta * grad
-        effects[submodule] = effect
-        deltas[submodule] = delta
-        grads[submodule] = grad
-        
-
     return EffectOut(effects, deltas, grads, total_effect)
-
-def _pe_attrib_separate(
-        clean,
-        patch,
-        model,
-        submodules,
-        dictionaries,
-        metric_fn,
-):
-    hidden_states_clean = {}
-
-    for submodule in submodules:
-        dictionary = dictionaries[submodule]
-        with model.invoke(clean, fwd_args={'inference' : False}):
-            x = submodule.output
-            is_resid = (type(x.shape) == tuple)
-            if is_resid:
-                x = x[0]
-            f = dictionary.encode(x)
-            f.retain_grad()
-            hidden_states_clean[submodule] = f.save()
-            
-            x_hat = dictionary.decode(f)
-            residual = (x - x_hat).detach()
-            if is_resid:
-                submodule.output[0][:] = x_hat + residual
-            else:
-                submodule.output = x_hat + residual
-            metric_clean = metric_fn(model).save()
-        metric_clean.value.sum().backward()
-
-    if patch is None:
-        hidden_states_patch = {
-            k : t.zeros_like(v) for k, v in hidden_states_clean.items()
-        }
-        total_effect = None
-    else:
-        hidden_states_patch = {}
-        with model.invoke(patch):
-            for submodule in submodules:
-                dictionary = dictionaries[submodule]
-                x = submodule.output
-                is_resid = (type(x.shape) == tuple)
-                if is_resid:
-                    x = x[0]
-                f = dictionary.encode(x)
-                hidden_states_patch[submodule] = f.save()
-            metric_patch = metric_fn(model).save()
-        total_effect = (metric_patch.value - metric_clean.value).detach()
-
-    effects = {}
-    deltas = {}
-    grads = {}
-    for submodule in submodules:
-        patch_state, clean_state = hidden_states_patch[submodule], hidden_states_clean[submodule]
-        delta = (patch_state.value - clean_state.value).detach()
-        grad = clean_state.value.grad
-        effect = delta * grad
-        effects[submodule] = effect
-        deltas[submodule] = delta
-        grads[submodule] = grad
-
-    return EffectOut(effects, deltas, grads, total_effect)
+    
 
 def _pe_ig(
         clean,
