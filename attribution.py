@@ -52,12 +52,13 @@ def _pe_attrib_all_folded(
     deltas = {}
     for submodule in submodules:
         patch_state, clean_state = hidden_states_patch[submodule].value, hidden_states_clean[submodule].value.detach()
-        delta = patch_state - clean_state
+        delta = patch_state - clean_state if patch_state is not None else -clean_state
         grad = grads[submodule].value
         effect = delta * grad
         effects[submodule] = effect
         deltas[submodule] = delta
         grads[submodule] = grad
+    total_effect = total_effect if total_effect is not None else None
     
     return EffectOut(effects, deltas, grads, total_effect)
     
@@ -130,11 +131,12 @@ def _pe_ig(
         metric = sum([m.value for m in metrics])
         metric.sum().backward()
         grad = sum([f.grad for f in fs]) / steps
-        delta = (patch_state.value - clean_state.value).detach()
+        delta = (patch_state.value - clean_state.value).detach() if patch_state is not None else -clean_state.value.detach()
         effect = grad * delta
         effects[submodule] = effect
         deltas[submodule] = delta
         grads[submodule] = grad
+    total_effect = total_effect if total_effect is not None else None
 
     return EffectOut(effects, deltas, grads, total_effect)
 
@@ -206,6 +208,7 @@ def _pe_exact(
         
         effects[submodule] = effect
         deltas[submodule] = delta
+    total_effect = total_effect if total_effect is not None else None
 
     return EffectOut(effects, deltas, None, total_effect)
 
@@ -228,7 +231,15 @@ def patching_effect(
     else:
         raise ValueError(f"Unknown method {method}")
 
-def get_grad(clean, patch, model, dictionaries, upstream_submods, downstream_submod, downstream_features):
+def get_grad(clean, 
+             patch, 
+             model, 
+             dictionaries, 
+             upstream_submods, 
+             downstream_submod, 
+             downstream_features, 
+             return_idxs=None # dictionary of upstream idxs to return, for each upstream submodule
+):
     grad = TensorDict()
     with model.invoke(clean, fwd_args={'inference' : False}):
         for upstream_submod in upstream_submods:
@@ -254,8 +265,13 @@ def get_grad(clean, patch, model, dictionaries, upstream_submods, downstream_sub
     
     grads = TensorDict()
     for downstream_feature_idx in downstream_features:
-        grads[downstream_feature_idx] = TensorDict()
+        grads[downstream_feature_idx] = {}
         f_downstream.value[tuple(downstream_feature_idx)].backward(retain_graph=True)
         for upstream_submod in upstream_submods:
-            grads[downstream_feature_idx][upstream_submod] = grad[upstream_submod].value
+            if return_idxs is None or return_idxs[upstream_submod] is None:
+                grads[downstream_feature_idx][upstream_submod] = grad[upstream_submod].value
+            else:
+                grads[downstream_feature_idx][upstream_submod] = TensorDict({
+                    idx : grad[upstream_submod].value[tuple(idx)] for idx in return_idxs[upstream_submod]
+                })
     return grads

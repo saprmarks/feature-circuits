@@ -119,59 +119,149 @@ def deduce_edge_weights(dag, oomphs):
     compute the weights of all edges.
 
     dag : a WeightedDAG
-    oomphs : a dict of the form {(node1, node2): oomph, ...} where node1 should be downstream of node2
+    oomphs : a dict of the form {(node1, node2): oomph, ...} where node2 should be downstream of node1
     """
-    oomphs_explained = {k : 0 for k in oomphs.keys()}
-
-    reverse_topo_order = dag.topological_sort(reverse=True)
-    for idxu, nu in enumerate(reverse_topo_order): # upstream node
-        for nd in reversed(reverse_topo_order[:idxu]): # downstream node
-            if (nd, nu) not in oomphs:
-                continue
-            weight = oomphs[(nd, nu)] - oomphs_explained[(nd, nu)]
-            dag.add_edge(nu, nd, weight)
-            for ndd in dag.get_children(nd):
-                oomphs_explained[(ndd, nu)] += weight * dag.edge_weight((nd, ndd))
+    oomphs_explained = defaultdict(lambda:0)
+    topo_order = dag.topological_sort()
+    for idxd, nd in enumerate(topo_order):
+        for idxu, nu in reversed(list(enumerate(topo_order[:idxd]))):
+            if (nu, nd) in dag.edges:
+                dag.add_edge(nu, nd, oomphs[(nu, nd)] - oomphs_explained[(nu, nd)])
+                oomphs_explained[(nu, nd)] = oomphs[(nu, nd)]
+                for nuu in topo_order[:idxu]:
+                    if (nuu, nu) in oomphs:
+                        oomphs_explained[(nuu, nd)] += oomphs_explained[(nuu, nu)] * dag.edge_weight((nu, nd))
     return dag
+
+    # oomphs = defaultdict(lambda:1, oomphs)
+    # oomphs_explained = defaultdict(lambda:0)
+    # topo_order = dag.topological_sort()
+    # stack = []
+    # done = set()
+
+    # def aux(n):
+    #     print(f"aux({n})")
+    #     # order children of n
+    #     children = dag.get_children(n)
+    #     children = sorted(children, key=lambda c: topo_order.index(c))
+    #     for m in children:
+    #         dag.add_edge(n, m, oomphs[(n, m)] - oomphs_explained[(n, m)])
+    #         for nu in stack:
+    #             oomphs_explained[(nu, m)] += oomphs[(nu, n)] * dag.edge_weight((n, m))
+    #         if m not in done: 
+    #             stack.append(m)
+    #             aux(m)
+    #     done.add(stack.pop())
+    
+    # for n in topo_order:
+    #     if n not in done:
+    #         stack.append(n)
+    #         aux(n)
+    # # stack.append(topo_order[0])
+    # # aux(topo_order[0])
+
+    # return dag
+
             
 
 
 if __name__ == "__main__":
 
-    random_dag = WeightedDAG.random(100, p=0.5, weight_range=(-1, 1))
-    topo_order = random_dag.topological_sort()
+    dag = WeightedDAG(
+        nodes= {i : None for i in range(5)},
+        edges = {
+            0 : {1 : 1, 2 : 2},
+            1 : {2 : 3},
+            2 : {3 : 4, 4 : 5},
+            3 : {4 : 6},
+        }
+    )
+    topo_order = dag.topological_sort()
+
+    oomphs = defaultdict(float)
+    for idxu, nu in enumerate(topo_order):
+        for idxd, nd in enumerate(topo_order[idxu+1:]):
+            if dag.has_edge((nu, nd)):
+                oomphs[(nu, nd)] += dag.edge_weight((nu, nd))
+            for nm in topo_order[idxu:idxu+idxd+1]:
+                if dag.has_edge((nm, nd)) and (nu, nm) in oomphs:
+                    oomphs[(nu, nd)] += oomphs[(nu, nm)] * dag.edge_weight((nm, nd))
+
+    cleared_dag = WeightedDAG(
+        nodes=dag._nodes,
+        edges={
+            n : {m : None for m in dag.get_children(n)} for n in dag.nodes
+        }
+    )
+    deduced_dag = deduce_edge_weights(cleared_dag, oomphs)
+    for n, m in dag.edges:
+        if not deduced_dag.has_edge((n, m)):
+            raise ValueError(f"Edge {(n, m)} is missing in deduced_dag")
+        if dag.edge_weight((n, m)) != deduced_dag.edge_weight((n, m)):
+            raise ValueError(f"Edge {(n, m)} has weight {dag.edge_weight((n, m))} in dag but {deduced_dag.edge_weight((n, m))} in deduced_dag")
+    for n, m in deduced_dag.edges:
+        if not dag.has_edge((n, m)):
+            raise ValueError(f"Edge {(n, m)} is missing in dag")
+        if dag.edge_weight((n, m)) != deduced_dag.edge_weight((n, m)):
+            raise ValueError(f"Edge {(n, m)} has weight {dag.edge_weight((n, m))} in dag but {deduced_dag.edge_weight((n, m))} in deduced_dag")
+
+    # test random dag
+    #random.seed(1)
+    dag = WeightedDAG.random(200, p=0.1, weight_range=(-1, 1))
+    topo_order = dag.topological_sort()
+
     # check that topo_order is a valid topological order
     for idxu, nu in enumerate(topo_order):
         for nd in topo_order[idxu+1:]:
-            if random_dag.has_edge((nd, nu)):
+            if dag.has_edge((nd, nu)):
                 raise ValueError(f"Invalid topological order: {nu} is downstream of {nd}")
 
 
     # check that each node is a parent of its children
-    for node in random_dag.nodes:
-        for child in random_dag.get_children(node):
-            if node not in random_dag.get_parents(child):
+    for node in dag.nodes:
+        for child in dag.get_children(node):
+            if node not in dag.get_parents(child):
                 raise ValueError(f"Node {node} is not a parent of {child}")
 
     # compute oomphs for random_dag
     oomphs = defaultdict(int)
     for idxu, nu in enumerate(topo_order):
         for idxd, nd in enumerate(topo_order[idxu+1:]):
-            if random_dag.has_edge((nu, nd)):
-                oomphs[(nu, nd)] += random_dag.edge_weight((nu, nd))
+            if dag.has_edge((nu, nd)):
+                oomphs[(nu, nd)] += dag.edge_weight((nu, nd))
             for nm in topo_order[idxu:idxu+idxd+1]:
-                if random_dag.has_edge((nm, nd)) and (nu, nm) in oomphs:
-                    oomphs[(nu, nd)] += oomphs[(nu, nm)] * random_dag.edge_weight((nm, nd))
-    deduced_dag = deduce_edge_weights(random_dag, oomphs)
-    for n1 in random_dag.nodes:
-        for n2 in random_dag.nodes:
-            e = (n1, n2)
-            if not random_dag.has_edge(e):
-                continue
-            if not random_dag.has_edge(e):
-                raise ValueError(f"Edge {e} is missing in deduced_dag")
-            if random_dag.edge_weight(e) != deduced_dag.edge_weight(e):
-                raise ValueError(f"Edge {e} has weight {random_dag.edge_weight(e)} in random_dag but {deduced_dag.edge_weight(e)} in deduced_dag")
+                if dag.has_edge((nm, nd)) and (nu, nm) in oomphs:
+                    oomphs[(nu, nd)] += oomphs[(nu, nm)] * dag.edge_weight((nm, nd))
+    cleared_dag = WeightedDAG(
+        nodes=dag._nodes,
+        edges={
+            n : {m : None for m in dag.get_children(n)} for n in dag.nodes
+        }
+    )
+    deduced_dag = deduce_edge_weights(cleared_dag, oomphs)
+    # check that computed edge weights are correct
+    for n, m in dag.edges:
+        if not deduced_dag.has_edge((n, m)):
+            raise ValueError(f"Edge {(n, m)} is missing in deduced_dag")
+        if abs(dag.edge_weight((n, m)) - deduced_dag.edge_weight((n, m))) > 1e-3:
+            print(dag._edges)
+            raise ValueError(f"Edge {(n, m)} has weight {dag.edge_weight((n, m))} in dag but {deduced_dag.edge_weight((n, m))} in deduced_dag")
+    for n, m in deduced_dag.edges:
+        if not dag.has_edge((n, m)):
+            raise ValueError(f"Edge {(n, m)} is missing in dag")
+        if abs(dag.edge_weight((n, m)) - deduced_dag.edge_weight((n, m))) > 1e-3:
+            raise ValueError(f"Edge {(n, m)} has weight {dag.edge_weight((n, m))} in dag but {deduced_dag.edge_weight((n, m))} in deduced_dag")
+    # check that the deduced oomphs to the root are correct
+    root = topo_order[-1]
+    for n in topo_order[:-1]:
+        oomphs_out = []
+        for m in dag.get_children(n):
+            if m == root:
+                oomphs_out.append(deduced_dag.edge_weight((n, m)))
+            else:
+                oomphs_out.append(deduced_dag.edge_weight((n, m)) * oomphs[(m, root)])
+        if abs(sum(oomphs_out) - oomphs[(n, root)]) > 1e-4:
+            raise ValueError(f"Sum of oomphs out of {n} is {sum(oomphs_out)} but should be {oomphs[(n, root)]}")
                 
 
 
