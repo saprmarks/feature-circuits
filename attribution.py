@@ -45,8 +45,9 @@ def _pe_attrib_all_folded(
             is_resid = (type(x.shape) == tuple)
             if is_resid:
                 x = x[0]
-            f = dictionary.encode(x)
-            hidden_states_patch[submodule] = f.save()
+            x_hat, f = dictionary(x, output_features=True) # x_hat implicitly depends on f
+            residual = x - x_hat
+            hidden_states_patch[submodule] = SparseAct(sparse_act=f.save(), residual=residual.save())
         metric_patch = metric_fn(model).save()
     total_effect = (metric_patch.value - metric_clean.value).detach()
 
