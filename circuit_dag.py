@@ -63,26 +63,38 @@ def get_circuit(
     dag.add_node(y, total_effect)
 
     nodes_by_component = {}
-    for submodule, idxs in reversed(feat_idxs.items()): # assuming that submodules are properly ordered
+    for submod_idx, (submodule, feats) in reversed(list(enumerate(feat_idxs.items()))): # assuming that submodules are properly ordered
         # get nodes for this component
         nodes = []
-        for idx in idxs:
+        for idx in feats:
             n = CircuitNode(f'{submodule_names[submodule]}/{idx.tolist()}', submodule, dictionaries[submodule], idx)
             nodes.append(n)
         nodes_by_component[submodule] = nodes
 
         # add nodes to the DAG
-        old_nodes = dag.nodes.copy()
         for n in nodes:
             dag.add_node(n, weight=deltas[submodule][tuple(n.feat_idx)])
             grads[(n, y)] = grads_to_y[submodule][n.feat_idx]
-            for n_old in old_nodes:
-                if n_old == y or n_old.feat_idx[0] == n.feat_idx[0]:
-                    dag.add_edge(n, n_old)
+            dag.add_edge(n, y)
+            for downstream_submod in submodules[submod_idx+1:]:
+                if 'attn' in submodule_names[submodule] and 'mlp' in submodule_names[downstream_submod]:
+                    continue
+                for n_downstream in nodes_by_component[downstream_submod]:    
+                    if n.feat_idx[0] == n_downstream.feat_idx[0]:
+                        dag.add_edge(n, n_downstream)
 
     # alternative caching gradients for all upstream nodes at once
     for downstream_idx, downstream_submod in reversed(list(enumerate(submodules))):
-        upstream_submods = submodules[:downstream_idx]
+        if 'mlp' in submodule_names[downstream_submod] and 'attn' in submodule_names[submodules[downstream_idx-1]]:
+            upstream_submods = submodules[:downstream_idx-1]
+        else:
+            upstream_submods = submodules[:downstream_idx]
+        return_idxs = {
+            upstream_submod : TensorDict({
+                downstream_feat_idx : [n.feat_idx for n in nodes_by_component[upstream_submod] if n.feat_idx[0] == downstream_feat_idx[0] and n.feat_idx[1] <= downstream_feat_idx[1]]
+                for downstream_feat_idx in feat_idxs[downstream_submod]
+            }) for upstream_submod in upstream_submods
+        }
         upstream_grads = get_grad(
             clean,
             patch,
@@ -91,12 +103,15 @@ def get_circuit(
             upstream_submods,
             downstream_submod,
             feat_idxs[downstream_submod],
-            return_idxs = {submod : [n.feat_idx for n in nodes_by_component[submod]] for submod in upstream_submods}
+            return_idxs = return_idxs,
         )
         for downstream_node in nodes_by_component[downstream_submod]:
             for upstream_submod in upstream_submods:
                 for upstream_node in nodes_by_component[upstream_submod]:
-                    grads[(upstream_node, downstream_node)] = upstream_grads[downstream_node.feat_idx][upstream_submod][upstream_node.feat_idx].item()
+                    try:
+                        grads[(upstream_node, downstream_node)] = upstream_grads[downstream_node.feat_idx][upstream_submod][upstream_node.feat_idx].item()
+                    except:
+                        grads[(upstream_node, downstream_node)] = 0.
 
     # compute the edge weights
     dag = deduce_edge_weights(dag, grads)
@@ -290,7 +305,7 @@ if __name__ == '__main__':
     # parser.add_argument("--dictionary_dir", "-a", type=str, default="/share/projects/dictionary_circuits/autoencoders/")
     # parser.add_argument("--dictionary_size", "-S", type=int, default=32768,
     #                     help="Width of trained dictionaries.")
-    parser.add_argument("--dataset", "-d", type=str, default="/share/projects/dictionary_circuits/data/phenomena/simple.json")
+    parser.add_argument("--dataset", "-d", type=str, default="simple")
     parser.add_argument("--num_examples", "-n", type=int, default=10,
                         help="Number of example pairs to use in the causal search.")
     parser.add_argument("--node_threshold", type=float, default=0.1)
@@ -332,15 +347,19 @@ if __name__ == '__main__':
             submodule_names[submodule] = f'resid_{layer}'
             dictionaries[submodule] = ae
 
-    dataset_items = open(args.dataset).readlines()
+    data_path = f"/share/projects/dictionary_circuits/data/phenomena/{args.dataset}.json"
+
+    dataset_items = open(data_path).readlines()
     random.seed(args.seed)
     random.shuffle(dataset_items)
 
-    examples = load_examples(args.dataset, args.num_examples, model)
+    examples = load_examples(data_path, args.num_examples, model)
     clean_inputs = t.cat([e['clean_prefix'] for e in examples], dim=0)
     patch_inputs = t.cat([e['patch_prefix'] for e in examples], dim=0)
     clean_answer_idxs = t.tensor([e['clean_answer'] for e in examples], dtype=t.long)
     patch_answer_idxs = t.tensor([e['patch_answer'] for e in examples], dtype=t.long)
+
+    print(examples)
 
     def metric_fn(model):
         return (
@@ -373,12 +392,8 @@ if __name__ == '__main__':
     for n in dag.nodes:
         if n.name == 'y':
             continue
-        try:
-            if dag.node_weight(n) < args.node_threshold:
-                dag.remove_node(n)
-        except:
-            print(n, dag.node_weight(n))
-            assert False
+        if dag.node_weight(n) < args.node_threshold:
+            dag.remove_node(n)
     
     # filter out edges
     for n1, n2 in dag.edges:
