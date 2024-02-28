@@ -238,7 +238,7 @@ def get_grad(clean,
              upstream_submods, 
              downstream_submod, 
              downstream_features, 
-             return_idxs=None # dictionary of upstream idxs to return, for each upstream submodule
+             return_idxs=None # dictionary of upstream idxs to return, for each upstream submodule (and, optionally, each downstream feature idx)
 ):
     grad = TensorDict()
     with model.invoke(clean, fwd_args={'inference' : False}):
@@ -270,8 +270,12 @@ def get_grad(clean,
         for upstream_submod in upstream_submods:
             if return_idxs is None or return_idxs[upstream_submod] is None:
                 grads[downstream_feature_idx][upstream_submod] = grad[upstream_submod].value
-            else:
+            elif isinstance(return_idxs[upstream_submod], list):
                 grads[downstream_feature_idx][upstream_submod] = TensorDict({
                     idx : grad[upstream_submod].value[tuple(idx)] for idx in return_idxs[upstream_submod]
+                })
+            elif isinstance(return_idxs[upstream_submod], TensorDict):
+                grads[downstream_feature_idx][upstream_submod] = TensorDict({
+                    idx : grad[upstream_submod].value[tuple(idx)] for idx in return_idxs[upstream_submod][downstream_feature_idx]
                 })
     return grads
