@@ -30,9 +30,10 @@ class SparseAct():
             else:
                 raise ValueError("Please initialize SparseAct with either (dense_act and dictionary) XOR (sparse_act and residual) arguments.")
 
-    def __matmul__(self, other: SparseAct) -> SparseAct:
+    def __mul__(self, other: SparseAct) -> SparseAct:
         sparse_result = self.sparse_act * other.sparse_act
-        return SparseAct(sparse_act=sparse_result, residual=t.zeros_like(self.residual)) # For now, we are not using residual in the multiplication
+        residual_result = self.residual * other.residual
+        return SparseAct(sparse_act=sparse_result, residual=residual_result)
 
 
 if __name__ == "__main__":
