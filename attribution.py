@@ -2,6 +2,7 @@ from collections import namedtuple
 import torch as t
 from tqdm import tqdm
 from tensordict import TensorDict
+from activation_utils import SparseAct
 
 EffectOut = namedtuple('EffectOut', ['effects', 'deltas', 'grads', 'total_effect'])
 
@@ -23,10 +24,11 @@ def _pe_attrib_all_folded(
             if is_resid:
                 x = x[0]
             x_hat, f = dictionary(x, output_features=True) # x_hat implicitly depends on f
-            residual = (x - x_hat).detach()
+            residual = x - x_hat
+            hidden_states_clean[submodule] = SparseAct(sparse_act=f.save(), residual=residual.save())
+            grads[submodule] = SparseAct(sparse_act=f.grad.save(), residual=residual.grad.save())
+            residual.grad = t.zeros_like(residual)
             x_recon = x_hat + residual
-            hidden_states_clean[submodule] = f.save()
-            grads[submodule] = f.grad.save()
             if is_resid:
                 submodule.output[0][:] = x_recon
             else:
