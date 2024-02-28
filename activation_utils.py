@@ -34,6 +34,26 @@ class SparseAct():
         sparse_result = self.sparse_act * other.sparse_act
         residual_result = self.residual * other.residual
         return SparseAct(sparse_act=sparse_result, residual=residual_result)
+    
+    def __minus__(self, other: SparseAct) -> SparseAct:
+        sparse_result = self.sparse_act - other.sparse_act
+        residual_result = self.residual - other.residual
+        return SparseAct(sparse_act=sparse_result, residual=residual_result)
+    
+    def __neg__(self) -> SparseAct:
+        sparse_result = -self.sparse_act
+        residual_result = -self.residual
+        return SparseAct(sparse_act=sparse_result, residual=residual_result)
+    
+    def value(self):
+        self.sparse_act = self.sparse_act.value
+        self.residual = self.residual.value
+        return SparseAct(sparse_act=self.sparse_act, residual=self.residual)
+    
+    def detach(self):
+        self.sparse_act = self.sparse_act.detach()
+        self.residual = self.residual.detach()
+        return SparseAct(sparse_act=self.sparse_act, residual=self.residual)
 
 
 if __name__ == "__main__":
