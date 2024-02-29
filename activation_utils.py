@@ -6,54 +6,71 @@ from dictionary_learning import AutoEncoder
 class SparseAct():
     def __init__(
             self, 
-            dense_act: TensorType["batch_size", "n_ctx", "d_model"] = None, 
-            dictionary: AutoEncoder = None,
-            sparse_act: TensorType["batch_size", "n_ctx", "d_dictionary"] = None, 
-            residual: TensorType["batch_size", "n_ctx", "d_model"] = None,
+            act: TensorType["batch_size", "n_ctx", "d_dictionary"] = None, 
+            res: TensorType["batch_size", "n_ctx", "d_model"] = None,
+            # dense_act: TensorType["batch_size", "n_ctx", "d_model"] = None, 
+            # dictionary: AutoEncoder = None,
             ) -> None:
 
-            def is_dense_init(dense_act, dictionary, sparse_act, residual):
-                """Check if initialization is for dense activation mode."""
-                return dense_act is not None and dictionary is not None and sparse_act is None and residual is None
+            # def is_dense_init(dense_act, dictionary, act, res):
+            #     """Check if initialization is for dense activation mode."""
+            #     return dense_act is not None and dictionary is not None and act is None and res is None
 
-            def is_sparse_init(dense_act, dictionary, sparse_act, residual):
-                """Check if initialization is for sparse activation mode."""
-                return dense_act is None and dictionary is None and sparse_act is not None and residual is not None
+            # def is_sparse_init(dense_act, dictionary, act, res):
+            #     """Check if initialization is for sparse activation mode."""
+            #     return dense_act is None and dictionary is None and act is not None and res is not None
 
-            if is_dense_init(dense_act, dictionary, sparse_act, residual):
-                self.sparse_act = dictionary.encode(dense_act)
-                reconstructed_act = dictionary.decode(self.sparse_act)
-                self.residual = dense_act - reconstructed_act
-            elif is_sparse_init(dense_act, dictionary, sparse_act, residual):
-                self.sparse_act = sparse_act
-                self.residual = residual
-            else:
-                raise ValueError("Please initialize SparseAct with either (dense_act and dictionary) XOR (sparse_act and residual) arguments.")
+            # if is_dense_init(dense_act, dictionary, act, res):
+            #     self.act = dictionary.encode(dense_act)
+            #     reconstructed_act = dictionary.decode(self.act)
+            #     self.res = dense_act - reconstructed_act
+            # elif is_sparse_init(dense_act, dictionary, act, res):
+            self.act = act
+            self.res = res
+            # else:
+            #     raise ValueError("Please initialize SparseAct with either (dense_act and dictionary) XOR (act and res) arguments.")
 
-    def __mul__(self, other: SparseAct) -> SparseAct:
-        sparse_result = self.sparse_act * other.sparse_act
-        residual_result = self.residual * other.residual
-        return SparseAct(sparse_act=sparse_result, residual=residual_result)
+    def __mul__(self, other) -> 'SparseAct':
+        if isinstance(other, SparseAct):
+            # Handle SparseAct * SparseAct
+            act_result = self.act * other.act
+            res_result = self.res * other.res
+        elif isinstance(other, (float, int)):
+            # Handle SparseAct * float/int
+            act_result = self.act * other
+            res_result = self.res * other
+        else:
+            raise TypeError(f"Unsupported operand type(s) for *: '{type(self)}' and '{type(other)}'")
+        return SparseAct(act=act_result, res=res_result)
+
+    def __rmul__(self, other) -> 'SparseAct':
+        # This will handle float/int * SparseAct by reusing the __mul__ logic
+        return self.__mul__(other)
     
-    def __minus__(self, other: SparseAct) -> SparseAct:
-        sparse_result = self.sparse_act - other.sparse_act
-        residual_result = self.residual - other.residual
-        return SparseAct(sparse_act=sparse_result, residual=residual_result)
+    def __add__(self, other: SparseAct) -> SparseAct:
+        sparse_result = self.act + other.act
+        res_result = self.res + other.res
+        return SparseAct(act=sparse_result, res=res_result)
+    
+    def __sub__(self, other: SparseAct) -> SparseAct:
+        sparse_result = self.act - other.act
+        res_result = self.res - other.res
+        return SparseAct(act=sparse_result, res=res_result)
     
     def __neg__(self) -> SparseAct:
-        sparse_result = -self.sparse_act
-        residual_result = -self.residual
-        return SparseAct(sparse_act=sparse_result, residual=residual_result)
+        sparse_result = -self.act
+        res_result = -self.res
+        return SparseAct(act=sparse_result, res=res_result)
     
     def value(self):
-        self.sparse_act = self.sparse_act.value
-        self.residual = self.residual.value
-        return SparseAct(sparse_act=self.sparse_act, residual=self.residual)
+        self.act = self.act.value
+        self.res = self.res.value
+        return SparseAct(act=self.act, res=self.res)
     
     def detach(self):
-        self.sparse_act = self.sparse_act.detach()
-        self.residual = self.residual.detach()
-        return SparseAct(sparse_act=self.sparse_act, residual=self.residual)
+        self.act = self.act.detach()
+        self.res = self.res.detach()
+        return SparseAct(act=self.act, res=self.res)
 
 
 if __name__ == "__main__":
@@ -68,11 +85,3 @@ if __name__ == "__main__":
     dictionary_layer = 0
     ae = AutoEncoder(d_model, d_dictionary)
     ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/mlp_out_layer{dictionary_layer}/5_32768/ae.pt'))
-
-    sa_A = SparseAct(dense_act=dense_A, dictionary=ae)
-    sa_B = SparseAct(dense_act=dense_B, dictionary=ae)
-
-    # Elementwise Multiplication
-    sa_elementwise = sa_A @ sa_B
-    t.allclose(sa_elementwise.sparse_act, sa_A.sparse_act * sa_B.sparse_act)
-    print("Elementwise Multiplication Test Passed")

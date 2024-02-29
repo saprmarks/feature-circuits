@@ -3,7 +3,7 @@ import os
 import pickle
 import random
 import torch as t
-from graph_utils import WeightedDAG, deduce_edge_weights
+from graph_utils import VectorWeightedDAG, deduce_edge_weights
 from attribution import patching_effect, get_grad
 from tensordict import TensorDict
 from dictionary_learning import AutoEncoder
@@ -56,7 +56,7 @@ def get_circuit(
         grads_to_y[submodule] = TensorDict({idx : grads[submodule][tuple(idx)] for idx in feat_idxs[submodule]})
         
     # construct DAG
-    dag = WeightedDAG()
+    dag = VectorWeightedDAG()
     grads = {} # stores grads between any two pairs of nodes
 
     y = CircuitNode("y", None, None, None)
@@ -138,7 +138,7 @@ def slice_dag(dag, pos, dim):
     Given a DAG whose nodes are CircuitNodes, returns a new DAG consisting only of those nodes whose feat_idx[dim] == pos
     """
     if type(pos) == list:
-        new_dag = WeightedDAG()
+        new_dag = VectorWeightedDAG()
         for n in dag.nodes:
             if n.feat_idx is None or n.feat_idx[dim] == pos[n.feat_idx[0]]:
                 new_dag.add_node(n, weight=dag.node_weight(n))
@@ -147,7 +147,7 @@ def slice_dag(dag, pos, dim):
                 new_dag.add_edge(n1, n2, weight=dag.edge_weight((n1, n2)))
         return new_dag
     elif type(pos) == int:
-        new_dag = WeightedDAG()
+        new_dag = VectorWeightedDAG()
         for n in dag.nodes:
             if n.feat_idx is None or n.feat_idx[dim] == pos:
                 new_dag.add_node(n, weight=dag.node_weight(n))
@@ -193,7 +193,7 @@ def _sum_with_crosses(dag, dim):
     return new_dag
 
 def _sum_without_crosses(dag, dim):
-    new_dag = WeightedDAG()
+    new_dag = VectorWeightedDAG()
     for n in dag.nodes:
         if n.name == 'y':
             new_dag.add_node(n, weight=dag.node_weight(n).sum())
