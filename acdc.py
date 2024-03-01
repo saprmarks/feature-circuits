@@ -20,14 +20,16 @@ def consolidated_patching_on(model, dataset, upstream_submodules, upstream_dicti
 
     # Aggregate over sequence
     if sequence_aggregation == 'final_pos_only':
-        effects={k : v[t.arange(len(final_token_positions)), final_token_positions-1] for k, v in effects.items()}
-        grads_y_wrt_us_features = grads_y_wrt_us_features[t.arange(len(final_token_positions)), final_token_positions-1]
+        effects = {k : v[t.arange(len(final_token_positions)), final_token_positions-1] for k, v in effects.items()}
+        grads_y_wrt_us_features = {k : v[t.arange(len(final_token_positions)), final_token_positions-1] for k, v in grads_y_wrt_us_features.items()}
     elif sequence_aggregation == 'max':
-        effects={k : v.max(dim=1).values for k, v in effects.items()} # Could retrieve the sequence position indices here
-        grads_y_wrt_us_features = grads_y_wrt_us_features.max(dim=1).values
+        for k, v in effects.items(): # k: submodule, v: (batch_size, sequence_length, feature_dim)
+            max_values, max_indices = v.max(dim=1, keepdim=True) # max_indices shape (batch_size, 1, feature_dim)
+            effects[k] = max_values
+            grads_y_wrt_us_features[k] = t.gather(grads_y_wrt_us_features[k], dim=1, index=max_indices).squeeze(1)                      
     elif sequence_aggregation == 'sum':
-        effects={k : v.sum(dim=1) for k, v in effects.items()}
-        grads_y_wrt_us_features = grads_y_wrt_us_features.sum(dim=1)
+        effects = {k : v.sum(dim=1) for k, v in effects.items()}
+        grads_y_wrt_us_features = {k : v.sum(dim=1) for k, v in grads_y_wrt_us_features.items()}
     else:
         raise ValueError(f"Unknown sequence_aggregation: {sequence_aggregation}")
 
@@ -36,7 +38,7 @@ def consolidated_patching_on(model, dataset, upstream_submodules, upstream_dicti
         effects={k : v.mean(dim=0) for k, v in effects.items()}, 
         total_effect=total_effect.mean(dim=0),
     )
-    grads_y_wrt_us_features = grads_y_wrt_us_features.mean(dim=0)
+    grads_y_wrt_us_features = {k : v.mean(dim=0) for k, v in grads_y_wrt_us_features.items()}
     return effect_out, grads_y_wrt_us_features
 
 def patching_on_y(model, dataset, submodules, dictionaries, method='separate', steps=10, grad_y_wrt_downstream=1, sequence_aggregation='final_pos_only'):
