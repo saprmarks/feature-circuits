@@ -2,6 +2,8 @@ from collections import namedtuple
 import torch as t
 from tqdm import tqdm
 from tensordict import TensorDict
+from torchtyping import TensorType
+from typing import Dict, Union
 from activation_utils import SparseAct
 
 EffectOut = namedtuple('EffectOut', ['effects', 'deltas', 'grads', 'total_effect'])
@@ -111,10 +113,10 @@ def _pe_attrib_all_folded_sparseact(
     effects = {}
     deltas = {}
     for submodule in submodules:
-        patch_state, clean_state = hidden_states_patch[submodule].value(), hidden_states_clean[submodule].value().detach()
+        patch_state, clean_state = hidden_states_patch[submodule].value, hidden_states_clean[submodule].value.detach()
         delta = patch_state - clean_state if patch_state is not None else -clean_state
-        grad = grads[submodule].value()
-        effect = delta * grad
+        grad = grads[submodule].value
+        effect = delta @ grad
         effects[submodule] = effect
         deltas[submodule] = delta
         grads[submodule] = grad
@@ -249,8 +251,8 @@ def _pe_ig_sparseact(
     grads = {}
     for submodule in submodules:
         dictionary = dictionaries[submodule]
-        clean_state = hidden_states_clean[submodule].value()
-        patch_state = hidden_states_patch[submodule].value()
+        clean_state = hidden_states_clean[submodule].value
+        patch_state = hidden_states_patch[submodule].value
         # patch_state, clean_state, residual = \
         #     hidden_states_patch[submodule], hidden_states_clean[submodule].act, hidden_states_clean[submodule].residual
         with model.forward(inference=False) as runner:
@@ -274,7 +276,7 @@ def _pe_ig_sparseact(
         mean_residual_grad = sum([f.res.grad for f in fs]) / steps
         grad = SparseAct(act=mean_grad, res=mean_residual_grad)
         delta = (patch_state - clean_state).detach() if patch_state is not None else -clean_state.detach()
-        effect = grad * delta
+        effect = grad @ delta
         effects[submodule] = effect
         deltas[submodule] = delta
         grads[submodule] = grad
@@ -372,6 +374,89 @@ def patching_effect(
         return _pe_exact(clean, patch, model, submodules, dictionaries, metric_fn)
     else:
         raise ValueError(f"Unknown method {method}")
+
+def jvp(
+        input,
+        model,
+        dictionaries,
+        downstream_submod,
+        downstream_features,
+        upstream_submod,
+        left_vec : Union[SparseAct, Dict[int, SparseAct]],
+        right_vec : SparseAct,
+        return_without_right = False,
+):
+    """
+    Return a sparse shape [# downstream features + 1, # upstream features + 1] tensor of Jacobian-vector products.
+    """
+    with model.invoke(input, fwd_args={'inference':False}):
+        downstream_dict, upstream_dict = dictionaries[downstream_submod], dictionaries[upstream_submod]
+        x = upstream_submod.output
+        is_resid = (type(x.shape) == tuple)
+        if is_resid:
+            x = x[0]
+        x_hat, f = upstream_dict(x, output_features=True)
+        residual = x - upstream_dict(x)
+        upstream_act = SparseAct(act=f, res=residual).save()
+        upstream_grad = SparseAct(act=f.grad, res=residual.grad).save()
+        if is_resid:
+            upstream_submod.output[0][:] = x_hat + residual
+        else:
+            upstream_submod.output = x_hat + residual
+        z = downstream_submod.output
+        is_resid = (type(z.shape) == tuple)
+        if is_resid:
+            z = z[0]
+        g = downstream_dict.encode(z)
+        residual = z - downstream_dict(z)
+        downstream_act = SparseAct(act=g, res=residual).save()
+
+    # just to get some shapes
+    d_downstream_contracted = len((downstream_act.value @ downstream_act.value).to_tensor().flatten())
+    d_upstream = len(upstream_act.value.to_tensor().flatten())
+    d_upstream_contracted = len((upstream_act.value @ upstream_act.value).to_tensor().flatten())
+
+    vjv_indices = t.empty(2, 0, dtype=t.long).to(downstream_act.value.act.device)
+    vjv_values = t.empty(0).to(downstream_act.value.act.device)
+    if return_without_right:
+        vj_indices = t.empty(2, 0, dtype=t.long).to(downstream_act.value.act.device)
+        vj_values = t.empty(0).to(downstream_act.value.act.device)
+    
+    for downstream_feature in downstream_features:
+        if isinstance(left_vec, SparseAct):
+            to_backprop = (left_vec @ downstream_act.value).to_tensor().flatten()
+        elif isinstance(left_vec, dict):
+            to_backprop = (left_vec[downstream_feature] @ downstream_act.value).to_tensor().flatten()
+        else:
+            raise ValueError(f"Unknown type {type(left_vec)}")
+        to_backprop[downstream_feature].backward(retain_graph=True)
+    
+        vjv = (upstream_grad.value @ right_vec).to_tensor().flatten().to_sparse()
+        stacked_indices = t.cat([t.tensor([[downstream_feature for _ in range(vjv.indices().shape[-1])]]).to(vjv), vjv.indices()], dim=0)
+        vjv_indices = t.cat([vjv_indices, stacked_indices], dim=-1)
+        vjv_values = t.cat([vjv_values, vjv.values()], dim=0)
+
+        if return_without_right:
+            vj = upstream_grad.value.to_tensor().flatten().to_sparse()
+            stacked_indices = t.cat([t.tensor([[downstream_feature for _ in range(vj.indices().shape[-1])]]).to(vj), vj.indices()], dim=0)
+            vj_indices = t.cat([vj_indices, stacked_indices], dim=-1)
+            vj_values = t.cat([vj_values, vj.values()], dim=0)
+
+    if not return_without_right:
+        return t.sparse_coo_tensor(vjv_indices, vjv_values, (d_downstream_contracted, d_upstream_contracted))
+    else:
+        return (
+            t.sparse_coo_tensor(vjv_indices, vjv_values, (d_downstream_contracted, d_upstream_contracted)), 
+            t.sparse_coo_tensor(vj_indices, vj_values, (d_downstream_contracted, d_upstream))
+        )
+        
+
+
+    
+
+
+
+
 
 def get_grad(clean, 
              patch, 
