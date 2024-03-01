@@ -253,8 +253,6 @@ def _pe_ig_sparseact(
         dictionary = dictionaries[submodule]
         clean_state = hidden_states_clean[submodule].value
         patch_state = hidden_states_patch[submodule].value
-        # patch_state, clean_state, residual = \
-        #     hidden_states_patch[submodule], hidden_states_clean[submodule].act, hidden_states_clean[submodule].residual
         with model.forward(inference=False) as runner:
             metrics = []
             fs = []
@@ -333,7 +331,7 @@ def _pe_exact(
         dictionary = dictionaries[submodule]
         patch_state, clean_state, residual = \
             hidden_states_patch[submodule], hidden_states_clean[submodule], residuals[submodule]
-        effect = t.zeros_like(clean_state.value)
+        effect = t.zeros(clean_state.value.shape[-1]) # shape of the features, summing over positions and batch later
         
         # iterate over positions and features for which clean and patch differ
         idxs = t.nonzero(patch_state.value - clean_state.value)
@@ -356,6 +354,78 @@ def _pe_exact(
 
     return EffectOut(effects, deltas, None, total_effect)
 
+
+def _pe_exact_sparseact(
+    clean,
+    patch,
+    model,
+    submodules,
+    dictionaries,
+    metric_fn,
+    ):
+    hidden_states_clean = {}
+    with model.invoke(clean):
+        for submodule in submodules:
+            dictionary = dictionaries[submodule]
+            x = submodule.output
+            is_resid = (type(x.shape) == tuple)
+            if is_resid:
+                x = x[0]
+            f = dictionary.encode(x)
+            x_hat = dictionary.decode(f)
+            residual = x - x_hat
+            hidden_states_clean[submodule] = SparseAct(act=f.save(), res=residual.save())
+        metric_clean = metric_fn(model).save()
+
+    if patch is None:
+        hidden_states_patch = {
+            k : SparseAct(act=t.zeros_like(v.act), res=t.zeros_like(v.res)) for k, v in hidden_states_clean.items()
+        }
+        total_effect = None
+    else:
+        hidden_states_patch = {}
+        with model.invoke(patch):
+            for submodule in submodules:
+                dictionary = dictionaries[submodule]
+                x = submodule.output
+                is_resid = (type(x.shape) == tuple)
+                if is_resid:
+                    x = x[0]
+                f = dictionary.encode(x)
+                x_hat = dictionary.decode(f)
+                residual = x - x_hat
+                hidden_states_patch[submodule] =SparseAct(act=f.save(), res=residual.save())
+            metric_patch = metric_fn(model).save()
+        total_effect = metric_patch.value - metric_clean.value
+
+    effects = {}
+    deltas = {}
+    for submodule in submodules:
+        dictionary = dictionaries[submodule]
+        clean_state = hidden_states_clean[submodule].value
+        patch_state = hidden_states_patch[submodule].value
+        effect = t.zeros(clean_state.act.shape[-1]) # shape of the features, summing over positions and batch later
+        
+        # iterate over positions and features for which clean and patch differ
+        idxs = t.nonzero(patch_state.act - clean_state.act)
+        for idx in tqdm(idxs):
+            with model.invoke(clean):
+                f = clean_state.act.clone()
+                f[tuple(idx)] = patch_state.act[tuple(idx)]
+                x_hat = dictionary.decode(f)
+                if is_resid:
+                    submodule.output[0][:] = x_hat + clean_state.res
+                else:
+                    submodule.output = x_hat + clean_state.res
+                metric = metric_fn(model).save()
+            effect[idx] = (metric.value - metric_clean.value).sum()
+        
+        effects[submodule] = SparseAct(act=effect, res=clean_state.res)
+        deltas[submodule] = patch_state - clean_state
+    total_effect = total_effect if total_effect is not None else None
+
+    return EffectOut(effects, deltas, None, total_effect)
+
 def patching_effect(
         clean,
         patch,
@@ -371,7 +441,7 @@ def patching_effect(
     elif method == 'ig':
         return _pe_ig_sparseact(clean, patch, model, submodules, dictionaries, metric_fn, steps=steps)
     elif method == 'exact':
-        return _pe_exact(clean, patch, model, submodules, dictionaries, metric_fn)
+        return _pe_exact_sparseact(clean, patch, model, submodules, dictionaries, metric_fn)
     else:
         raise ValueError(f"Unknown method {method}")
 
@@ -450,14 +520,6 @@ def jvp(
             t.sparse_coo_tensor(vj_indices, vj_values, (d_downstream_contracted, d_upstream))
         )
         
-
-
-    
-
-
-
-
-
 def get_grad(clean, 
              patch, 
              model, 
@@ -512,7 +574,7 @@ if __name__ == "__main__":
     from nnsight import LanguageModel
     from dictionary_learning import AutoEncoder
 
-    model = LanguageModel('EleutherAI/pythia-70m-deduped', device_map='cuda:0')
+    model = LanguageModel('EleutherAI/pythia-70m-deduped', device_map='cpu')
     submodules = []
     submodule_names = {}
     dictionaries = {}
@@ -520,14 +582,14 @@ if __name__ == "__main__":
         submodule = model.gpt_neox.layers[layer].mlp
         submodule_names[submodule] = f'mlp{layer}'
         submodules.append(submodule)
-        ae = AutoEncoder(512, 64 * 512).cuda()
+        ae = AutoEncoder(512, 64 * 512)#.cuda()
         ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/mlp_out_layer{layer}/5_32768/ae.pt'))
         dictionaries[submodule] = ae
 
         submodule = model.gpt_neox.layers[layer]
         submodule_names[submodule] = f'resid{layer}'
         submodules.append(submodule)
-        ae = AutoEncoder(512, 64 * 512).cuda()
+        ae = AutoEncoder(512, 64 * 512)#.cuda()
         ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/resid_out_layer{layer}/5_32768/ae.pt'))
         dictionaries[submodule] = ae
 
@@ -541,9 +603,16 @@ if __name__ == "__main__":
     
     def compare_effect_outs(eo1, eo2_sparseact):
         for k in ['effects', 'deltas', 'grads']:
-            for submod in getattr(eo1, k):
-                tensor1 = getattr(eo1, k)[submod]
-                tensor2_sparseact = getattr(eo2_sparseact, k)[submod].act
+            effect_out1 = getattr(eo1, k)
+            if effect_out1 is None:
+                continue
+            for submod in effect_out1:
+                tensor1 = effect_out1[submod]
+                effect_out2_sparseact = getattr(eo2_sparseact, k)[submod]
+                if isinstance(effect_out2_sparseact, SparseAct):
+                    tensor2_sparseact = effect_out2_sparseact.act
+                else:
+                    tensor2_sparseact = effect_out2_sparseact
                 if not t.allclose(tensor1, tensor2_sparseact):
                     print(f"{k} differs at submod {submod}")
                     print(tensor1.sum())
@@ -592,3 +661,23 @@ if __name__ == "__main__":
     )
     if compare_effect_outs(effect_out_ig, effect_out_ig_sparseact):
         print("IG test passed")
+
+    ## Exact feature activation test
+    effect_out_exact = _pe_exact(
+        clean_context,
+        patch_context,
+        model,
+        submodules,
+        dictionaries,
+        metric_fn,
+    )
+    effect_out_exact_sparseact = _pe_exact_sparseact(
+        clean_context,
+        patch_context,
+        model,
+        submodules,
+        dictionaries,
+        metric_fn,
+    )
+    if compare_effect_outs(effect_out_exact, effect_out_exact_sparseact):
+        print("Exact test passed")
