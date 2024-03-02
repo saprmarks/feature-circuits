@@ -43,7 +43,7 @@ def get_circuit(
         metric_fn,
         node_threshold=0.1,
         edge_threshold=0.01,
-        method='separate',
+        method='all-folded',
 ):
     
     # first, figure out which features get to go in the circuit and the gradient of y wrt these feeatures
@@ -86,10 +86,9 @@ def get_circuit(
             clean,
             patch,
             model,
+            dictionaries,
             upstream_submods,
-            upstream_dictionaries,
             downstream_submod,
-            dictionaries[downstream_submod],
             feat_idxs[downstream_submod],
         )
         for downstream_node in nodes_by_component[downstream_submod]:

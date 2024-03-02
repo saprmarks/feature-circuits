@@ -15,6 +15,9 @@ class TensorKey:
     def __hash__(self):
         return hash(tuple(self.x.tolist()))
     
+    def __repr__(self):
+        return f"TensorKey({self.x})"
+    
 class TensorDict:
     _dict : dict
 
@@ -55,6 +58,11 @@ class TensorDict:
     # magic methods must be defined by hand
     def __len__(self):
         return len(self._dict)
+    
+    def __repr__(self):
+        return f"""TensorDict({dict({
+            k : v for k, v in self.items()
+        })})"""
     
 if __name__ == '__main__':
     x = t.tensor([1,2,3])

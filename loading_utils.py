@@ -17,7 +17,7 @@ class DictionaryCfg(): # TODO Move to dictionary_learning repo?
         self.dir = dictionary_dir
         self.size = dictionary_size
 
-def load_examples(dataset, num_examples, model, seed=12, pad_to_length=16):
+def load_examples(dataset, num_examples, model, seed=12, pad_to_length=None):
         examples = []
         dataset_items = open(dataset).readlines()
         random.seed(seed)
@@ -36,17 +36,17 @@ def load_examples(dataset, num_examples, model, seed=12, pad_to_length=16):
                 continue
             if clean_answer.shape[1] != 1 or patch_answer.shape[1] != 1:
                 continue
-            prefix_length_wo_pad = clean_prefix.shape[1]
-            if pad_to_length:
-                model.tokenizer.padding_side = 'right' # TODO: move this after model initialization
-                pad_length = pad_to_length - prefix_length_wo_pad
-                clean_prefix = F.pad(clean_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
-                patch_prefix = F.pad(patch_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
+            # prefix_length_wo_pad = clean_prefix.shape[1]
+            # if pad_to_length:
+            #     # model.tokenizer.padding_side = 'right'
+            #     pad_length = pad_to_length - prefix_length_wo_pad
+            #     clean_prefix = F.pad(clean_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
+            #     patch_prefix = F.pad(patch_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
             example_dict = {"clean_prefix": clean_prefix,
                             "patch_prefix": patch_prefix,
                             "clean_answer": clean_answer.item(),
-                            "patch_answer": patch_answer.item(),
-                            "prefix_length_wo_pad": prefix_length_wo_pad,}
+                            "patch_answer": patch_answer.item(),}
+                            # "prefix_length_wo_pad": prefix_length_wo_pad,}
             examples.append(example_dict)
             if len(examples) >= num_examples:
                 break
