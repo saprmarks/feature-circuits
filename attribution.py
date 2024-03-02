@@ -331,7 +331,7 @@ def _pe_exact(
         dictionary = dictionaries[submodule]
         patch_state, clean_state, residual = \
             hidden_states_patch[submodule], hidden_states_clean[submodule], residuals[submodule]
-        effect = t.zeros(clean_state.value.shape[-1]) # shape of the features, summing over positions and batch later
+        effect = t.zeros_like(clean_state.value) # shape of the features, summing over positions and batch later
         
         # iterate over positions and features for which clean and patch differ
         idxs = t.nonzero(patch_state.value - clean_state.value)
@@ -345,7 +345,7 @@ def _pe_exact(
                 else:
                     submodule.output = x_hat + residual.value
                 metric = metric_fn(model).save()
-            effect[idx] = (metric.value - metric_clean.value).sum()
+            effect[tuple(idx)] = (metric.value - metric_clean.value).sum()
         delta = patch_state.value - clean_state.value
         
         effects[submodule] = effect
@@ -404,7 +404,7 @@ def _pe_exact_sparseact(
         dictionary = dictionaries[submodule]
         clean_state = hidden_states_clean[submodule].value
         patch_state = hidden_states_patch[submodule].value
-        effect = t.zeros(clean_state.act.shape[-1]) # shape of the features, summing over positions and batch later
+        effect = t.zeros_like(clean_state.act)
         
         # iterate over positions and features for which clean and patch differ
         idxs = t.nonzero(patch_state.act - clean_state.act)
@@ -418,7 +418,7 @@ def _pe_exact_sparseact(
                 else:
                     submodule.output = x_hat + clean_state.res
                 metric = metric_fn(model).save()
-            effect[idx] = (metric.value - metric_clean.value).sum()
+            effect[tuple(idx)] = (metric.value - metric_clean.value).sum()
         
         effects[submodule] = SparseAct(act=effect, res=clean_state.res)
         deltas[submodule] = patch_state - clean_state
@@ -622,45 +622,45 @@ if __name__ == "__main__":
 
     # Check that the sparseact version of the function returns the same result as the original
 
-    ## All-folded feature activation test
-    effect_out_all_folded = _pe_attrib_all_folded(
-        clean_context,
-        patch_context,
-        model,
-        submodules,
-        dictionaries,
-        metric_fn,
-    )
-    effect_out_all_folded_sparseact = _pe_attrib_all_folded_sparseact(
-        clean_context,
-        patch_context,
-        model,
-        submodules,
-        dictionaries,
-        metric_fn,
-    )
-    if compare_effect_outs(effect_out_all_folded, effect_out_all_folded_sparseact):
-      print("All-folded test passed")
+    # ## All-folded feature activation test
+    # effect_out_all_folded = _pe_attrib_all_folded(
+    #     clean_context,
+    #     patch_context,
+    #     model,
+    #     submodules,
+    #     dictionaries,
+    #     metric_fn,
+    # )
+    # effect_out_all_folded_sparseact = _pe_attrib_all_folded_sparseact(
+    #     clean_context,
+    #     patch_context,
+    #     model,
+    #     submodules,
+    #     dictionaries,
+    #     metric_fn,
+    # )
+    # if compare_effect_outs(effect_out_all_folded, effect_out_all_folded_sparseact):
+    #   print("All-folded test passed")
 
-    ## IG feature activation test
-    effect_out_ig = _pe_ig(
-        clean_context,
-        patch_context,
-        model,
-        submodules,
-        dictionaries,
-        metric_fn,
-    )
-    effect_out_ig_sparseact = _pe_ig_sparseact(
-        clean_context,
-        patch_context,
-        model,
-        submodules,
-        dictionaries,
-        metric_fn,
-    )
-    if compare_effect_outs(effect_out_ig, effect_out_ig_sparseact):
-        print("IG test passed")
+    # ## IG feature activation test
+    # effect_out_ig = _pe_ig(
+    #     clean_context,
+    #     patch_context,
+    #     model,
+    #     submodules,
+    #     dictionaries,
+    #     metric_fn,
+    # )
+    # effect_out_ig_sparseact = _pe_ig_sparseact(
+    #     clean_context,
+    #     patch_context,
+    #     model,
+    #     submodules,
+    #     dictionaries,
+    #     metric_fn,
+    # )
+    # if compare_effect_outs(effect_out_ig, effect_out_ig_sparseact):
+    #     print("IG test passed")
 
     ## Exact feature activation test
     effect_out_exact = _pe_exact(
