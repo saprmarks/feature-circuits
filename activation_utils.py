@@ -9,6 +9,7 @@ class SparseAct():
             act: TensorType["batch_size", "n_ctx", "d_dictionary"] = None, 
             res: TensorType["batch_size", "n_ctx", "d_model"] = None,
             resc: TensorType["batch_size", "n_ctx"] = None, # contracted residual
+            device: str = "cuda:0"
             # dense_act: TensorType["batch_size", "n_ctx", "d_model"] = None, 
             # dictionary: AutoEncoder = None,
             ) -> None:
