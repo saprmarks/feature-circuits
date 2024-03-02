@@ -243,68 +243,6 @@ class Circuit:
                         feat_ds_effects = feat_ds_effects.effects
                         self._evaluate_effects_chainrule(feat_ds_effects, us_submodule_names, self.feat_threshold, ds_node, nodes_per_submod, grads_y_wrt_us_features)
 
-    def locate_circuit_chainrule_nopair(self, patch_method='separate', sequence_aggregation='final_pos_only'):
-        num_layers = self.model.config.num_hidden_layers
-        nodes_per_submod = defaultdict(set)
-
-        # Load all submodules and dictionaries into list grouped by layer
-        all_submodule_names, all_submodules, all_dictionaries = [], [], []
-        for layer in range(num_layers):
-            submodule_names_layer, submodules_layer, dictionaries_layer = [], [], []
-            for submodule_name in self.submodules_generic:
-                submodule_name = submodule_name.format(str(layer))
-                submodule, dictionary = load_submodule_and_dictionary(self.model, submodule_name, self.dict_cfg)
-                submodule_names_layer.append(submodule_name)
-                submodules_layer.append(submodule)
-                dictionaries_layer.append(dictionary)
-            all_submodule_names.append(submodule_names_layer)
-            all_submodules.append(submodules_layer)
-            all_dictionaries.append(dictionaries_layer)
-
-        # Iterate through layers
-        for layer in trange(num_layers-1, -1, -1, desc="Layers", total=num_layers):
-            submodule_names_layer, submodules_layer, dictionaries_layer = all_submodule_names[layer], all_submodules[layer], all_dictionaries[layer]
-            # Effects on y (downstream)
-            # Upstream: submodules of this layer
-            effects_on_y, grads_y_wrt_us_features = patching_on_y_nopair(
-                self.model, 
-                self.dataset, 
-                submodules_layer, 
-                dictionaries_layer, 
-                method=patch_method, 
-                grad_y_wrt_downstream=1, 
-                sequence_aggregation=sequence_aggregation
-                ) # (d/dy)y = 1
-            effects_on_y = effects_on_y.effects
-            self._evaluate_effects_chainrule(effects_on_y, submodule_names_layer, self.y_threshold, self.root, nodes_per_submod, grads_y_wrt_us_features)
-
-            # Effects on submodules in this layer
-            # Upstream: submodules of layers earier in the forward pass
-            if layer > 0:
-                for ds_submodule, ds_dictionary in zip(submodules_layer, dictionaries_layer): # iterate backwards through submodules; first submodule in all_submodules cannot be downstream
-                    # Effects on downstream features
-                    # Iterate backwards through submodules and measure causal effects.
-                    us_submodule_names = [n for names in all_submodule_names[:layer] for n in names] # flatten all_submodule_names[:layer]
-                    us_submodules = [s for submodules in all_submodules[:layer] for s in submodules]
-                    us_dictionaries = [d for dictionaries in all_dictionaries[:layer] for d in dictionaries]
-                    for ds_node in nodes_per_submod[ds_submodule]:
-                        # print(f'ds_node: {ds_node.name}')
-                        ds_node_idx = int(ds_node.name.split("_")[1])
-                        feat_ds_effects, grads_y_wrt_us_features = patching_on_downstream_feature_nopair(
-                            self.model, 
-                            self.dataset,
-                            us_submodules,
-                            us_dictionaries,
-                            ds_submodule,
-                            ds_dictionary,
-                            downstream_feature_id=ds_node_idx,
-                            grad_y_wrt_downstream=ds_node.accumulated_gradient,
-                            method=patch_method,
-                            sequence_aggregation=sequence_aggregation,
-                            )
-                        feat_ds_effects = feat_ds_effects.effects
-                        self._evaluate_effects_chainrule(feat_ds_effects, us_submodule_names, self.feat_threshold, ds_node, nodes_per_submod, grads_y_wrt_us_features)
-
     def evaluate_faithfulness(self, eval_dataset=None, patch_type='zero'):
         """
         Evaluate performance of circuit compared to full model.
