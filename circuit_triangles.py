@@ -5,6 +5,70 @@ from nnsight import LanguageModel
 from attribution import patching_effect, jvp
 from einops import rearrange
 from activation_utils import SparseAct
+from collections import defaultdict
+import argparse
+from circuit_plotting import plot_circuit
+import random
+from loading_utils import load_examples
+
+def flatten_index(idxs, shape):
+    """
+    index : a tensor of shape [n, len(shape)]
+    shape : a shape
+    return a tensor of shape [n] where each element is the flattened index
+    """
+    idxs = idxs.t()
+    # get strides from shape
+    strides = [1]
+    for i in range(len(shape)-1, 0, -1):
+        strides.append(strides[-1]*shape[i])
+    strides = list(reversed(strides))
+    strides = t.tensor(strides).to(idxs.device)
+    # flatten index
+    return (idxs * strides).sum(dim=1).unsqueeze(0)
+
+def prod(l):
+    out = 1
+    for x in l: out *= x
+    return out
+
+def sparse_flatten(x):
+    x = x.coalesce()
+    return t.sparse_coo_tensor(
+        flatten_index(x.indices(), x.shape),
+        x.values(),
+        (prod(x.shape),)
+    )
+
+def reshape_index(index, shape):
+    """
+    index : a tensor of shape [n]
+    shape : a shape
+    return a tensor of shape [n, len(shape)] where each element is the reshaped index
+    """
+    multi_index = []
+    for dim in reversed(shape):
+        multi_index.append(index % dim)
+        index //= dim
+    multi_index.reverse()
+    return t.stack(multi_index, dim=-1)
+
+def sparse_reshape(x, shape):
+    """
+    x : a sparse COO tensor
+    shape : a shape
+    return x reshaped to shape
+    """
+    # first flatten x
+    x = sparse_flatten(x).coalesce()
+    new_indices = reshape_index(x.indices()[0], shape)
+    return t.sparse_coo_tensor(new_indices.t(), x.values(), shape)
+
+def sparse_mean(x, dim):
+    if isinstance(dim, int):
+        return x.sum(dim=dim) / x.shape[dim]
+    else:
+        return x.sum(dim=dim) / prod(x.shape[d] for d in dim)
 
 def get_circuit(
         clean,
@@ -27,10 +91,11 @@ def get_circuit(
         model,
         all_submods,
         dictionaries,
-        metric_fn
+        metric_fn,
+        method='ig' # get better approximations for early layers by using ig
     )
 
-    def unflatten(tensor):
+    def unflatten(tensor): # will break if dictionaries vary in size between layers
         b, s, f = effects[resids[0]].act.shape
         unflattened = rearrange(tensor, '(b s x) -> b s x', b=b, s=s)
         return SparseAct(act=unflattened[...,:f], res=unflattened[...,f:])
@@ -47,8 +112,8 @@ def get_circuit(
         nodes[f'mlp_{i}'] = effects[mlps[i]]
         nodes[f'resid_{i}'] = effects[resids[i]]
 
-    edges = {}
-    edges[f'resid_{len(resids) - 1}'] = { 'y' : effects[resids[-1]].to_tensor().flatten() }
+    edges = defaultdict(lambda:{})
+    edges[f'resid_{len(resids) - 1}'] = { 'y' : effects[resids[-1]].to_tensor().flatten().to_sparse() }
 
     def N(upstream, downstream):
         return jvp(
@@ -73,17 +138,17 @@ def get_circuit(
         MR_effect, MR_grad = N(mlp, resid)
         AR_effect, AR_grad = N(attn, resid)
 
-        edges[f'mlp_{layer}']  = { f'resid_{layer}' : MR_effect }
-        edges[f'attn_{layer}'] = { f'resid_{layer}' : AR_effect }
+        edges[f'mlp_{layer}'][f'resid_{layer}'] = MR_effect
+        edges[f'attn_{layer}'][f'resid_{layer}'] = AR_effect
 
-        if layer > 1:
+        if layer > 0:
             prev_resid = resids[layer - 1]
 
             RM_effect, _ = N(prev_resid, mlp)
             RA_effect, _ = N(prev_resid, attn)
 
-            edges[f'resid_{layer - 1}'] = { f'mlp_{layer}' : RM_effect }
-            edges[f'resid_{layer - 1}'] = { f'attn_{layer}' : RA_effect }
+            edges[f'resid_{layer - 1}'][f'mlp_{layer}'] = RM_effect
+            edges[f'resid_{layer - 1}'][f'attn_{layer}'] = RA_effect
 
             RMR_effect = jvp(
                 clean,
@@ -106,51 +171,146 @@ def get_circuit(
                 deltas[prev_resid],
             )
             RR_effect, _ = N(prev_resid, resid)
-            edges[f'resid_{layer - 1}'] = { f'resid_{layer}' : RR_effect - RMR_effect - RAR_effect }
+            edges[f'resid_{layer - 1}'][f'resid_{layer}'] = RR_effect - RMR_effect - RAR_effect
     
+
+    # aggregate across batch dimensions
+    for child in edges:
+        # get shape for child
+        bc, sc, fc = nodes[child].act.shape
+        for parent in edges[child]:
+            weight_matrix = edges[child][parent]
+            if parent == 'y':
+                weight_matrix = sparse_reshape(weight_matrix, (bc, sc, fc+1))
+                weight_matrix = weight_matrix.sum(dim=0) / bc
+            else:
+                bp, sp, fp = nodes[parent].act.shape
+                assert bp == bc
+                weight_matrix = sparse_reshape(weight_matrix, (bp, sp, fp+1, bc, sc, fc+1))
+                weight_matrix = weight_matrix.sum(dim=(0, 3)) / bc
+            edges[child][parent] = weight_matrix
+    for node in nodes:
+        nodes[node] = nodes[node].mean(dim=0)
+
+
+
     return nodes, edges
 
 if __name__ == '__main__':
-    device = 'cuda:0'
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--tests', action='store_true')
+    parser.add_argument('--dataset', '-d', type=str, default='simple')
+    parser.add_argument('--num_examples', '-n', type=int, default=10)
+    parser.add_argument('--model', type=str, default='EleutherAI/pythia-70m-deduped')
+    parser.add_argument('--d_model', type=int, default=512)
+    parser.add_argument('--dict_id', type=int, default=5)
+    parser.add_argument('--dict_size', type=int, default=32768)
+    parser.add_argument('--node_threshold', type=float, default=0.1)
+    parser.add_argument('--edge_threshold', type=float, default=0.01)
+    parser.add_argument('--pen_thickness', type=float, default=1)
+    parser.add_argument('--seed', type=int, default=12)
+    parser.add_argument('--device', type=str, default='cuda:0')
+    args = parser.parse_args()
 
-    model = LanguageModel('EleutherAI/pythia-70m-deduped', device_map=device)
+
+    device = args.device
+
+    if args.tests:
+        def _assert_equal(x, y):
+            # assert that two sparse tensors are equal
+            assert x.shape == y.shape
+            assert t.all((x - y).coalesce().values() == 0)
+
+        # test flatten_index
+        shape = [4, 3, 1, 8, 2]
+        x = t.randn(*shape).to(device)
+        assert t.all(
+            x.flatten().to_sparse().indices() == \
+            flatten_index(x.to_sparse().indices(), shape)
+        )
+
+        # test sparse_flatten
+        shape = [5]
+        x = t.randn(*shape).to(device)
+        _assert_equal(x.flatten().to_sparse(), sparse_flatten(x.to_sparse()))
+
+        shape = [5, 2, 10, 3, 4]
+        x = t.randn(*shape).to(device)
+        _assert_equal(x.flatten().to_sparse(), sparse_flatten(x.to_sparse()))
+        
+        # test sparse_reshape
+        shape = [2, 2, 3, 5, 4]
+        x = t.randn(*shape).to(device)
+        x_flat = x.flatten().to_sparse()
+        x_reshaped = sparse_reshape(x_flat, shape)
+        _assert_equal(x.to_sparse(), x_reshaped)
+
+        shape = [4, 6]
+        new_shape = [2, 2, 6]
+        x = t.randn(*shape).to(device)
+        x_rearranged = rearrange(x, '(a b) c -> a b c', a=2)
+        assert t.all(x_rearranged.to_dense() == sparse_reshape(x.to_sparse(), new_shape).to_dense())
+
+        shape = [4, 4, 4]
+        new_shape = [2, 2, 4, 2, 2]
+        x = t.randn(*shape).to(device)
+        x_rearranged = rearrange(x, '(a b) c (d e) -> a b c d e', a=2, b=2, d=2, e=2)
+        assert t.all(x_rearranged.to_dense() == sparse_reshape(x.to_sparse(), new_shape).to_dense())
+
+
+    model = LanguageModel(args.model, device_map=device)
 
     attns = [layer.attention for layer in model.gpt_neox.layers]
     mlps = [layer.mlp for layer in model.gpt_neox.layers]
     resids = [layer for layer in model.gpt_neox.layers]
     dictionaries = {}
     for i in range(len(model.gpt_neox.layers)):
-        ae = AutoEncoder(512, 512 * 64).to(device)
-        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/attn_out_layer{i}/5_32768/ae.pt'))
+        ae = AutoEncoder(args.d_model, args.dict_size).to(device)
+        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/attn_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
         dictionaries[attns[i]] = ae
 
-        ae = AutoEncoder(512, 512 * 64).to(device)
-        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/mlp_out_layer{i}/5_32768/ae.pt'))
+        ae = AutoEncoder(args.d_model, args.dict_size).to(device)
+        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/mlp_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
         dictionaries[mlps[i]] = ae
 
-        ae = AutoEncoder(512, 512 * 64).to(device)
-        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/resid_out_layer{i}/5_32768/ae.pt'))
+        ae = AutoEncoder(args.d_model, args.dict_size).to(device)
+        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/resid_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
         dictionaries[resids[i]] = ae
     
-    clean = 'The man'
-    patch = 'The men'
+    data_path = f"/share/projects/dictionary_circuits/data/phenomena/{args.dataset}.json"
 
-    clean_idx = model.tokenizer(" is").input_ids[-1]
-    patch_idx = model.tokenizer(" are").input_ids[-1]
+
+    dataset_items = open(data_path).readlines()
+    random.seed(args.seed)
+    random.shuffle(dataset_items)
+
+    examples = load_examples(data_path, args.num_examples, model)
+    clean_inputs = t.cat([e['clean_prefix'] for e in examples], dim=0)
+    patch_inputs = t.cat([e['patch_prefix'] for e in examples], dim=0)
+    clean_answer_idxs = t.tensor([e['clean_answer'] for e in examples], dtype=t.long)
+    patch_answer_idxs = t.tensor([e['patch_answer'] for e in examples], dtype=t.long)
 
     def metric_fn(model):
-        return model.embed_out.output[:,-1,patch_idx] - model.embed_out.output[:,-1,clean_idx]
+        return (
+            t.gather(model.embed_out.output[:,-1,:], dim=-1, index=patch_answer_idxs.view(-1, 1)).squeeze(-1) - \
+            t.gather(model.embed_out.output[:,-1,:], dim=-1, index=clean_answer_idxs.view(-1, 1)).squeeze(-1)
+        )
     
-    get_circuit(
-        clean,
-        patch,
+    nodes, edges = get_circuit(
+        clean_inputs,
+        patch_inputs,
         model,
         attns,
         mlps,
         resids,
         dictionaries,
-        metric_fn
+        metric_fn,
+        node_threshold=args.node_threshold,
+        edge_threshold=args.edge_threshold,
     )
+
+    plot_circuit(nodes, edges, layers=len(model.gpt_neox.layers), node_threshold=args.node_threshold, edge_threshold=args.edge_threshold, pen_thickness=args.pen_thickness)
+
 
 
         

@@ -78,6 +78,20 @@ class SparseAct():
             return f"SparseAct(act={self.act}, res={self.res})"
         raise ValueError("SparseAct has both residual and contracted residual. This is an unsupported state.")
     
+    def sum(self, dim: int):
+        kwargs = {}
+        for attr in ['act', 'res', 'resc']:
+            if getattr(self, attr) is not None:
+                kwargs[attr] = getattr(self, attr).sum(dim)
+        return SparseAct(**kwargs)
+    
+    def mean(self, dim: int):
+        kwargs = {}
+        for attr in ['act', 'res', 'resc']:
+            if getattr(self, attr) is not None:
+                kwargs[attr] = getattr(self, attr).mean(dim)
+        return SparseAct(**kwargs)
+    
     @property
     def value(self):
         kwargs = {}
