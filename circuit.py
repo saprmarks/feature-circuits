@@ -370,15 +370,3 @@ if __name__ == "__main__":
     )
 
     print(dag)
-
-    # TODO: Solve CUDA out of memory error, that occurs when setting --num_examples to 10
-
-    # TODO: Using attn and MLP simultaneously is not supported, bc they are passed in submodule array in hierarchy (i.e. the algorithm assumes output of attn is the innput to MLP in the same layer), but they run in parallel so have no gradients onto each other. We have to implement layer hierarchy (insetead of submodule hierarchy) across this scircuit discovery method.
-
-    # TODO: Connect Sam's implementation of sliced, mean, sum DAGs to the sequence aggregation argument in the argparser
-
-    # TODO: Convert DAG to a lightweight object which enables pickling
-    # with open(save_path, 'wb') as pickle_file:
-    #     pickle.dump(dag, pickle_file)
-
-    # TODO: Adapt circuit evaluation in circuit_evaluation.py to use the lightweight object
