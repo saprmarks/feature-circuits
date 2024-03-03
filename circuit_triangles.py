@@ -81,6 +81,7 @@ def get_circuit(
         resids,
         dictionaries,
         metric_fn,
+        metric_kwargs=dict(),
         aggregation='sum', # or 'none' for not aggregating across sequence position
         node_threshold=0.1,
         edge_threshold=0.01,
@@ -95,6 +96,7 @@ def get_circuit(
         all_submods,
         dictionaries,
         metric_fn,
+        metric_kwargs=metric_kwargs,
         method='ig' # get better approximations for early layers by using ig
     )
 
@@ -107,7 +109,7 @@ def get_circuit(
         submod : (effects[submod].to_tensor().flatten().abs() > node_threshold).nonzero().flatten().tolist() for submod in all_submods
     }
 
-    n_layers = len(model.gpt_neox.layers)
+    n_layers = len(resids)
 
     nodes = {'y' : total_effect}
     for i in range(n_layers):
@@ -152,6 +154,16 @@ def get_circuit(
 
             edges[f'resid_{layer - 1}'][f'mlp_{layer}'] = RM_effect
             edges[f'resid_{layer - 1}'][f'attn_{layer}'] = RA_effect
+            # for feat_idx in features_by_submod[resid]:
+            #     print(MR_grad.shape)
+            #     print(feat_idx)
+            #     try:
+            #         MR_grad[feat_idx]
+            #     except:
+            #         MR_grad.cpu()[feat_idx]
+
+            MR_grad = MR_grad.coalesce()
+            AR_grad = AR_grad.coalesce()
 
             RMR_effect = jvp(
                 clean,
@@ -217,7 +229,8 @@ def get_circuit(
                     weight_matrix = weight_matrix.sum(dim=(0,2)) / bc
                 edges[child][parent] = weight_matrix
         for node in nodes:
-            nodes[node] = nodes[node].mean(dim=0)
+            if node != 'y':
+                nodes[node] = nodes[node].mean(dim=0)
     
     elif aggregation == 'none':
 

@@ -72,6 +72,7 @@ def _pe_attrib_all_folded_sparseact(
         submodules,
         dictionaries,
         metric_fn,
+        metric_kwargs=dict(),
 ):
     hidden_states_clean = {}
     grads = {}
@@ -93,7 +94,7 @@ def _pe_attrib_all_folded_sparseact(
             else:
                 submodule.output = x_recon
             x.grad = x_recon.grad
-        metric_clean = metric_fn(model).save()
+        metric_clean = metric_fn(model, **metric_kwargs).save()
     metric_clean.value.sum().backward()
 
     hidden_states_patch = {}
@@ -107,7 +108,7 @@ def _pe_attrib_all_folded_sparseact(
             x_hat, f = dictionary(x, output_features=True) # x_hat implicitly depends on f
             residual = x - x_hat
             hidden_states_patch[submodule] = SparseAct(act=f.save(), res=residual.save())
-        metric_patch = metric_fn(model).save()
+        metric_patch = metric_fn(model, **metric_kwargs).save()
     total_effect = (metric_patch.value - metric_clean.value).detach()
 
     effects = {}
@@ -209,6 +210,7 @@ def _pe_ig_sparseact(
         dictionaries,
         metric_fn,
         steps=10,
+        metric_kwargs=dict(),
 ):
 
     hidden_states_clean = {}
@@ -224,7 +226,7 @@ def _pe_ig_sparseact(
             x_hat = dictionary.decode(f)
             residual = x - x_hat
             hidden_states_clean[submodule] = SparseAct(act=f.save(), res=residual.save())
-        metric_clean = metric_fn(model).save()
+        metric_clean = metric_fn(model, **metric_kwargs).save()
 
     hidden_states_patch = {}
     if patch is None:
@@ -243,7 +245,7 @@ def _pe_ig_sparseact(
                 x_hat = dictionary.decode(f)
                 residual = x - x_hat
                 hidden_states_patch[submodule] = SparseAct(act=f.save(), res=residual.save())
-            metric_patch = metric_fn(model).save()
+            metric_patch = metric_fn(model, **metric_kwargs).save()
         total_effect = (metric_patch.value - metric_clean.value).detach()
 
     effects = {}
@@ -267,7 +269,7 @@ def _pe_ig_sparseact(
                         submodule.output[0][:] = dictionary.decode(f.act) + f.res # clean_state.res instead of f.res makes this exactly same as the non-sparseact version
                     else:
                         submodule.output = dictionary.decode(f.act) + f.res # clean_state.res instead of f.res makes this exactly same as the non-sparseact version
-                    metrics.append(metric_fn(model).save())
+                    metrics.append(metric_fn(model, **metric_kwargs).save())
         metric = sum([m.value for m in metrics])
         metric.sum().backward()
         mean_grad = sum([f.act.grad for f in fs]) / steps
@@ -435,11 +437,12 @@ def patching_effect(
         metric_fn,
         method='all-folded',
         steps=10,
+        metric_kwargs=dict()
 ):
     if method == 'all-folded':
-        return _pe_attrib_all_folded_sparseact(clean, patch, model, submodules, dictionaries, metric_fn)
+        return _pe_attrib_all_folded_sparseact(clean, patch, model, submodules, dictionaries, metric_fn, metric_kwargs=metric_kwargs)
     elif method == 'ig':
-        return _pe_ig_sparseact(clean, patch, model, submodules, dictionaries, metric_fn, steps=steps)
+        return _pe_ig_sparseact(clean, patch, model, submodules, dictionaries, metric_fn, steps=steps, metric_kwargs=metric_kwargs)
     elif method == 'exact':
         return _pe_exact_sparseact(clean, patch, model, submodules, dictionaries, metric_fn)
     else:
