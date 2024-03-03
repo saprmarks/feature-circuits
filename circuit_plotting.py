@@ -14,7 +14,6 @@ def get_name(component, layer, idx):
 
 def plot_circuit(nodes, edges, layers=6, node_threshold=0.1, edge_threshold=0.01, pen_thickness=1, annotations=None, save_dir='circuit'):
 
-
     # get min and max node effects
     min_effect = min([v.to_tensor().min() for n, v in nodes.items() if n != 'y'])
     max_effect = max([v.to_tensor().max() for n, v in nodes.items() if n != 'y'])
@@ -49,26 +48,19 @@ def plot_circuit(nodes, edges, layers=6, node_threshold=0.1, edge_threshold=0.01
         def get_label(name):
             return name
     else:
-        # for deciding label of node
         def get_label(name):
-            return name
-        # TODO implement this later
-            # try: 
-            #     match name.split(', '):
-            #         case seq, feat:
-            #             if feat in annotations:
-            #                 component = feat.split('/')[0]
-            #                 component = feat.split('_')[0]
-            #                 return f'{seq}, {annotations[feat]} ({component})'
-            #             return name
-            #         case feat:
-            #             if feat in annotations:
-            #                 component = feat.split('/')[0]
-            #                 component = feat.split('_')[0]
-            #                 return f'{annotations[feat]} ({component})'
-            # except:
-            #     print(name)
-            #     assert False
+            match name.split(', '):
+                case seq, feat:
+                    if feat in annotations:
+                        component = feat.split('/')[0]
+                        component = feat.split('_')[0]
+                        return f'{seq}, {annotations[feat]} ({component})'
+                    return name
+                case [feat]:
+                    if feat in annotations:
+                        component = feat.split('/')[0]
+                        component = feat.split('_')[0]
+                        return f'{annotations[feat]} ({component})'
 
     G = Digraph(name='Feature circuit')
     G.graph_attr.update(rankdir='BT', newrank='true')

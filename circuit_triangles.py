@@ -81,6 +81,7 @@ def get_circuit(
         resids,
         dictionaries,
         metric_fn,
+        aggregation='sum', # or 'none' for not aggregating across sequence position
         node_threshold=0.1,
         edge_threshold=0.01,
 ):
@@ -189,53 +190,57 @@ def get_circuit(
                 weight_matrix = sparse_reshape(weight_matrix, (bp, sp, fp+1, bc, sc, fc+1))
             edges[child][parent] = weight_matrix
     
-    
-    # aggregate across sequence position
-    for child in edges:
-        for parent in edges[child]:
-            weight_matrix = edges[child][parent]
-            if parent == 'y':
-                weight_matrix = weight_matrix.sum(dim=1)
-            else:
-                weight_matrix = weight_matrix.sum(dim=(1, 4))
-            edges[child][parent] = weight_matrix
-    for node in nodes:
-        if node != 'y':
-            nodes[node] = nodes[node].sum(dim=1)
+    if aggregation == 'sum':
+        # aggregate across sequence position
+        for child in edges:
+            for parent in edges[child]:
+                weight_matrix = edges[child][parent]
+                if parent == 'y':
+                    weight_matrix = weight_matrix.sum(dim=1)
+                else:
+                    weight_matrix = weight_matrix.sum(dim=(1, 4))
+                edges[child][parent] = weight_matrix
+        for node in nodes:
+            if node != 'y':
+                nodes[node] = nodes[node].sum(dim=1)
 
-    # aggregate across batch dimension
-    for child in edges:
-        bc, fc = nodes[child].act.shape
-        for parent in edges[child]:
-            weight_matrix = edges[child][parent]
-            if parent == 'y':
-                weight_matrix = weight_matrix.sum(dim=0) / bc
-            else:
-                bp, fp = nodes[parent].act.shape
-                assert bp == bc
-                weight_matrix = weight_matrix.sum(dim=(0,2)) / bc
-            edges[child][parent] = weight_matrix
-    for node in nodes:
-        nodes[node] = nodes[node].mean(dim=0)
+        # aggregate across batch dimension
+        for child in edges:
+            bc, fc = nodes[child].act.shape
+            for parent in edges[child]:
+                weight_matrix = edges[child][parent]
+                if parent == 'y':
+                    weight_matrix = weight_matrix.sum(dim=0) / bc
+                else:
+                    bp, fp = nodes[parent].act.shape
+                    assert bp == bc
+                    weight_matrix = weight_matrix.sum(dim=(0,2)) / bc
+                edges[child][parent] = weight_matrix
+        for node in nodes:
+            nodes[node] = nodes[node].mean(dim=0)
     
+    elif aggregation == 'none':
 
-    # # aggregate across batch dimensions
-    # for child in edges:
-    #     # get shape for child
-    #     bc, sc, fc = nodes[child].act.shape
-    #     for parent in edges[child]:
-    #         weight_matrix = edges[child][parent]
-    #         if parent == 'y':
-    #             weight_matrix = sparse_reshape(weight_matrix, (bc, sc, fc+1))
-    #             weight_matrix = weight_matrix.sum(dim=0) / bc
-    #         else:
-    #             bp, sp, fp = nodes[parent].act.shape
-    #             assert bp == bc
-    #             weight_matrix = sparse_reshape(weight_matrix, (bp, sp, fp+1, bc, sc, fc+1))
-    #             weight_matrix = weight_matrix.sum(dim=(0, 3)) / bc
-    #         edges[child][parent] = weight_matrix
-    # for node in nodes:
-    #     nodes[node] = nodes[node].mean(dim=0)
+        # aggregate across batch dimensions
+        for child in edges:
+            # get shape for child
+            bc, sc, fc = nodes[child].act.shape
+            for parent in edges[child]:
+                weight_matrix = edges[child][parent]
+                if parent == 'y':
+                    weight_matrix = sparse_reshape(weight_matrix, (bc, sc, fc+1))
+                    weight_matrix = weight_matrix.sum(dim=0) / bc
+                else:
+                    bp, sp, fp = nodes[parent].act.shape
+                    assert bp == bc
+                    weight_matrix = sparse_reshape(weight_matrix, (bp, sp, fp+1, bc, sc, fc+1))
+                    weight_matrix = weight_matrix.sum(dim=(0, 3)) / bc
+                edges[child][parent] = weight_matrix
+        for node in nodes:
+            nodes[node] = nodes[node].mean(dim=0)
+
+    else:
+        raise ValueError(f"Unknown aggregation: {aggregation}")
 
 
 
@@ -250,6 +255,7 @@ if __name__ == '__main__':
     parser.add_argument('--d_model', type=int, default=512)
     parser.add_argument('--dict_id', type=int, default=5)
     parser.add_argument('--dict_size', type=int, default=32768)
+    parser.add_argument('--aggregation', type=str, default='sum')
     parser.add_argument('--node_threshold', type=float, default=0.1)
     parser.add_argument('--edge_threshold', type=float, default=0.01)
     parser.add_argument('--pen_thickness', type=float, default=1)
@@ -351,17 +357,10 @@ if __name__ == '__main__':
         resids,
         dictionaries,
         metric_fn,
+        aggregation=args.aggregation,
         node_threshold=args.node_threshold,
         edge_threshold=args.edge_threshold,
     )
-
-    # t.save(
-    #     TensorDict({
-    #         'nodes' : nodes,
-    #         'edges' : edges
-    #     }),
-    #     f'{args.save_dir}.pt'
-    # )
 
     # feature annotations
     try:
@@ -370,7 +369,15 @@ if __name__ == '__main__':
     except:
         annotations = None
 
-    plot_circuit(nodes, edges, layers=len(model.gpt_neox.layers), node_threshold=args.node_threshold, edge_threshold=args.edge_threshold, pen_thickness=args.pen_thickness, annotations=annotations, save_dir=args.save_dir)
+    plot_circuit(
+        nodes, 
+        edges, 
+        layers=len(model.gpt_neox.layers), 
+        node_threshold=args.node_threshold, 
+        edge_threshold=args.edge_threshold, 
+        pen_thickness=args.pen_thickness, 
+        annotations=annotations, 
+        save_dir=f'circuits/{args.save_dir}')
 
 
 
