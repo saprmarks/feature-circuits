@@ -9,6 +9,8 @@ from collections import defaultdict
 import argparse
 from circuit_plotting import plot_circuit
 import random
+import json
+from tensordict import TensorDict
 from loading_utils import load_examples
 
 def flatten_index(idxs, shape):
@@ -172,9 +174,8 @@ def get_circuit(
             )
             RR_effect, _ = N(prev_resid, resid)
             edges[f'resid_{layer - 1}'][f'resid_{layer}'] = RR_effect - RMR_effect - RAR_effect
-    
 
-    # aggregate across batch dimensions
+    # rearrange weight matrices
     for child in edges:
         # get shape for child
         bc, sc, fc = nodes[child].act.shape
@@ -182,15 +183,59 @@ def get_circuit(
             weight_matrix = edges[child][parent]
             if parent == 'y':
                 weight_matrix = sparse_reshape(weight_matrix, (bc, sc, fc+1))
-                weight_matrix = weight_matrix.sum(dim=0) / bc
             else:
                 bp, sp, fp = nodes[parent].act.shape
                 assert bp == bc
                 weight_matrix = sparse_reshape(weight_matrix, (bp, sp, fp+1, bc, sc, fc+1))
-                weight_matrix = weight_matrix.sum(dim=(0, 3)) / bc
+            edges[child][parent] = weight_matrix
+    
+    
+    # aggregate across sequence position
+    for child in edges:
+        for parent in edges[child]:
+            weight_matrix = edges[child][parent]
+            if parent == 'y':
+                weight_matrix = weight_matrix.sum(dim=1)
+            else:
+                weight_matrix = weight_matrix.sum(dim=(1, 4))
+            edges[child][parent] = weight_matrix
+    for node in nodes:
+        if node != 'y':
+            nodes[node] = nodes[node].sum(dim=1)
+
+    # aggregate across batch dimension
+    for child in edges:
+        bc, fc = nodes[child].act.shape
+        for parent in edges[child]:
+            weight_matrix = edges[child][parent]
+            if parent == 'y':
+                weight_matrix = weight_matrix.sum(dim=0) / bc
+            else:
+                bp, fp = nodes[parent].act.shape
+                assert bp == bc
+                weight_matrix = weight_matrix.sum(dim=(0,2)) / bc
             edges[child][parent] = weight_matrix
     for node in nodes:
         nodes[node] = nodes[node].mean(dim=0)
+    
+
+    # # aggregate across batch dimensions
+    # for child in edges:
+    #     # get shape for child
+    #     bc, sc, fc = nodes[child].act.shape
+    #     for parent in edges[child]:
+    #         weight_matrix = edges[child][parent]
+    #         if parent == 'y':
+    #             weight_matrix = sparse_reshape(weight_matrix, (bc, sc, fc+1))
+    #             weight_matrix = weight_matrix.sum(dim=0) / bc
+    #         else:
+    #             bp, sp, fp = nodes[parent].act.shape
+    #             assert bp == bc
+    #             weight_matrix = sparse_reshape(weight_matrix, (bp, sp, fp+1, bc, sc, fc+1))
+    #             weight_matrix = weight_matrix.sum(dim=(0, 3)) / bc
+    #         edges[child][parent] = weight_matrix
+    # for node in nodes:
+    #     nodes[node] = nodes[node].mean(dim=0)
 
 
 
@@ -198,7 +243,7 @@ def get_circuit(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--tests', action='store_true')
+    parser.add_argument('--tests', default=False, action='store_true')
     parser.add_argument('--dataset', '-d', type=str, default='simple')
     parser.add_argument('--num_examples', '-n', type=int, default=10)
     parser.add_argument('--model', type=str, default='EleutherAI/pythia-70m-deduped')
@@ -209,6 +254,7 @@ if __name__ == '__main__':
     parser.add_argument('--edge_threshold', type=float, default=0.01)
     parser.add_argument('--pen_thickness', type=float, default=1)
     parser.add_argument('--seed', type=int, default=12)
+    parser.add_argument('--save_dir', type=str, default='circuit')
     parser.add_argument('--device', type=str, default='cuda:0')
     args = parser.parse_args()
 
@@ -309,7 +355,22 @@ if __name__ == '__main__':
         edge_threshold=args.edge_threshold,
     )
 
-    plot_circuit(nodes, edges, layers=len(model.gpt_neox.layers), node_threshold=args.node_threshold, edge_threshold=args.edge_threshold, pen_thickness=args.pen_thickness)
+    # t.save(
+    #     TensorDict({
+    #         'nodes' : nodes,
+    #         'edges' : edges
+    #     }),
+    #     f'{args.save_dir}.pt'
+    # )
+
+    # feature annotations
+    try:
+        with open(f'{args.dict_id}_{args.dict_size}_annotations.json', 'r') as f:
+            annotations = json.load(f)
+    except:
+        annotations = None
+
+    plot_circuit(nodes, edges, layers=len(model.gpt_neox.layers), node_threshold=args.node_threshold, edge_threshold=args.edge_threshold, pen_thickness=args.pen_thickness, annotations=annotations, save_dir=args.save_dir)
 
 
 

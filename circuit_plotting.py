@@ -1,25 +1,18 @@
 from graphviz import Digraph
-import json
 import torch as t
 
-
-with open('feature_annotations.json', 'r') as f:
-    feature_annotations = json.load(f)
-
 def get_name(component, layer, idx):
-    seq, feat = idx
-    if feat == 32768: feat = 'res'
-    return f'{seq}, {component}_{layer}/{feat}'
+    match idx:
+        case (seq, feat):
+            if feat == 32768: feat = 'res'
+            return f'{seq}, {component}_{layer}/{feat}'
+        case (feat,):
+            if feat == 32768: feat = 'res'
+            return f'{component}_{layer}/{feat}'
+        case _: raise ValueError(f"Invalid idx: {idx}")
 
-def get_label(name):
-    seq, feat = name.split(', ')
-    if feat in feature_annotations:
-        component = feat.split('/')[0]
-        component = feat.split('_')[0]
-        return f'{seq}, {feature_annotations[feat]} ({component})'
-    return name
 
-def plot_circuit(nodes, edges, layers=6, node_threshold=0.1, edge_threshold=0.01, pen_thickness=1):
+def plot_circuit(nodes, edges, layers=6, node_threshold=0.1, edge_threshold=0.01, pen_thickness=1, annotations=None, save_dir='circuit'):
 
 
     # get min and max node effects
@@ -27,6 +20,7 @@ def plot_circuit(nodes, edges, layers=6, node_threshold=0.1, edge_threshold=0.01
     max_effect = max([v.to_tensor().max() for n, v in nodes.items() if n != 'y'])
     scale = max(abs(min_effect), abs(max_effect))
 
+    # for deciding shade of node
     def to_hex(number):
         number = number / scale
         
@@ -50,7 +44,31 @@ def plot_circuit(nodes, edges, layers=6, node_threshold=0.1, edge_threshold=0.01
         hex_code = f'#{red:02X}{green:02X}{blue:02X}'
         
         return hex_code
-
+    
+    if annotations is None:
+        def get_label(name):
+            return name
+    else:
+        # for deciding label of node
+        def get_label(name):
+            return name
+        # TODO implement this later
+            # try: 
+            #     match name.split(', '):
+            #         case seq, feat:
+            #             if feat in annotations:
+            #                 component = feat.split('/')[0]
+            #                 component = feat.split('_')[0]
+            #                 return f'{seq}, {annotations[feat]} ({component})'
+            #             return name
+            #         case feat:
+            #             if feat in annotations:
+            #                 component = feat.split('/')[0]
+            #                 component = feat.split('_')[0]
+            #                 return f'{annotations[feat]} ({component})'
+            # except:
+            #     print(name)
+            #     assert False
 
     G = Digraph(name='Feature circuit')
     G.graph_attr.update(rankdir='BT', newrank='true')
@@ -115,4 +133,4 @@ def plot_circuit(nodes, edges, layers=6, node_threshold=0.1, edge_threshold=0.01
                 color = 'red' if weight < 0 else 'blue'
             )
 
-    G.render('circuit', format='png', cleanup=True)
+    G.render(save_dir, format='png', cleanup=True)

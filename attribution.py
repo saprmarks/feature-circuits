@@ -1,7 +1,7 @@
 from collections import namedtuple
 import torch as t
 from tqdm import tqdm
-from tensordict import TensorDict
+from tkdict import TKDict
 from torchtyping import TensorType
 from typing import Dict, Union
 from activation_utils import SparseAct
@@ -529,7 +529,7 @@ def get_grad(clean,
              downstream_features, 
              return_idxs=None # dictionary of upstream idxs to return, for each upstream submodule (and, optionally, each downstream feature idx)
 ):
-    grad = TensorDict()
+    grad = TKDict()
     with model.invoke(clean, fwd_args={'inference' : False}):
         for upstream_submod in upstream_submods:
             upstream_dictionary = dictionaries[upstream_submod]
@@ -552,7 +552,7 @@ def get_grad(clean,
             y = y[0]
         f_downstream = downstream_dictionary.encode(y).save()
     
-    grads = TensorDict()
+    grads = TKDict()
     for downstream_feature_idx in downstream_features:
         grads[downstream_feature_idx] = {}
         f_downstream.value[tuple(downstream_feature_idx)].backward(retain_graph=True)
@@ -560,11 +560,11 @@ def get_grad(clean,
             if return_idxs is None or return_idxs[upstream_submod] is None:
                 grads[downstream_feature_idx][upstream_submod] = grad[upstream_submod].value
             elif isinstance(return_idxs[upstream_submod], list):
-                grads[downstream_feature_idx][upstream_submod] = TensorDict({
+                grads[downstream_feature_idx][upstream_submod] = TKDict({
                     idx : grad[upstream_submod].value[tuple(idx)] for idx in return_idxs[upstream_submod]
                 })
-            elif isinstance(return_idxs[upstream_submod], TensorDict):
-                grads[downstream_feature_idx][upstream_submod] = TensorDict({
+            elif isinstance(return_idxs[upstream_submod], TKDict):
+                grads[downstream_feature_idx][upstream_submod] = TKDict({
                     idx : grad[upstream_submod].value[tuple(idx)] for idx in return_idxs[upstream_submod][downstream_feature_idx]
                 })
     return grads
