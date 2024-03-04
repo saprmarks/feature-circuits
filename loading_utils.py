@@ -138,6 +138,7 @@ def load_submodules_and_dictionaries(
     use_resid,
     dict_path="/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped",
     dict_size=512 * 64,
+    dict_run_name="5_32768",
     device="cuda:0",
     ):
     """
@@ -154,7 +155,7 @@ def load_submodules_and_dictionaries(
             submodule_names[submodule] = f'attn{layer}'
             submodules.append(submodule)
             ae = AutoEncoder(model.config.hidden_size, dict_size).to(device)
-            path = os.path.join(dict_path, f"attn_out_layer{layer}/5_32768/ae.pt")
+            path = os.path.join(dict_path, f"attn_out_layer{layer}/{dict_run_name}/ae.pt")
             ae.load_state_dict(t.load(path))
             dictionaries[submodule] = ae
 
@@ -163,7 +164,7 @@ def load_submodules_and_dictionaries(
             submodule_names[submodule] = f'mlp{layer}'
             submodules.append(submodule)
             ae = AutoEncoder(model.config.hidden_size, dict_size).to(device)
-            path = os.path.join(dict_path, f"mlp_out_layer{layer}/5_32768/ae.pt")
+            path = os.path.join(dict_path, f"mlp_out_layer{layer}/{dict_run_name}/ae.pt")
             ae.load_state_dict(t.load(path))
             dictionaries[submodule] = ae
 
@@ -172,7 +173,7 @@ def load_submodules_and_dictionaries(
             submodule_names[submodule] = f'resid{layer}'
             submodules.append(submodule)
             ae = AutoEncoder(model.config.hidden_size, dict_size).to(device)
-            path = os.path.join(dict_path, f"resid_out_layer{layer}/5_32768/ae.pt")
+            path = os.path.join(dict_path, f"resid_out_layer{layer}/{dict_run_name}/ae.pt")
             ae.load_state_dict(t.load(path))
             dictionaries[submodule] = ae
     return submodules, submodule_names, dictionaries
