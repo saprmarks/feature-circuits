@@ -1,5 +1,5 @@
 from graphviz import Digraph
-import torch as t
+import re
 
 def get_name(component, layer, idx):
     match idx:
@@ -78,12 +78,29 @@ def plot_circuit(nodes, edges, layers=6, node_threshold=0.1, edge_threshold=0.01
         for component in ['attn', 'mlp', 'resid']:
             with G.subgraph(name=f'layer {layer} {component}') as subgraph:
                 subgraph.attr(rank='same')
+                max_seq_pos = None
                 for idx, effect in nodes_by_submod[f'{component}_{layer}'].items():
                     name = get_name(component, layer, idx)
                     if name[-3:] == 'res':
                         subgraph.node(name, shape='triangle', fillcolor=to_hex(effect), style='filled')
                     else:
                         subgraph.node(name, label=get_label(name), fillcolor=to_hex(effect), style='filled')
+                    # if sequence position is present, separate nodes by sequence position
+                    match idx:
+                        case (seq, _):
+                            subgraph.node(f'{component}_{layer}_#{seq}_pre', style='invis'), subgraph.node(f'{component}_{layer}_#{seq}_post', style='invis')
+                            subgraph.edge(f'{component}_{layer}_#{seq}_pre', name, style='invis'), subgraph.edge(name, f'{component}_{layer}_#{seq}_post', style='invis')
+                            if max_seq_pos is None or seq > max_seq_pos:
+                                max_seq_pos = seq
+
+                if max_seq_pos is None: continue
+                # make sure the auxiliary ordering nodes are in right order
+                for seq in reversed(range(max_seq_pos+1)):
+                    if f'{component}_{layer}_#{seq}_pre' in ''.join(subgraph.body):
+                        for seq_prev in range(seq):
+                            if f'{component}_{layer}_#{seq_prev}_post' in ''.join(subgraph.body):
+                                subgraph.edge(f'{component}_{layer}_#{seq_prev}_post', f'{component}_{layer}_#{seq}_pre', style='invis')
+
         
         for component in ['attn', 'mlp']:
             for upstream_idx in nodes_by_submod[f'{component}_{layer}'].keys():
@@ -112,6 +129,7 @@ def plot_circuit(nodes, edges, layers=6, node_threshold=0.1, edge_threshold=0.01
                                 penwidth=str(abs(weight) * pen_thickness),
                                 color = 'red' if weight < 0 else 'blue'
                             )
+
 
     # the cherry on top
     G.node('y', shape='diamond')
