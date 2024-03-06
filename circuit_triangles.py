@@ -10,7 +10,8 @@ import argparse
 from circuit_plotting import plot_circuit
 import random
 import json
-from tensordict import TensorDict
+import pickle
+from tkdict import TKDict
 from loading_utils import load_examples
 
 def flatten_index(idxs, shape):
@@ -374,6 +375,15 @@ if __name__ == '__main__':
         node_threshold=args.node_threshold,
         edge_threshold=args.edge_threshold,
     )
+    print(dict(nodes))
+    print()
+    print("--------------")
+    print()
+    print(dict(edges))
+
+    with open(f"circuits/{args.dataset}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_triangles.pt", "wb") as outfile:
+        nodes_and_edges = {"nodes": dict(nodes), "edges": dict(edges)}
+        t.save(nodes_and_edges, outfile)
 
     # feature annotations
     try:
@@ -391,12 +401,3 @@ if __name__ == '__main__':
         pen_thickness=args.pen_thickness, 
         annotations=annotations, 
         save_dir=f'circuits/{args.save_dir}')
-
-
-
-        
-        
-
-
-
-
