@@ -37,12 +37,15 @@ def plot_circuit(nodes, edges, layers=6, node_threshold=0.1, edge_threshold=0.01
             red = green = int((1 - number) * 255)  # Increase other components less as it gets more positive
         else:
             # Exact 0, resulting in white
-            red = green = blue = 255
+            red = green = blue = 255 
         
+        # decide whether text is black or white depending on darkness of color
+        text_hex = "#000000" if (red*0.299 + green*0.587 + blue*0.114) > 170 else "#ffffff"
+
         # Convert to hex, ensuring each component is 2 digits
         hex_code = f'#{red:02X}{green:02X}{blue:02X}'
         
-        return hex_code
+        return hex_code, text_hex
     
     if annotations is None:
         def get_label(name):
@@ -81,10 +84,13 @@ def plot_circuit(nodes, edges, layers=6, node_threshold=0.1, edge_threshold=0.01
                 max_seq_pos = None
                 for idx, effect in nodes_by_submod[f'{component}_{layer}'].items():
                     name = get_name(component, layer, idx)
+                    fillhex, texthex = to_hex(effect)
                     if name[-3:] == 'res':
-                        subgraph.node(name, shape='triangle', fillcolor=to_hex(effect), style='filled')
+                        subgraph.node(name, shape='triangle', width="1.6", height="0.8", fixedsize="true",
+                                      fillcolor=fillhex, style='filled', fontcolor=texthex)
                     else:
-                        subgraph.node(name, label=get_label(name), fillcolor=to_hex(effect), style='filled')
+                        subgraph.node(name, label=get_label(name), fillcolor=fillhex, fontcolor=texthex,
+                                      style='filled')
                     # if sequence position is present, separate nodes by sequence position
                     match idx:
                         case (seq, _):
