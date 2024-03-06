@@ -8,7 +8,6 @@ from activation_utils import SparseAct
 from collections import defaultdict
 import argparse
 from circuit_plotting import plot_circuit
-import random
 import json
 from tensordict import TensorDict
 from loading_utils import load_examples
@@ -343,11 +342,6 @@ if __name__ == '__main__':
         dictionaries[resids[i]] = ae
     
     data_path = f"/share/projects/dictionary_circuits/data/phenomena/{args.dataset}.json"
-
-
-    dataset_items = open(data_path).readlines()
-    random.seed(args.seed)
-    random.shuffle(dataset_items)
 
     examples = load_examples(data_path, args.num_examples, model)
     clean_inputs = t.cat([e['clean_prefix'] for e in examples], dim=0)
