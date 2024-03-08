@@ -43,6 +43,8 @@ def load_examples(dataset, num_examples, model, seed=12, pad_to_length=None, len
         if pad_to_length:
             model.tokenizer.padding_side = 'right' # TODO: move this after model initialization
             pad_length = pad_to_length - prefix_length_wo_pad
+            if pad_length < 0:  # example too long
+                continue
             clean_prefix = F.pad(clean_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
             patch_prefix = F.pad(patch_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
         example_dict = {"clean_prefix": clean_prefix,

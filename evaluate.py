@@ -112,6 +112,7 @@ def evaluate_completeness(circuit_features, model, dict_cfg, eval_dataset, dicti
     model_no_K_diff = 0.
     circuit_features_no_K = circuit_feature_set.difference(K)
     completeness = 0.
+    baseline = 0.
     for example in tqdm(eval_dataset, desc="Evaluating completeness", total=len(eval_dataset)):
         model_no_K_out = run_with_ablated_features(model, example["clean_prefix"],
                                     dict_cfg.size,
@@ -125,10 +126,20 @@ def evaluate_completeness(circuit_features, model, dict_cfg, eval_dataset, dicti
                                                         patch_vector=patch_vector, inverse=True)["model"]
         circuit_no_K_diff = circuit_no_K_out.logits[:, -1, example["clean_answer"]] - \
                             circuit_no_K_out.logits[:, -1, example["patch_answer"]]
+        
+        # baseline: how well does the full model do compared to the empty set?
+        with model.invoke(example["clean_prefix"]) as invoker:
+            pass
+        model_diff = invoker.output.logits[:, -1, example["clean_answer"]] - \
+                     invoker.output.logits[:, -1, example["patch_answer"]]
+
         completeness += circuit_no_K_diff / model_no_K_diff
+        baseline += circuit_no_K_diff / model_diff
     
     completeness /= num_examples
+    baseline /= num_examples
     return {"mean_completeness": completeness.item(),
+            "baseline": baseline.item(),
             "K": K}
 
 
@@ -199,7 +210,7 @@ def load_triangles_circuit(circuit_path, n_layers):
     for submodtype in ["mlp", "attn", "resid"]:
         for layer in range(n_layers):
             submodname = f"{submodtype}_{layer}"
-            idxs = (circuit_nodes[submodname].act > node_threshold).nonzero().flatten()
+            idxs = (circuit_nodes[submodname].act.abs() > node_threshold).nonzero().flatten()
             for idx in idxs:
                 feature_list.append(f"{submodtype}_{layer}/{idx}")
     return feature_list
@@ -214,15 +225,16 @@ if __name__ == "__main__":
     parser.add_argument("circuit_path", type=str)
     parser.add_argument("--model", type=str, default="EleutherAI/pythia-70m-deduped")
     parser.add_argument("--dataset", type=str, default="/share/projects/dictionary_circuits/data/phenomena/simple_test.json")
-    parser.add_argument("--dict_id", type=int, default=5)
+    parser.add_argument("--dict_id", type=int, default=10)
     parser.add_argument("--dict_size", type=int, default=32768)
+    parser.add_argument("--num_examples", type=int, default=100)
 
     args = parser.parse_args()
 
     model = LanguageModel(args.model, device_map="cuda:0")
     d_model = model.config.hidden_size
     n_layers = model.config.num_hidden_layers
-    dataset = load_examples(args.dataset, 100, model)
+    dataset = load_examples(args.dataset, args.num_examples, model)
 
     dict_cfg = DictionaryCfg("/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/",
                              32768)
@@ -249,6 +261,7 @@ if __name__ == "__main__":
     completeness = evaluate_completeness(circuit_features, model, dict_cfg, dataset, dictionaries)
     minimality = evaluate_minimality(circuit_features)
 
-    print("faithfulness:", faithfulness)
-    print("completeness:", completeness["mean_completeness"])
-    print("minimality:", minimality)
+    print("faithfulness (F(C) / F(M)):", faithfulness)
+    print("completeness (F(empty) / F(M \ C)):", completeness["mean_completeness"])
+    print("\tbaseline (F(empty) / F(M)):", completeness["baseline"])
+    print("minimality (negative num nodes):", minimality)

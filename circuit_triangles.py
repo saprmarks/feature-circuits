@@ -12,6 +12,7 @@ import json
 import pickle
 import os
 from tkdict import TKDict
+from tqdm import tqdm
 from loading_utils import load_examples
 
 def flatten_index(idxs, shape):
@@ -355,10 +356,10 @@ if __name__ == '__main__':
     
     data_path = f"/share/projects/dictionary_circuits/data/phenomena/{args.dataset}.json"
 
-    examples = load_examples(data_path, args.num_examples, model, length=args.example_length)
+    examples = load_examples(data_path, args.num_examples, model, pad_to_length=args.example_length)
 
     batch_size = len(examples) // args.batches
-    for batch in range(args.batches):
+    for batch in tqdm(range(args.batches), desc="Batches", total=args.batches):
         batch_examples = examples[batch*batch_size:(batch+1)*batch_size]
         clean_inputs = t.cat([e['clean_prefix'] for e in batch_examples], dim=0)
         patch_inputs = t.cat([e['patch_prefix'] for e in batch_examples], dim=0)
@@ -394,6 +395,9 @@ if __name__ == '__main__':
                 "edges": dict(edges)
             }
             t.save(save_dict, outfile)
+        
+        # memory cleanup
+        del nodes, edges
 
     # aggregate over the batches
     out_dicts = [
@@ -434,4 +438,4 @@ if __name__ == '__main__':
         edge_threshold=args.edge_threshold, 
         pen_thickness=args.pen_thickness, 
         annotations=annotations, 
-        save_dir=f'circuits/{args.dataset}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}')
+        save_dir=f'circuits/figures/{args.dataset}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}')
