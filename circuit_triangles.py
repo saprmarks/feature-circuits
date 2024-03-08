@@ -10,6 +10,7 @@ import argparse
 from circuit_plotting import plot_circuit
 import json
 import pickle
+import os
 from tkdict import TKDict
 from loading_utils import load_examples
 
@@ -369,13 +370,10 @@ if __name__ == '__main__':
         node_threshold=args.node_threshold,
         edge_threshold=args.edge_threshold,
     )
-    print(dict(nodes))
-    print()
-    print("--------------")
-    print()
-    print(dict(edges))
 
-    with open(f"circuits/{args.dataset}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_triangles.pt", "wb") as outfile:
+    save_path = f"circuits/{args.dataset}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_triangles.pt"
+    save_path_basename = os.path.splitext(os.path.basename(save_path))[0]
+    with open(save_path, "wb") as outfile:
         nodes_and_edges = {"nodes": dict(nodes), "edges": dict(edges)}
         t.save(nodes_and_edges, outfile)
 
@@ -394,4 +392,4 @@ if __name__ == '__main__':
         edge_threshold=args.edge_threshold, 
         pen_thickness=args.pen_thickness, 
         annotations=annotations, 
-        save_dir=f'circuits/{args.save_dir}')
+        save_dir=f'circuits/figures/{save_path_basename}')
