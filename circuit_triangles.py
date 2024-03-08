@@ -10,6 +10,7 @@ import argparse
 from circuit_plotting import plot_circuit
 import json
 import pickle
+import os
 from tkdict import TKDict
 from loading_utils import load_examples
 

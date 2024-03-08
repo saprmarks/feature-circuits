@@ -1,5 +1,6 @@
 from graphviz import Digraph
 import re
+import os
 
 def get_name(component, layer, idx):
     match idx:
@@ -149,4 +150,6 @@ def plot_circuit(nodes, edges, layers=6, node_threshold=0.1, edge_threshold=0.01
                 color = 'red' if weight < 0 else 'blue'
             )
 
+    if not os.path.exists(os.path.dirname(save_dir)):
+        os.makedirs(os.path.dirname(save_dir))
     G.render(save_dir, format='png', cleanup=True)
