@@ -18,7 +18,7 @@ class DictionaryCfg(): # TODO Move to dictionary_learning repo?
         self.size = dictionary_size
 
 
-def load_examples(dataset, num_examples, model, seed=12, pad_to_length=16):
+def load_examples(dataset, num_examples, model, seed=12, pad_to_length=None, length=None):
     examples = []
     dataset_items = open(dataset).readlines()
     random.seed(seed)
@@ -36,6 +36,8 @@ def load_examples(dataset, num_examples, model, seed=12, pad_to_length=16):
         if clean_prefix.shape[1] != patch_prefix.shape[1]:
             continue
         if clean_answer.shape[1] != 1 or patch_answer.shape[1] != 1:
+            continue
+        if length and clean_prefix.shape[1] != length:
             continue
         prefix_length_wo_pad = clean_prefix.shape[1]
         if pad_to_length:
@@ -116,7 +118,6 @@ def get_annotation(dataset, model, data):
             word = " " + word
         word_tok = model.tokenizer(word, return_tensors="pt", padding=False).input_ids
         num_tokens = word_tok.shape[1]
-        print(word, num_tokens)
         span = (curr_token, curr_token + num_tokens-1)
         curr_token += num_tokens
         annotations[template_word] = span

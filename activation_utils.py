@@ -9,7 +9,6 @@ class SparseAct():
             act: TensorType["batch_size", "n_ctx", "d_dictionary"] = None, 
             res: TensorType["batch_size", "n_ctx", "d_model"] = None,
             resc: TensorType["batch_size", "n_ctx"] = None, # contracted residual
-            device: str = "cuda:0"
             # dense_act: TensorType["batch_size", "n_ctx", "d_model"] = None, 
             # dictionary: AutoEncoder = None,
             ) -> None:
@@ -36,15 +35,16 @@ class SparseAct():
     def __mul__(self, other) -> 'SparseAct':
         if isinstance(other, SparseAct):
             # Handle SparseAct * SparseAct
-            act_result = self.act * other.act
-            res_result = self.res * other.res
-        elif isinstance(other, (float, int)):
-            # Handle SparseAct * float/int
-            act_result = self.act * other
-            res_result = self.res * other
+            kwargs = {}
+            for attr in ['act', 'res', 'resc']:
+                if getattr(self, attr) is not None:
+                    kwargs[attr] = getattr(self, attr) * getattr(other, attr)
         else:
-            raise TypeError(f"Unsupported operand type(s) for *: '{type(self)}' and '{type(other)}'")
-        return SparseAct(act=act_result, res=res_result)
+            kwargs = {}
+            for attr in ['act', 'res', 'resc']:
+                if getattr(self, attr) is not None:
+                    kwargs[attr] = getattr(self, attr) * other
+        return SparseAct(**kwargs)
 
     def __rmul__(self, other) -> 'SparseAct':
         # This will handle float/int * SparseAct by reusing the __mul__ logic
@@ -54,16 +54,56 @@ class SparseAct():
         # dot product between two SparseActs, except only the residual is contracted
         return SparseAct(act = self.act * other.act, resc=(self.res * other.res).sum(dim=-1, keepdim=True))
     
-    def __add__(self, other: SparseAct) -> SparseAct:
-        sparse_result = self.act + other.act
-        res_result = self.res + other.res
-        return SparseAct(act=sparse_result, res=res_result)
+    def __add__(self, other) -> SparseAct:
+        if isinstance(other, SparseAct):
+            kwargs = {}
+            for attr in ['act', 'res', 'resc']:
+                if getattr(self, attr) is not None:
+                    if getattr(self, attr).shape != getattr(other, attr).shape:
+                        raise ValueError(f"Shapes of {attr} do not match: {getattr(self, attr).shape} and {getattr(other, attr).shape}")
+                    kwargs[attr] = getattr(self, attr) + getattr(other, attr)
+        else:
+            kwargs = {}
+            for attr in ['act', 'res', 'resc']:
+                if getattr(self, attr) is not None:
+                    kwargs[attr] = getattr(self, attr) + other
+        return SparseAct(**kwargs)
+    
+    def __radd__(self, other: SparseAct) -> SparseAct:
+        return self.__add__(other)
     
     def __sub__(self, other: SparseAct) -> SparseAct:
         sparse_result = self.act - other.act
         res_result = self.res - other.res
         return SparseAct(act=sparse_result, res=res_result)
     
+    def __truediv__(self, other) -> SparseAct:
+        if isinstance(other, SparseAct):
+            kwargs = {}
+            for attr in ['act', 'res', 'resc']:
+                if getattr(self, attr) is not None:
+                    kwargs[attr] = getattr(self, attr) / getattr(other, attr)
+        else:
+            kwargs = {}
+            for attr in ['act', 'res', 'resc']:
+                if getattr(self, attr) is not None:
+                    kwargs[attr] = getattr(self, attr) / other
+        return SparseAct(**kwargs)
+
+    def __rtruediv__(self, other) -> SparseAct:
+        if isinstance(other, SparseAct):
+            kwargs = {}
+            for attr in ['act', 'res', 'resc']:
+                if getattr(self, attr) is not None:
+                    kwargs[attr] = other / getattr(self, attr)
+        else:
+            kwargs = {}
+            for attr in ['act', 'res', 'resc']:
+                if getattr(self, attr) is not None:
+                    kwargs[attr] = other / getattr(self, attr)
+        return SparseAct(**kwargs)
+
+
     def __neg__(self) -> SparseAct:
         sparse_result = -self.act
         res_result = -self.res
@@ -118,6 +158,11 @@ class SparseAct():
         if self.res is None:
             return t.cat([self.act, self.resc], dim=-1)
         raise ValueError("SparseAct has both residual and contracted residual. This is an unsupported state.")
+
+    def to(self, device):
+        for attr in ['act', 'res', 'resc']:
+            if getattr(self, attr) is not None:
+                setattr(self, attr, getattr(self, attr).to(device))
 
 
 if __name__ == "__main__":
