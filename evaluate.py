@@ -1,3 +1,4 @@
+from dictionary_learning.dictionary import AutoEncoder
 from acdc import patching_on_y, patching_on_downstream_feature
 from ablation_utils import run_with_ablated_features
 from loading_utils import load_submodule_and_dictionary, DictionaryCfg
@@ -10,7 +11,7 @@ def _normalize_name(name):
     return f"{submodule_type}_{layer}/{feat_idx}"
 
 
-def evaluate_faithfulness(circuit_features, model, dict_cfg, eval_dataset, submodules_generic,
+def evaluate_faithfulness(circuit_features, model, dict_cfg, eval_dataset, dictionaries,
                           patch_type='zero'):
     """
     Evaluate performance of circuit compared to full model.
@@ -27,15 +28,6 @@ def evaluate_faithfulness(circuit_features, model, dict_cfg, eval_dataset, submo
     elif patch_type == "random":
         raise NotImplementedError()
     
-    # Pre-load all submodules and dictionaries
-    num_layers = model.config.num_hidden_layers
-    submodule_to_autoencoder = {}
-    for layer in range(num_layers):
-        for submodule_name in submodules_generic:
-            submodule_name = submodule_name.format(str(layer))
-            submodule, dictionary = load_submodule_and_dictionary(model, submodule_name, dict_cfg)
-            submodule_to_autoencoder[submodule] = dictionary
-    
     mean_faithfulness = 0.
     num_examples = len(eval_dataset)
     faithfulness_by_example = {}
@@ -45,8 +37,8 @@ def evaluate_faithfulness(circuit_features, model, dict_cfg, eval_dataset, submo
         model_logit_diff = invoker.output.logits[:, -1, example["clean_answer"]] - \
                             invoker.output.logits[:, -1, example["patch_answer"]]
 
-        circuit_out = run_with_ablated_features(model, example["clean_prefix"], dict_cfg.dir, dict_cfg.size,
-                                                circuit_features, # submodule_to_autoencoder, 
+        circuit_out = run_with_ablated_features(model, example["clean_prefix"], dict_cfg.size,
+                                                circuit_features, dictionaries,
                                                 patch_vector=patch_vector, inverse=True)["model"]
         circuit_logit_diff = circuit_out.logits[:, -1, example["clean_answer"]] - \
                                 circuit_out.logits[:, -1, example["patch_answer"]]
@@ -65,7 +57,7 @@ def evaluate_faithfulness(circuit_features, model, dict_cfg, eval_dataset, submo
     return mean_faithfulness.item()
 
 
-def evaluate_completeness(circuit_features, model, dict_cfg, eval_dataset, submodules_generic,
+def evaluate_completeness(circuit_features, model, dict_cfg, eval_dataset, dictionaries,
                           patch_type='zero', K_size=10):
     """
     Evaluate whether we've found everything contributing to the logit diff.
@@ -83,15 +75,6 @@ def evaluate_completeness(circuit_features, model, dict_cfg, eval_dataset, submo
         raise NotImplementedError()
     elif patch_type == "random":
         raise NotImplementedError()
-
-    # Pre-load all submodules and dictionaries
-    num_layers = model.config.num_hidden_layers
-    submodule_to_autoencoder = {}
-    for layer in range(num_layers):
-        for submodule_name in submodules_generic:
-            submodule_name = submodule_name.format(str(layer))
-            submodule, dictionary = load_submodule_and_dictionary(model, submodule_name, dict_cfg)
-            submodule_to_autoencoder[submodule] = dictionary
     
     mean_percent_recovered = 0
     completeness_points = []
@@ -131,23 +114,21 @@ def evaluate_completeness(circuit_features, model, dict_cfg, eval_dataset, submo
     completeness = 0.
     for example in tqdm(eval_dataset, desc="Evaluating completeness", total=len(eval_dataset)):
         model_no_K_out = run_with_ablated_features(model, example["clean_prefix"],
-                                    dict_cfg.dir, dict_cfg.size,
-                                    K, # submodule_to_autoencoder, 
+                                    dict_cfg.size,
+                                    K, dictionaries, 
                                     patch_vector=patch_vector, inverse=False)["model"]
         model_no_K_diff = model_no_K_out.logits[:, -1, example["clean_answer"]] - \
                             model_no_K_out.logits[:, -1, example["patch_answer"]]
         circuit_no_K_out = run_with_ablated_features(model, example["clean_prefix"],
-                                                        dict_cfg.dir, dict_cfg.size,
-                                                        list(circuit_features_no_K), # submodule_to_autoencoder,
+                                                        dict_cfg.size,
+                                                        list(circuit_features_no_K), dictionaries,
                                                         patch_vector=patch_vector, inverse=True)["model"]
         circuit_no_K_diff = circuit_no_K_out.logits[:, -1, example["clean_answer"]] - \
                             circuit_no_K_out.logits[:, -1, example["patch_answer"]]
         completeness += circuit_no_K_diff / model_no_K_diff
     
     completeness /= num_examples
-    completeness_points.append((circuit_no_K_diff.item(), model_no_K_diff.item()))
     return {"mean_completeness": completeness.item(),
-            "completeness_points": completeness_points,
             "K": K}
 
 
@@ -233,22 +214,39 @@ if __name__ == "__main__":
     parser.add_argument("circuit_path", type=str)
     parser.add_argument("--model", type=str, default="EleutherAI/pythia-70m-deduped")
     parser.add_argument("--dataset", type=str, default="/share/projects/dictionary_circuits/data/phenomena/simple_test.json")
+    parser.add_argument("--dict_id", type=int, default=5)
+    parser.add_argument("--dict_size", type=int, default=32768)
 
     args = parser.parse_args()
 
     model = LanguageModel(args.model, device_map="cuda:0")
+    d_model = model.config.hidden_size
     n_layers = model.config.num_hidden_layers
     dataset = load_examples(args.dataset, 100, model)
 
     dict_cfg = DictionaryCfg("/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/",
                              32768)
-    submodules_generic = ["model.gpt_neox.layers.{}.attention.dense", "model.gpt_neox.layers.{}.mlp.dense_4h_to_h",
-                          "model.gpt_neox.layers.{}"]
+    attns = [layer.attention.dense for layer in model.gpt_neox.layers]
+    mlps = [layer.mlp.dense_4h_to_h for layer in model.gpt_neox.layers]
+    resids = [layer for layer in model.gpt_neox.layers]
+    dictionaries = {}
+    for i in range(len(model.gpt_neox.layers)):
+        ae = AutoEncoder(d_model, args.dict_size).to("cuda:0")
+        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/attn_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
+        dictionaries[attns[i]] = ae
+
+        ae = AutoEncoder(d_model, args.dict_size).to("cuda:0")
+        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/mlp_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
+        dictionaries[mlps[i]] = ae
+
+        ae = AutoEncoder(d_model, args.dict_size).to("cuda:0")
+        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/resid_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
+        dictionaries[resids[i]] = ae
 
     circuit_features = load_triangles_circuit(args.circuit_path, n_layers)
 
-    faithfulness = evaluate_faithfulness(circuit_features, model, dict_cfg, dataset, submodules_generic)
-    completeness = evaluate_completeness(circuit_features, model, dict_cfg, dataset, submodules_generic)
+    faithfulness = evaluate_faithfulness(circuit_features, model, dict_cfg, dataset, dictionaries)
+    completeness = evaluate_completeness(circuit_features, model, dict_cfg, dataset, dictionaries)
     minimality = evaluate_minimality(circuit_features)
 
     print("faithfulness:", faithfulness)

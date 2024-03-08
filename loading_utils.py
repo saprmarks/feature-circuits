@@ -116,7 +116,6 @@ def get_annotation(dataset, model, data):
             word = " " + word
         word_tok = model.tokenizer(word, return_tensors="pt", padding=False).input_ids
         num_tokens = word_tok.shape[1]
-        print(word, num_tokens)
         span = (curr_token, curr_token + num_tokens-1)
         curr_token += num_tokens
         annotations[template_word] = span

@@ -6,7 +6,7 @@ from loading_utils import load_submodule, submodule_type_to_name
 from collections import defaultdict
 from dictionary_learning.dictionary import AutoEncoder
 
-def run_with_ablated_features(model, example, dictionary_dir, dictionary_size, features,
+def run_with_ablated_features(model, example, dictionary_size, features, dictionaries,
                               return_submodules=None, inverse=False, patch_vector=None):
     """
     TODO: This method currently uses zero ablations. Should update this to also support
@@ -16,6 +16,13 @@ def run_with_ablated_features(model, example, dictionary_dir, dictionary_size, f
     # usage: features_per_layer[layer][submodule_type]
     features_per_layer = defaultdict(lambda: defaultdict(list))
     saved_submodules = {}
+
+    # add all submodules to features_per_layer (necessary for inverse)
+    for layer in range(model.config.num_hidden_layers):
+        features_per_layer[layer]["mlp"] = []
+        features_per_layer[layer]["attn"] = []
+        features_per_layer[layer]["resid"] = []
+    # add feature indices to features_per_layer
     for feature in features:
         submodule_type, layer_and_feat_idx = feature.split("_")
         layer, feat_idx = layer_and_feat_idx.split("/")
@@ -23,27 +30,17 @@ def run_with_ablated_features(model, example, dictionary_dir, dictionary_size, f
 
     def _ablate_features(submodule_type, layer, feature_list, patch_vector):
         submodule_name = submodule_type_to_name(submodule_type).format(layer)
+        is_resid = "mlp" not in submodule_name and "attention" not in submodule_name
         submodule = load_submodule(model, submodule_name)
+
         # if there are no features to ablate, just return the submodule output
         if len(feature_list) == 0 and return_submodules and submodule_name in return_submodules:
             saved_submodules[submodule_name] = submodule.output.save()
             return
 
         # load autoencoder
-        is_resid = len(submodule.output[0].shape) > 2
-        if is_resid:
-            submodule_width = submodule.output[0].shape[2]
-        else:
-            submodule_width = submodule.out_features
-        autoencoder = AutoEncoder(submodule_width, dictionary_size).cuda()
-        try:
-            autoencoder.load_state_dict(
-                t.load(os.path.join(dictionary_dir, f"{submodule_type}_out_layer{layer}/1_32768/ae.pt"))
-            )
-        except FileNotFoundError:
-            autoencoder.load_state_dict(
-                t.load(os.path.join(dictionary_dir, f"{submodule_type}_out_layer{layer}/0_32768/ae.pt"))
-            )
+        autoencoder = dictionaries[submodule]
+
         if patch_vector is None:
             patch_vector = t.zeros(dictionary_size)     # do zero ablation
 
