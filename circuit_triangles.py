@@ -13,7 +13,7 @@ import pickle
 import os
 from tkdict import TKDict
 from tqdm import tqdm
-from loading_utils import load_examples
+from loading_utils import load_examples, load_examples_nopair
 
 def flatten_index(idxs, shape):
     """
@@ -276,6 +276,7 @@ if __name__ == '__main__':
     parser.add_argument('--node_threshold', type=float, default=0.1)
     parser.add_argument('--edge_threshold', type=float, default=0.01)
     parser.add_argument('--pen_thickness', type=float, default=1)
+    parser.add_argument('--nopair', default=False, action="store_true")
     parser.add_argument('--plot_circuit', default=False, action='store_true')
     parser.add_argument('--seed', type=int, default=12)
     parser.add_argument('--device', type=str, default='cuda:0')
@@ -354,23 +355,36 @@ if __name__ == '__main__':
             ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/resid_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
             dictionaries[resids[i]] = ae
     
-    data_path = f"/share/projects/dictionary_circuits/data/phenomena/{args.dataset}.json"
+    if args.nopair:
+        data_path = f"contexts/{args.dataset}.json"
+    else:
+        data_path = f"/share/projects/dictionary_circuits/data/phenomena/{args.dataset}.json"
 
-    examples = load_examples(data_path, args.num_examples, model, pad_to_length=args.example_length)
+    if args.nopair:
+        examples = load_examples_nopair(data_path, args.num_examples, model, length=args.example_length)
+    else:
+        examples = load_examples(data_path, args.num_examples, model, pad_to_length=args.example_length)
 
     batch_size = len(examples) // args.batches
     for batch in tqdm(range(args.batches), desc="Batches", total=args.batches):
         batch_examples = examples[batch*batch_size:(batch+1)*batch_size]
         clean_inputs = t.cat([e['clean_prefix'] for e in batch_examples], dim=0)
-        patch_inputs = t.cat([e['patch_prefix'] for e in batch_examples], dim=0)
         clean_answer_idxs = t.tensor([e['clean_answer'] for e in batch_examples], dtype=t.long)
-        patch_answer_idxs = t.tensor([e['patch_answer'] for e in batch_examples], dtype=t.long)
 
-        def metric_fn(model):
-            return (
-                t.gather(model.embed_out.output[:,-1,:], dim=-1, index=patch_answer_idxs.view(-1, 1)).squeeze(-1) - \
-                t.gather(model.embed_out.output[:,-1,:], dim=-1, index=clean_answer_idxs.view(-1, 1)).squeeze(-1)
-            )
+        if args.nopair:
+            patch_inputs = None
+            def metric_fn(model):
+                return (
+                    -1 * t.gather(model.embed_out.output[:,-1,:], dim=-1, index=clean_answer_idxs.view(-1, 1)).squeeze(-1)
+                )
+        else:
+            patch_inputs = t.cat([e['patch_prefix'] for e in batch_examples], dim=0)
+            patch_answer_idxs = t.tensor([e['patch_answer'] for e in batch_examples], dtype=t.long)
+            def metric_fn(model):
+                return (
+                    t.gather(model.embed_out.output[:,-1,:], dim=-1, index=patch_answer_idxs.view(-1, 1)).squeeze(-1) - \
+                    t.gather(model.embed_out.output[:,-1,:], dim=-1, index=clean_answer_idxs.view(-1, 1)).squeeze(-1)
+                )
         
         nodes, edges = get_circuit(
             clean_inputs,
