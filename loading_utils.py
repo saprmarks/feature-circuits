@@ -45,8 +45,11 @@ def load_examples(dataset, num_examples, model, seed=12, pad_to_length=None, len
             pad_length = pad_to_length - prefix_length_wo_pad
             if pad_length < 0:  # example too long
                 continue
-            clean_prefix = F.pad(clean_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
-            patch_prefix = F.pad(patch_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
+            # left padding: reverse, right-pad, reverse
+            clean_prefix = t.flip(F.pad(t.flip(clean_prefix, (1,)), (0, pad_length), value=model.tokenizer.pad_token_id), (1,))
+            patch_prefix = t.flip(F.pad(t.flip(patch_prefix, (1,)), (0, pad_length), value=model.tokenizer.pad_token_id), (1,))
+            # clean_prefix = F.pad(clean_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
+            # patch_prefix = F.pad(patch_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
         example_dict = {"clean_prefix": clean_prefix,
                         "patch_prefix": patch_prefix,
                         "clean_answer": clean_answer.item(),
@@ -59,19 +62,27 @@ def load_examples(dataset, num_examples, model, seed=12, pad_to_length=None, len
     return examples
 
 
-def load_examples_nopair(dataset, num_examples, model):
+def load_examples_nopair(dataset, num_examples, model, length=None):
     examples = []
-    dataset_json = json.load(open(dataset))
+    if isinstance(dataset, str):        # is a path to a .json file
+        dataset = json.load(open(dataset))
+    elif isinstance(dataset, dict):     # is an already-loaded dictionary
+        pass
+    else:
+        raise ValueError(f"`dataset` is unrecognized type: {type(dataset)}. Must be path (str) or dict")
+    
     max_len = 0     # for padding
-    for context_id in dataset_json:
-        context = dataset_json[context_id]["context"]
+    for context_id in dataset:
+        context = dataset[context_id]["context"]
+        if length is not None and len(context) > length:
+            context = context[-length:]
         clean_prefix = model.tokenizer("".join(context), return_tensors="pt",
                         padding=False).input_ids
         max_len = max(max_len, clean_prefix.shape[-1])
 
-    for context_id in dataset_json:
-        answer = dataset_json[context_id]["answer"]
-        context = dataset_json[context_id]["context"]
+    for context_id in dataset:
+        answer = dataset[context_id]["answer"]
+        context = dataset[context_id]["context"]
         clean_prefix = model.tokenizer("".join(context), return_tensors="pt",
                                     padding=False).input_ids
         clean_answer = model.tokenizer(answer, return_tensors="pt",
@@ -79,9 +90,11 @@ def load_examples_nopair(dataset, num_examples, model):
         if clean_answer.shape[1] != 1:
             continue
         prefix_length_wo_pad = clean_prefix.shape[1]
-        model.tokenizer.padding_side = 'right' # TODO: move this after model initialization
         pad_length = max_len - prefix_length_wo_pad
-        clean_prefix = F.pad(clean_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
+        # left padding: reverse, right-pad, reverse
+        clean_prefix = t.flip(F.pad(t.flip(clean_prefix, (1,)), (0, pad_length), value=model.tokenizer.pad_token_id), (1,))
+        # right padding
+        # clean_prefix = F.pad(clean_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
         example_dict = {"clean_prefix": clean_prefix,
                         "clean_answer": clean_answer.item(),
                         "prefix_length_wo_pad": prefix_length_wo_pad,}
