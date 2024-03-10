@@ -73,9 +73,19 @@ class SparseAct():
         return self.__add__(other)
     
     def __sub__(self, other: SparseAct) -> SparseAct:
-        sparse_result = self.act - other.act
-        res_result = self.res - other.res
-        return SparseAct(act=sparse_result, res=res_result)
+        if isinstance(other, SparseAct):
+            kwargs = {}
+            for attr in ['act', 'res', 'resc']:
+                if getattr(self, attr) is not None:
+                    if getattr(self, attr).shape != getattr(other, attr).shape:
+                        raise ValueError(f"Shapes of {attr} do not match: {getattr(self, attr).shape} and {getattr(other, attr).shape}")
+                    kwargs[attr] = getattr(self, attr) - getattr(other, attr)
+        else:
+            kwargs = {}
+            for attr in ['act', 'res', 'resc']:
+                if getattr(self, attr) is not None:
+                    kwargs[attr] = getattr(self, attr) - other
+        return SparseAct(**kwargs)
     
     def __truediv__(self, other) -> SparseAct:
         if isinstance(other, SparseAct):
@@ -132,6 +142,21 @@ class SparseAct():
             if getattr(self, attr) is not None:
                 kwargs[attr] = getattr(self, attr).mean(dim)
         return SparseAct(**kwargs)
+
+    @property
+    def grad(self):
+        kwargs = {}
+        for attribute in ['act', 'res', 'resc']:
+            if getattr(self, attribute) is not None:
+                kwargs[attribute] = getattr(self, attribute).grad
+        return SparseAct(**kwargs)
+    
+    def clone(self):
+        kwargs = {}
+        for attribute in ['act', 'res', 'resc']:
+            if getattr(self, attribute) is not None:
+                kwargs[attribute] = getattr(self, attribute).clone()
+        return SparseAct(**kwargs)
     
     @property
     def value(self):
@@ -140,7 +165,7 @@ class SparseAct():
             if getattr(self, attribute) is not None:
                 kwargs[attribute] = getattr(self, attribute).value
         return SparseAct(**kwargs)
-    
+
     def save(self):
         for attribute in ['act', 'res', 'resc']:
             if getattr(self, attribute) is not None:
@@ -163,6 +188,7 @@ class SparseAct():
         for attr in ['act', 'res', 'resc']:
             if getattr(self, attr) is not None:
                 setattr(self, attr, getattr(self, attr).to(device))
+        return self
 
 
 if __name__ == "__main__":

@@ -156,13 +156,6 @@ def get_circuit(
 
             edges[f'resid_{layer - 1}'][f'mlp_{layer}'] = RM_effect
             edges[f'resid_{layer - 1}'][f'attn_{layer}'] = RA_effect
-            # for feat_idx in features_by_submod[resid]:
-            #     print(MR_grad.shape)
-            #     print(feat_idx)
-            #     try:
-            #         MR_grad[feat_idx]
-            #     except:
-            #         MR_grad.cpu()[feat_idx]
 
             MR_grad = MR_grad.coalesce()
             AR_grad = AR_grad.coalesce()
