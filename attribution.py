@@ -89,7 +89,7 @@ def _pe_ig_sparseact(
 
     hidden_states_clean = {}
     is_resids = {}
-    with model.trace(clean), t.inference_mode():
+    with model.trace(clean):
         for submodule in submodules:
             dictionary = dictionaries[submodule]
             x = submodule.output
