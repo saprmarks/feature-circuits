@@ -2,7 +2,7 @@ from dictionary_learning import AutoEncoder
 from attribution import EffectOut
 import torch as t
 from nnsight import LanguageModel
-from attribution import patching_effect, jvp
+from attribution_2 import patching_effect, jvp
 from einops import rearrange
 from activation_utils import SparseAct
 from collections import defaultdict
@@ -321,7 +321,7 @@ if __name__ == '__main__':
         assert t.all(x_rearranged.to_dense() == sparse_reshape(x.to_sparse(), new_shape).to_dense())
 
 
-    model = LanguageModel(args.model, device_map=device)
+    model = LanguageModel(args.model, device_map=device, dispatch=True)
 
     attns = [layer.attention for layer in model.gpt_neox.layers]
     mlps = [layer.mlp for layer in model.gpt_neox.layers]
@@ -361,8 +361,8 @@ if __name__ == '__main__':
     batch_size = len(examples) // args.batches
     for batch in tqdm(range(args.batches), desc="Batches", total=args.batches):
         batch_examples = examples[batch*batch_size:(batch+1)*batch_size]
-        clean_inputs = t.cat([e['clean_prefix'] for e in batch_examples], dim=0)
-        clean_answer_idxs = t.tensor([e['clean_answer'] for e in batch_examples], dtype=t.long)
+        clean_inputs = t.cat([e['clean_prefix'] for e in batch_examples], dim=0).to(device)
+        clean_answer_idxs = t.tensor([e['clean_answer'] for e in batch_examples], dtype=t.long, device=device)
 
         if args.nopair:
             patch_inputs = None
@@ -371,8 +371,8 @@ if __name__ == '__main__':
                     -1 * t.gather(model.embed_out.output[:,-1,:], dim=-1, index=clean_answer_idxs.view(-1, 1)).squeeze(-1)
                 )
         else:
-            patch_inputs = t.cat([e['patch_prefix'] for e in batch_examples], dim=0)
-            patch_answer_idxs = t.tensor([e['patch_answer'] for e in batch_examples], dtype=t.long)
+            patch_inputs = t.cat([e['patch_prefix'] for e in batch_examples], dim=0).to(device)
+            patch_answer_idxs = t.tensor([e['patch_answer'] for e in batch_examples], dtype=t.long, device=device)
             def metric_fn(model):
                 return (
                     t.gather(model.embed_out.output[:,-1,:], dim=-1, index=patch_answer_idxs.view(-1, 1)).squeeze(-1) - \
