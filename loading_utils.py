@@ -197,7 +197,7 @@ def load_dictionary(model, submodule_layer, submodule_object, submodule_type, di
             submodule_width = submodule_object.out_features
         except AttributeError:
             # is residual. need to load model to get this
-            with model.invoke("test") as invoker:
+            with model.trace("test"), t.inference_mode():
                 hidden_states = submodule_object.output.save()
             hidden_states = hidden_states.value
             if isinstance(hidden_states, tuple):

@@ -2,68 +2,11 @@ from collections import namedtuple
 import torch as t
 from tqdm import tqdm
 from tkdict import TKDict
-from torchtyping import TensorType
+from numpy import ndindex
 from typing import Dict, Union
 from activation_utils import SparseAct
 
 EffectOut = namedtuple('EffectOut', ['effects', 'deltas', 'grads', 'total_effect'])
-
-def _pe_attrib_all_folded(
-        clean,
-        patch,
-        model,
-        submodules,
-        dictionaries,
-        metric_fn,
-):
-    hidden_states_clean = {}
-    grads = {}
-    with model.invoke(clean, fwd_args={'inference' : False}):
-        for submodule in submodules:
-            dictionary = dictionaries[submodule]
-            x = submodule.output
-            is_resid = (type(x.shape) == tuple)
-            if is_resid:
-                x = x[0]
-            x_hat, f = dictionary(x, output_features=True) # x_hat implicitly depends on f
-            residual = (x - x_hat).detach()
-            x_recon = x_hat + residual
-            hidden_states_clean[submodule] = f.save()
-            grads[submodule] = f.grad.save()
-            if is_resid:
-                submodule.output[0][:] = x_recon
-            else:
-                submodule.output = x_recon
-            x.grad = x_recon.grad
-        metric_clean = metric_fn(model).save()
-    metric_clean.value.sum().backward()
-
-    hidden_states_patch = {}
-    with model.invoke(patch):
-        for submodule in submodules:
-            dictionary = dictionaries[submodule]
-            x = submodule.output
-            is_resid = (type(x.shape) == tuple)
-            if is_resid:
-                x = x[0]
-            f = dictionary.encode(x)
-            hidden_states_patch[submodule] = f.save()
-        metric_patch = metric_fn(model).save()
-    total_effect = (metric_patch.value - metric_clean.value).detach()
-
-    effects = {}
-    deltas = {}
-    for submodule in submodules:
-        patch_state, clean_state = hidden_states_patch[submodule].value, hidden_states_clean[submodule].value.detach()
-        delta = patch_state - clean_state if patch_state is not None else -clean_state
-        grad = grads[submodule].value
-        effect = delta * grad
-        effects[submodule] = effect
-        deltas[submodule] = delta
-        grads[submodule] = grad
-    total_effect = total_effect if total_effect is not None else None
-    
-    return EffectOut(effects, deltas, grads, total_effect)
 
 def _pe_attrib_all_folded_sparseact(
         clean,
@@ -85,8 +28,8 @@ def _pe_attrib_all_folded_sparseact(
                 x = x[0]
             x_hat, f = dictionary(x, output_features=True) # x_hat implicitly depends on f
             residual = x - x_hat
-            hidden_states_clean[submodule] = SparseAct(act=f.save(), res=residual.save())
-            grads[submodule] = SparseAct(act=f.grad.save(), res=residual.grad.save())
+            hidden_states_clean[submodule] = SparseAct(act=f, res=residual).save()
+            grads[submodule] = hidden_states_clean[submodule].grad.save()
             residual.grad = t.zeros_like(residual)
             x_recon = x_hat + residual
             if is_resid:
@@ -96,110 +39,41 @@ def _pe_attrib_all_folded_sparseact(
             x.grad = x_recon.grad
         metric_clean = metric_fn(model, **metric_kwargs).save()
         metric_clean.sum().backward()
+    hidden_states_clean = {k : v.value for k, v in hidden_states_clean.items()}
+    grads = {k : v.value for k, v in grads.items()}
 
-    hidden_states_patch = {}
-    with model.trace(patch), t.no_grad():
-        for submodule in submodules:
-            dictionary = dictionaries[submodule]
-            x = submodule.output
-            is_resid = (type(x.shape) == tuple)
-            if is_resid:
-                x = x[0]
-            x_hat, f = dictionary(x, output_features=True) # x_hat implicitly depends on f
-            residual = x - x_hat
-            hidden_states_patch[submodule] = SparseAct(act=f.save(), res=residual.save())
-        metric_patch = metric_fn(model, **metric_kwargs).save()
-    total_effect = (metric_patch.value - metric_clean.value).detach()
+    if patch is None:
+        hidden_states_patch = {
+            k : SparseAct(act=t.zeros_like(v.act), res=t.zeros_like(v.res)) for k, v in hidden_states_clean.items()
+        }
+        total_effect = None
+    else:
+        hidden_states_patch = {}
+        with model.trace(patch), t.inference_mode():
+            for submodule in submodules:
+                dictionary = dictionaries[submodule]
+                x = submodule.output
+                is_resid = (type(x.shape) == tuple)
+                if is_resid:
+                    x = x[0]
+                x_hat, f = dictionary(x, output_features=True)
+                residual = x - x_hat
+                hidden_states_patch[submodule] = SparseAct(act=f, res=residual).save()
+            metric_patch = metric_fn(model, **metric_kwargs).save()
+        total_effect = (metric_patch.value - metric_clean.value).detach()
+        hidden_states_patch = {k : v.value for k, v in hidden_states_patch.items()}
 
     effects = {}
     deltas = {}
     for submodule in submodules:
-        patch_state, clean_state = hidden_states_patch[submodule].value, hidden_states_clean[submodule].value.detach()
-        delta = patch_state - clean_state if patch_state is not None else -clean_state
-        grad = grads[submodule].value
+        patch_state, clean_state, grad = hidden_states_patch[submodule], hidden_states_clean[submodule], grads[submodule]
+        delta = patch_state - clean_state.detach() if patch_state is not None else -clean_state.detach()
         effect = delta @ grad
         effects[submodule] = effect
         deltas[submodule] = delta
         grads[submodule] = grad
     total_effect = total_effect if total_effect is not None else None
     
-    return EffectOut(effects, deltas, grads, total_effect)
-    
-def _pe_ig(
-        clean,
-        patch,
-        model,
-        submodules,
-        dictionaries,
-        metric_fn,
-        steps=10,
-):
-
-    hidden_states_clean = {}
-    residuals = {}
-    is_resids = {}
-    with model.invoke(clean):
-        for submodule in submodules:
-            dictionary = dictionaries[submodule]
-            x = submodule.output
-            is_resids[submodule] = (type(x.shape) == tuple)
-            if is_resids[submodule]:
-                x = x[0]
-            f = dictionary.encode(x)
-            hidden_states_clean[submodule] = f.save()
-            x_hat = dictionary.decode(f)
-            residuals[submodule] = (x - x_hat).save()
-        metric_clean = metric_fn(model).save()
-
-    hidden_states_patch = {}
-    if patch is None:
-        hidden_states_patch = {
-            k : t.zeros_like(v) for k, v in hidden_states_clean.items()
-        }
-        total_effect = None
-    else:
-        with model.invoke(patch):
-            for submodule in submodules:
-                dictionary = dictionaries[submodule]
-                x = submodule.output
-                if is_resids[submodule]:
-                    x = x[0]
-                f = dictionary.encode(x)
-                hidden_states_patch[submodule] = f.save()
-            metric_patch = metric_fn(model).save()
-        total_effect = (metric_patch.value - metric_clean.value).detach()
-
-    effects = {}
-    deltas = {}
-    grads = {}
-    for submodule in submodules:
-        dictionary = dictionaries[submodule]
-        patch_state, clean_state, residual = \
-            hidden_states_patch[submodule], hidden_states_clean[submodule], residuals[submodule]
-        with model.forward(inference=False) as runner:
-            metrics = []
-            fs = []
-            for step in range(steps):
-                alpha = step / steps
-                f = (1 - alpha) * clean_state.value + alpha * patch_state.value
-                f.requires_grad = True
-                fs.append(f)
-                with runner.invoke(clean):
-                    if is_resids[submodule]:
-                        submodule.output[0][:] = dictionary.decode(f) + residual.value
-                    else:
-                        submodule.output = dictionary.decode(f) + residual
-                    metrics.append(metric_fn(model).save())
-        metric = sum([m.value for m in metrics])
-        metric.sum().backward()
-        grad = sum([f.grad for f in fs]) / steps
-        delta = (patch_state.value - clean_state.value).detach() if patch_state is not None else -clean_state.value.detach()
-        effect = grad * delta
-        effects[submodule] = effect
-        deltas[submodule] = delta
-        grads[submodule] = grad
-    total_effect = total_effect if total_effect is not None else None
-
     return EffectOut(effects, deltas, grads, total_effect)
 
 def _pe_ig_sparseact(
@@ -215,7 +89,7 @@ def _pe_ig_sparseact(
 
     hidden_states_clean = {}
     is_resids = {}
-    with model.trace(clean), t.no_grad():
+    with model.trace(clean):
         for submodule in submodules:
             dictionary = dictionaries[submodule]
             x = submodule.output
@@ -236,7 +110,7 @@ def _pe_ig_sparseact(
         total_effect = None
     else:
         hidden_states_patch = {}
-        with model.trace(patch), t.no_grad():
+        with model.trace(patch), t.inference_mode():
             for submodule in submodules:
                 dictionary = dictionaries[submodule]
                 x = submodule.output
@@ -286,78 +160,6 @@ def _pe_ig_sparseact(
 
     return EffectOut(effects, deltas, grads, total_effect)
 
-def _pe_exact(
-        clean,
-        patch,
-        model,
-        submodules,
-        dictionaries,
-        metric_fn,
-):
-    
-    hidden_states_clean = {}
-    residuals = {}
-    with model.invoke(clean):
-        for submodule in submodules:
-            dictionary = dictionaries[submodule]
-            x = submodule.output
-            is_resid = (type(x.shape) == tuple)
-            if is_resid:
-                x = x[0]
-            f = dictionary.encode(x)
-            hidden_states_clean[submodule] = f.save()
-            x_hat = dictionary.decode(f)
-            residuals[submodule] = (x - x_hat).save()
-        metric_clean = metric_fn(model).save()
-
-    if patch is None:
-        hidden_states_patch = {
-            k : t.zeros_like(v) for k, v in hidden_states_clean.items()
-        }
-        total_effect = None
-    else:
-        hidden_states_patch = {}
-        with model.invoke(patch):
-            for submodule in submodules:
-                dictionary = dictionaries[submodule]
-                x = submodule.output
-                is_resid = (type(x.shape) == tuple)
-                if is_resid:
-                    x = x[0]
-                f = dictionary.encode(x)
-                hidden_states_patch[submodule] = f.save()
-            metric_patch = metric_fn(model).save()
-        total_effect = metric_patch.value - metric_clean.value
-
-    effects = {}
-    deltas = {}
-    for submodule in submodules:
-        dictionary = dictionaries[submodule]
-        patch_state, clean_state, residual = \
-            hidden_states_patch[submodule], hidden_states_clean[submodule], residuals[submodule]
-        effect = t.zeros_like(clean_state.value) # shape of the features, summing over positions and batch later
-        
-        # iterate over positions and features for which clean and patch differ
-        idxs = t.nonzero(patch_state.value - clean_state.value)
-        for idx in tqdm(idxs):
-            with model.invoke(clean):
-                f = clean_state.value.clone()
-                f[tuple(idx)] = patch_state.value[tuple(idx)]
-                x_hat = dictionary.decode(f)
-                if is_resid:
-                    submodule.output[0][:] = x_hat + residual.value
-                else:
-                    submodule.output = x_hat + residual.value
-                metric = metric_fn(model).save()
-            effect[tuple(idx)] = (metric.value - metric_clean.value).sum()
-        delta = patch_state.value - clean_state.value
-        
-        effects[submodule] = effect
-        deltas[submodule] = delta
-    total_effect = total_effect if total_effect is not None else None
-
-    return EffectOut(effects, deltas, None, total_effect)
-
 
 def _pe_exact_sparseact(
     clean,
@@ -368,18 +170,20 @@ def _pe_exact_sparseact(
     metric_fn,
     ):
     hidden_states_clean = {}
-    with model.invoke(clean):
+    is_resids = {}
+    with model.trace(clean), t.inference_mode():
         for submodule in submodules:
             dictionary = dictionaries[submodule]
             x = submodule.output
-            is_resid = (type(x.shape) == tuple)
-            if is_resid:
+            is_resids[submodule] = (type(x.shape) == tuple)
+            if is_resids[submodule]:
                 x = x[0]
             f = dictionary.encode(x)
             x_hat = dictionary.decode(f)
             residual = x - x_hat
-            hidden_states_clean[submodule] = SparseAct(act=f.save(), res=residual.save())
+            hidden_states_clean[submodule] = SparseAct(act=f, res=residual).save()
         metric_clean = metric_fn(model).save()
+    hidden_states_clean = {k : v.value for k, v in hidden_states_clean.items()}
 
     if patch is None:
         hidden_states_patch = {
@@ -388,43 +192,53 @@ def _pe_exact_sparseact(
         total_effect = None
     else:
         hidden_states_patch = {}
-        with model.invoke(patch):
+        with model.trace(patch), t.inference_mode():
             for submodule in submodules:
                 dictionary = dictionaries[submodule]
                 x = submodule.output
-                is_resid = (type(x.shape) == tuple)
-                if is_resid:
+                if is_resids[submodule]:
                     x = x[0]
                 f = dictionary.encode(x)
                 x_hat = dictionary.decode(f)
                 residual = x - x_hat
-                hidden_states_patch[submodule] =SparseAct(act=f.save(), res=residual.save())
+                hidden_states_patch[submodule] = SparseAct(act=f, res=residual).save()
             metric_patch = metric_fn(model).save()
         total_effect = metric_patch.value - metric_clean.value
+        hidden_states_patch = {k : v.value for k, v in hidden_states_patch.items()}
 
     effects = {}
     deltas = {}
     for submodule in submodules:
         dictionary = dictionaries[submodule]
-        clean_state = hidden_states_clean[submodule].value
-        patch_state = hidden_states_patch[submodule].value
-        effect = t.zeros_like(clean_state.act)
+        clean_state = hidden_states_clean[submodule]
+        patch_state = hidden_states_patch[submodule]
+        effect = SparseAct(act=t.zeros_like(clean_state.act), res=t.zeros_like(clean_state.res))
         
         # iterate over positions and features for which clean and patch differ
         idxs = t.nonzero(patch_state.act - clean_state.act)
         for idx in tqdm(idxs):
-            with model.invoke(clean):
+            with model.trace(clean), t.inference_mode():
                 f = clean_state.act.clone()
                 f[tuple(idx)] = patch_state.act[tuple(idx)]
                 x_hat = dictionary.decode(f)
-                if is_resid:
+                if is_resids[submodule]:
                     submodule.output[0][:] = x_hat + clean_state.res
                 else:
                     submodule.output = x_hat + clean_state.res
                 metric = metric_fn(model).save()
-            effect[tuple(idx)] = (metric.value - metric_clean.value).sum()
+            effect.act[tuple(idx)] = (metric.value - metric_clean.value).sum()
+        for idx in list(ndindex(*clean_state.res.shape[:-1])):
+            with model.trace(clean), t.inference_mode():
+                res = clean_state.res.clone()
+                res[tuple(idx)] = patch_state.res[tuple(idx)]
+                x_hat = dictionary.decode(clean_state.act)
+                if is_resids[submodule]:
+                    submodule.output[0][:] = x_hat + res
+                else:
+                    submodule.output = x_hat + res
+                metric = metric_fn(model).save()
+            effect.res[tuple(idx)] = (metric.value - metric_clean.value).sum()
         
-        effects[submodule] = SparseAct(act=effect, res=clean_state.res)
         deltas[submodule] = patch_state - clean_state
     total_effect = total_effect if total_effect is not None else None
 
@@ -545,55 +359,6 @@ def jvp(
         t.sparse_coo_tensor(vjv_indices, vjv_values, (d_downstream_contracted, d_upstream_contracted)),
         t.sparse_coo_tensor(jv_indices, jv_values, (d_downstream_contracted, d_upstream))
     )
-        
-def get_grad(clean, 
-             patch, 
-             model, 
-             dictionaries, 
-             upstream_submods, 
-             downstream_submod, 
-             downstream_features, 
-             return_idxs=None # dictionary of upstream idxs to return, for each upstream submodule (and, optionally, each downstream feature idx)
-):
-    grad = TKDict()
-    with model.invoke(clean, fwd_args={'inference' : False}):
-        for upstream_submod in upstream_submods:
-            upstream_dictionary = dictionaries[upstream_submod]
-            x = upstream_submod.output
-            is_resid = (type(x.shape) == tuple)
-            if is_resid:
-                x = x[0]
-            x_hat, f = upstream_dictionary(x, output_features=True)
-            grad[upstream_submod] = f.grad.save()
-            residual = x - upstream_dictionary(x)
-            if is_resid:
-                upstream_submod.output[0][:] = x_hat + residual
-            else:
-                upstream_submod.output = x_hat + residual
-        
-        y = downstream_submod.output
-        downstream_dictionary = dictionaries[downstream_submod]
-        is_resid = (type(y.shape) == tuple)
-        if is_resid:
-            y = y[0]
-        f_downstream = downstream_dictionary.encode(y).save()
-    
-    grads = TKDict()
-    for downstream_feature_idx in downstream_features:
-        grads[downstream_feature_idx] = {}
-        f_downstream.value[tuple(downstream_feature_idx)].backward(retain_graph=True)
-        for upstream_submod in upstream_submods:
-            if return_idxs is None or return_idxs[upstream_submod] is None:
-                grads[downstream_feature_idx][upstream_submod] = grad[upstream_submod].value
-            elif isinstance(return_idxs[upstream_submod], list):
-                grads[downstream_feature_idx][upstream_submod] = TKDict({
-                    idx : grad[upstream_submod].value[tuple(idx)] for idx in return_idxs[upstream_submod]
-                })
-            elif isinstance(return_idxs[upstream_submod], TKDict):
-                grads[downstream_feature_idx][upstream_submod] = TKDict({
-                    idx : grad[upstream_submod].value[tuple(idx)] for idx in return_idxs[upstream_submod][downstream_feature_idx]
-                })
-    return grads
 
 
 if __name__ == "__main__":

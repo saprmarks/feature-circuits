@@ -131,10 +131,11 @@ def evaluate_completeness(circuit_features, model, dict_cfg, eval_dataset, dicti
                             circuit_no_K_out.logits[:, -1, example["patch_answer"]]
         
         # baseline: how well does the full model do compared to the empty set?
-        with model.invoke(example["clean_prefix"]) as invoker:
-            pass
-        model_diff = invoker.output.logits[:,-1,example["clean_answer"]] - \
-                     invoker.output.logits[:,-1,example["patch_answer"]]
+        with model.trace(example["clean_prefix"]), t.inference_mode():
+            model_diff = model.output.logits[:,-1,example["clean_answer"]] - \
+                         model.output.logits[:,-1,example["patch_answer"]]
+            model_diff = model_diff.save()
+        model_diff = model_diff.value
         # model_out = run_with_ablated_features(model, example["clean_prefix"],
         #                     dict_cfg.size,
         #                     [], dictionaries, add_error=False,
@@ -265,7 +266,7 @@ if __name__ == "__main__":
             text = model.tokenizer(next(corpus), return_tensors="pt",
                                    max_length=128, padding=True, truncation=True)
             attn_acts, mlp_acts, resid_acts = {}, {}, {}
-            with model.invoke(text):
+            with model.trace(text), t.inference_mode():
                 seq_len = attns[0].output.shape[1]
                 token_pos = random.randint(0, seq_len-1)
                 for i in range(len(model.gpt_neox.layers)):
