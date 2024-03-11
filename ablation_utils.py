@@ -67,7 +67,7 @@ def run_with_ablated_features(model, example, dictionary_size, features, diction
         if return_submodules and submodule_name in return_submodules:
             saved_submodules[submodule_name] = submodule.output.save()
 
-    with model.invoke(example) as invoker:
+    with model.trace(example), t.inference_mode():
         # from lowest layer to highest (does this matter in nnsight?)
         for layer in sorted(features_per_layer):
             for submodule_type in features_per_layer[layer]:
@@ -83,7 +83,8 @@ def run_with_ablated_features(model, example, dictionary_size, features, diction
                             layer = int(submodule_parts[idx+1])
                             break
                     _ablate_features(submodule_type, layer, [])
-    saved_submodules["model"] = invoker.output
+        model_out = model.output.save()
+    saved_submodules["model"] = model_out.value
 
     return saved_submodules
 
