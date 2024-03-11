@@ -2,16 +2,13 @@ from dictionary_learning import AutoEncoder
 from attribution import EffectOut
 import torch as t
 from nnsight import LanguageModel
-from attribution_2 import patching_effect, jvp
+from attribution import patching_effect, jvp
 from einops import rearrange
 from activation_utils import SparseAct
 from collections import defaultdict
 import argparse
 from circuit_plotting import plot_circuit
 import json
-import pickle
-import os
-from tkdict import TKDict
 from tqdm import tqdm
 from loading_utils import load_examples, load_examples_nopair
 
