@@ -7,8 +7,8 @@ AGG=$4
 
 python circuit_triangles.py \
     --model EleutherAI/pythia-70m-deduped \
-    --num_examples 100 \
-    --batches 20 \
+    --num_examples 40 \
+    --batch_size 1 \
     --dataset $DATA \
 	--node_threshold $NODE \
 	--edge_threshold $EDGE \

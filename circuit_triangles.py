@@ -9,6 +9,8 @@ from collections import defaultdict
 import argparse
 from circuit_plotting import plot_circuit
 import json
+import gc
+import os
 from tqdm import tqdm
 from loading_utils import load_examples, load_examples_nopair
 
@@ -261,13 +263,15 @@ if __name__ == '__main__':
     parser.add_argument('--d_model', type=int, default=512)
     parser.add_argument('--dict_id', type=str, default=10)
     parser.add_argument('--dict_size', type=int, default=32768)
-    parser.add_argument('--batches', type=int, default=1)
+    # parser.add_argument('--batches', type=int, default=1)
+    parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--aggregation', type=str, default='sum')
     parser.add_argument('--node_threshold', type=float, default=0.1)
     parser.add_argument('--edge_threshold', type=float, default=0.01)
     parser.add_argument('--pen_thickness', type=float, default=1)
     parser.add_argument('--nopair', default=False, action="store_true")
     parser.add_argument('--plot_circuit', default=False, action='store_true')
+    parser.add_argument('--plot_only', action="store_true")
     parser.add_argument('--seed', type=int, default=12)
     parser.add_argument('--device', type=str, default='cuda:0')
     args = parser.parse_args()
@@ -346,66 +350,75 @@ if __name__ == '__main__':
             dictionaries[resids[i]] = ae
     
     if args.nopair:
-        data_path = f"contexts/{args.dataset}.json"
+        data_path = f"{args.dataset}"
+        save_basename = os.path.splitext(os.path.basename(args.dataset))[0]
     else:
         data_path = f"/share/projects/dictionary_circuits/data/phenomena/{args.dataset}.json"
+        save_basename = args.dataset
 
     if args.nopair:
         examples = load_examples_nopair(data_path, args.num_examples, model, length=args.example_length)
     else:
         examples = load_examples(data_path, args.num_examples, model, pad_to_length=args.example_length)
 
-    batch_size = len(examples) // args.batches
-    for batch in tqdm(range(args.batches), desc="Batches", total=args.batches):
-        batch_examples = examples[batch*batch_size:(batch+1)*batch_size]
-        clean_inputs = t.cat([e['clean_prefix'] for e in batch_examples], dim=0).to(device)
-        clean_answer_idxs = t.tensor([e['clean_answer'] for e in batch_examples], dtype=t.long, device=device)
+    batch_size = args.batch_size
+    batches = len(examples) // args.batch_size
+    if not args.plot_only:
+        for batch in tqdm(range(batches), desc="Batches", total=batches):
+            if batch == batches-1:
+                batch_examples = examples[batch*batch_size:]    # potentially smaller batch in last iteration
+            else:
+                batch_examples = examples[batch*batch_size:(batch+1)*batch_size]
+                
+            clean_inputs = t.cat([e['clean_prefix'] for e in batch_examples], dim=0).to(device)
+            clean_answer_idxs = t.tensor([e['clean_answer'] for e in batch_examples], dtype=t.long, device=device)
 
-        if args.nopair:
-            patch_inputs = None
-            def metric_fn(model):
-                return (
-                    -1 * t.gather(model.embed_out.output[:,-1,:], dim=-1, index=clean_answer_idxs.view(-1, 1)).squeeze(-1)
-                )
-        else:
-            patch_inputs = t.cat([e['patch_prefix'] for e in batch_examples], dim=0).to(device)
-            patch_answer_idxs = t.tensor([e['patch_answer'] for e in batch_examples], dtype=t.long, device=device)
-            def metric_fn(model):
-                return (
-                    t.gather(model.embed_out.output[:,-1,:], dim=-1, index=patch_answer_idxs.view(-1, 1)).squeeze(-1) - \
-                    t.gather(model.embed_out.output[:,-1,:], dim=-1, index=clean_answer_idxs.view(-1, 1)).squeeze(-1)
-                )
-        
-        nodes, edges = get_circuit(
-            clean_inputs,
-            patch_inputs,
-            model,
-            attns,
-            mlps,
-            resids,
-            dictionaries,
-            metric_fn,
-            aggregation=args.aggregation,
-            node_threshold=args.node_threshold,
-            edge_threshold=args.edge_threshold,
-        )
+            if args.nopair:
+                patch_inputs = None
+                def metric_fn(model):
+                    return (
+                        -1 * t.gather(model.embed_out.output[:,-1,:], dim=-1, index=clean_answer_idxs.view(-1, 1)).squeeze(-1)
+                    )
+            else:
+                patch_inputs = t.cat([e['patch_prefix'] for e in batch_examples], dim=0).to(device)
+                patch_answer_idxs = t.tensor([e['patch_answer'] for e in batch_examples], dtype=t.long, device=device)
+                def metric_fn(model):
+                    return (
+                        t.gather(model.embed_out.output[:,-1,:], dim=-1, index=patch_answer_idxs.view(-1, 1)).squeeze(-1) - \
+                        t.gather(model.embed_out.output[:,-1,:], dim=-1, index=clean_answer_idxs.view(-1, 1)).squeeze(-1)
+                    )
+            
+            nodes, edges = get_circuit(
+                clean_inputs,
+                patch_inputs,
+                model,
+                attns,
+                mlps,
+                resids,
+                dictionaries,
+                metric_fn,
+                aggregation=args.aggregation,
+                node_threshold=args.node_threshold,
+                edge_threshold=args.edge_threshold,
+            )
 
-        save_file = f'circuits/{args.dataset}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_agg{args.aggregation}_batch{batch}'
+            save_file = f'circuits/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_agg{args.aggregation}_batch{batch}'
 
-        with open(f"{save_file}.pt", "wb") as outfile:
-            save_dict = {
-                "examples" : batch_examples,
-                "nodes": dict(nodes), 
-                "edges": dict(edges)
-            }
-            t.save(save_dict, outfile)
-        
-        # memory cleanup
-        del nodes, edges
+            with open(f"{save_file}.pt", "wb") as outfile:
+                save_dict = {
+                    "examples" : batch_examples,
+                    "nodes": dict(nodes), 
+                    "edges": dict(edges)
+                }
+                t.save(save_dict, outfile)
+            
+            # memory cleanup
+            del nodes, edges
+            gc.collect()
 
     # aggregate over the batches
     out_dicts = [
-        t.load(f'circuits/{args.dataset}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_batch{batch}.pt') for batch in range(args.batches)
+        t.load(f'circuits/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_batch{batch}.pt') for batch in range(batches)
     ]
     assert sum([len(d['examples']) for d in out_dicts]) == args.num_examples
     nodes = {
@@ -424,7 +437,7 @@ if __name__ == '__main__':
         "nodes": nodes,
         "edges": edges
     }
-    with open(f'circuits/{args.dataset}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_agg{args.aggregation}.pt', 'wb') as outfile:
+    with open(f'circuits/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_agg{args.aggregation}.pt', 'wb') as outfile:
         t.save(save_dict, outfile)
 
     # feature annotations
@@ -442,4 +455,4 @@ if __name__ == '__main__':
         edge_threshold=args.edge_threshold, 
         pen_thickness=args.pen_thickness, 
         annotations=annotations, 
-        save_dir=f'circuits/figures/{args.dataset}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_agg{args.aggregation}')
+        save_dir=f'circuits/figures/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_agg{args.aggregation}')
