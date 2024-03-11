@@ -10,6 +10,7 @@ import argparse
 from circuit_plotting import plot_circuit
 import json
 import gc
+import os
 from tqdm import tqdm
 from loading_utils import load_examples, load_examples_nopair
 
@@ -349,9 +350,11 @@ if __name__ == '__main__':
             dictionaries[resids[i]] = ae
     
     if args.nopair:
-        data_path = f"contexts/{args.dataset}.json"
+        data_path = f"{args.dataset}"
+        save_basename = os.path.splitext(os.path.basename(args.dataset))[0]
     else:
         data_path = f"/share/projects/dictionary_circuits/data/phenomena/{args.dataset}.json"
+        save_basename = args.dataset
 
     if args.nopair:
         examples = load_examples_nopair(data_path, args.num_examples, model, length=args.example_length)
@@ -399,7 +402,7 @@ if __name__ == '__main__':
                 edge_threshold=args.edge_threshold,
             )
 
-            save_file = f'circuits/{args.dataset}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_batch{batch}'
+            save_file = f'circuits/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_batch{batch}'
 
             with open(f"{save_file}.pt", "wb") as outfile:
                 save_dict = {
@@ -415,7 +418,7 @@ if __name__ == '__main__':
 
     # aggregate over the batches
     out_dicts = [
-        t.load(f'circuits/{args.dataset}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_batch{batch}.pt') for batch in range(batches)
+        t.load(f'circuits/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_batch{batch}.pt') for batch in range(batches)
     ]
     assert sum([len(d['examples']) for d in out_dicts]) == args.num_examples
     nodes = {
@@ -434,7 +437,7 @@ if __name__ == '__main__':
         "nodes": nodes,
         "edges": edges
     }
-    with open(f'circuits/{args.dataset}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}.pt', 'wb') as outfile:
+    with open(f'circuits/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}.pt', 'wb') as outfile:
         t.save(save_dict, outfile)
 
     # feature annotations
@@ -452,4 +455,4 @@ if __name__ == '__main__':
         edge_threshold=args.edge_threshold, 
         pen_thickness=args.pen_thickness, 
         annotations=annotations, 
-        save_dir=f'circuits/figures/{args.dataset}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}')
+        save_dir=f'circuits/figures/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}')
