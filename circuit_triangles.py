@@ -390,7 +390,7 @@ if __name__ == '__main__':
             edge_threshold=args.edge_threshold,
         )
 
-        save_file = f'circuits/{args.dataset}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_batch{batch}'
+        save_file = f'circuits/{args.dataset}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_agg{args.aggregation}_batch{batch}'
 
         with open(f"{save_file}.pt", "wb") as outfile:
             save_dict = {
@@ -424,7 +424,7 @@ if __name__ == '__main__':
         "nodes": nodes,
         "edges": edges
     }
-    with open(f'circuits/{args.dataset}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}.pt', 'wb') as outfile:
+    with open(f'circuits/{args.dataset}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_agg{args.aggregation}.pt', 'wb') as outfile:
         t.save(save_dict, outfile)
 
     # feature annotations
@@ -442,4 +442,4 @@ if __name__ == '__main__':
         edge_threshold=args.edge_threshold, 
         pen_thickness=args.pen_thickness, 
         annotations=annotations, 
-        save_dir=f'circuits/figures/{args.dataset}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}')
+        save_dir=f'circuits/figures/{args.dataset}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_agg{args.aggregation}')
