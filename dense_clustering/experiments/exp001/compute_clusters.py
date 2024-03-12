@@ -9,7 +9,7 @@ import numpy as np
 import torch
 import sklearn.cluster
 
-SAVE_DIR = "/om/user/ericjm/results/dictionary-circuits/dense_clustering/exp000"
+SAVE_DIR = "/om/user/ericjm/results/dictionary-circuits/dense_clustering/exp001"
 
 idxs, C = torch.load(os.path.join(SAVE_DIR, "similarity.pt"))
 C = C.cpu().numpy()

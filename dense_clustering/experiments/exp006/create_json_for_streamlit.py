@@ -7,12 +7,7 @@ import json
 import numpy as np
 from tqdm.auto import tqdm
 
-import torch
-import torch.nn.functional as F
-
 import datasets
-
-SAVE_DIR = "/om/user/ericjm/results/dictionary-circuits/dense_clustering/exp000"
 
 pile_canonical = "/om/user/ericjm/the_pile/the_pile_test_canonical_200k"
 dataset = datasets.load_from_disk(pile_canonical)
@@ -53,7 +48,11 @@ def print_context(idx, context_length=-1):
     print(prompt + "\033[41m" + token + "\033[0m")
 
 
-idxs, _ = torch.load(os.path.join(SAVE_DIR, "similarity.pt"))
+SAVE_DIR = "/om/user/ericjm/results/dictionary-circuits/dense_clustering/exp006"
+
+# load up idxs
+with open("/om/user/ericjm/results/dictionary-circuits/dense_clustering/exp006/idxs.pkl", "rb") as f:
+    idxs = pickle.load(f)
 
 # we need to save the contexts for these idxs as a json in the following format
 # we need the json to be a dictionary with idxs (converted to strings) as keys
@@ -62,7 +61,7 @@ idxs, _ = torch.load(os.path.join(SAVE_DIR, "similarity.pt"))
 
 # first construct this dictionary
 contexts = {}
-for idx in idxs:
+for idx in tqdm(idxs):
     document_idx, _ = loss_idx_to_dataset_idx(idx)
     document, token_idx = get_context(idx)
     tokens = document["split_by_token"]
@@ -73,11 +72,11 @@ for idx in idxs:
     contexts[str(idx)] = {"y": token, "context": prompt, "document_idx": document_idx}
 
 # save contexts as a json
-with open(os.path.join(SAVE_DIR, "contexts.json"), "w") as f:
+with open(os.path.join(SAVE_DIR, "contexts-pythia-70m-100k.json"), "w") as f:
     json.dump(contexts, f)
 
 # load up clustering results
-with open(os.path.join(SAVE_DIR, "clusters.pkl"), "rb") as f:
+with open(os.path.join(SAVE_DIR, "clusters-pythia-70m-100k-kmeans-30k-dim.pkl"), "rb") as f:
     clusters = pickle.load(f)
 
 clusters_json = {}
@@ -87,5 +86,5 @@ for n_clusters, result in clusters.items():
     clusters_json[str(n_clusters)] = list(results_pair)
 
 # save clusters as a json
-with open(os.path.join(SAVE_DIR, "clusters.json"), "w") as f:
+with open(os.path.join(SAVE_DIR, "clusters-pythia-70m.json"), "w") as f:
     json.dump(clusters_json, f)

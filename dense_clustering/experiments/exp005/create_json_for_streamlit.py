@@ -7,12 +7,7 @@ import json
 import numpy as np
 from tqdm.auto import tqdm
 
-import torch
-import torch.nn.functional as F
-
 import datasets
-
-SAVE_DIR = "/om/user/ericjm/results/dictionary-circuits/dense_clustering/exp000"
 
 pile_canonical = "/om/user/ericjm/the_pile/the_pile_test_canonical_200k"
 dataset = datasets.load_from_disk(pile_canonical)
@@ -53,7 +48,11 @@ def print_context(idx, context_length=-1):
     print(prompt + "\033[41m" + token + "\033[0m")
 
 
-idxs, _ = torch.load(os.path.join(SAVE_DIR, "similarity.pt"))
+SAVE_DIR = "/om/user/ericjm/results/dictionary-circuits/dense_clustering/exp005"
+
+# load up idxs
+with open("/om/user/ericjm/results/dictionary-circuits/dense_clustering/exp005/idxs.pkl", "rb") as f:
+    idxs = pickle.load(f)
 
 # we need to save the contexts for these idxs as a json in the following format
 # we need the json to be a dictionary with idxs (converted to strings) as keys

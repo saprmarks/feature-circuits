@@ -12,7 +12,7 @@ import torch.nn.functional as F
 
 import datasets
 
-SAVE_DIR = "/om/user/ericjm/results/dictionary-circuits/dense_clustering/exp000"
+SAVE_DIR = "/om/user/ericjm/results/dictionary-circuits/dense_clustering/exp002"
 
 pile_canonical = "/om/user/ericjm/the_pile/the_pile_test_canonical_200k"
 dataset = datasets.load_from_disk(pile_canonical)
