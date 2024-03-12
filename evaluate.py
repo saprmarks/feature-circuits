@@ -35,18 +35,18 @@ def evaluate_faithfulness(circuit_features, model, dict_cfg, eval_dataset, dicti
         # model_logit_diff = invoker.output.logits[:,-1,example["clean_answer"]] - \
         #                    invoker.output.logits[:,-1,example["patch_answer"]]
         model_out = run_with_ablated_features(model, example["clean_prefix"], dict_cfg.size, 
-                                              [], dictionaries, add_error=True,
+                                              [], dictionaries, add_error=False,
                                               patch_type=patch_type, patch_vectors=patch_vectors,
                                               inverse=False)["model"]
-        model_logit_diff = model_out.logits[:, -1, example["clean_answer"]] - \
-                            model_out.logits[:, -1, example["patch_answer"]]
+        model_logit_diff = model_out[:, -1, example["clean_answer"]] - \
+                            model_out[:, -1, example["patch_answer"]]
 
         circuit_out = run_with_ablated_features(model, example["clean_prefix"], dict_cfg.size,
-                                                circuit_features, dictionaries, add_error=True,
+                                                circuit_features, dictionaries, add_error=False,
                                                 patch_type=patch_type, patch_vectors=patch_vectors,
                                                 inverse=True)["model"]
-        circuit_logit_diff = circuit_out.logits[:, -1, example["clean_answer"]] - \
-                                circuit_out.logits[:, -1, example["patch_answer"]]
+        circuit_logit_diff = circuit_out[:, -1, example["clean_answer"]] - \
+                                circuit_out[:, -1, example["patch_answer"]]
         faithfulness = circuit_logit_diff / model_logit_diff
 
         # print(example["clean_prefix"], example["clean_answer"])
@@ -117,23 +117,23 @@ def evaluate_completeness(circuit_features, model, dict_cfg, eval_dataset, dicti
     for example in tqdm(eval_dataset, desc="Evaluating completeness", total=len(eval_dataset)):
         model_no_K_out = run_with_ablated_features(model, example["clean_prefix"],
                                     dict_cfg.size,
-                                    K, dictionaries, add_error=True,
+                                    K, dictionaries, add_error=False,
                                     patch_type=patch_type, patch_vectors=patch_vectors,
                                     inverse=False)["model"]
-        model_no_K_diff = model_no_K_out.logits[:, -1, example["clean_answer"]] - \
-                            model_no_K_out.logits[:, -1, example["patch_answer"]]
+        model_no_K_diff = model_no_K_out[:, -1, example["clean_answer"]] - \
+                            model_no_K_out[:, -1, example["patch_answer"]]
         circuit_no_K_out = run_with_ablated_features(model, example["clean_prefix"],
                                                         dict_cfg.size,
-                                                        list(circuit_features_no_K), dictionaries, add_error=True,
+                                                        list(circuit_features_no_K), dictionaries, add_error=False,
                                                         patch_type=patch_type, patch_vectors=patch_vectors,
                                                         inverse=True)["model"]
-        circuit_no_K_diff = circuit_no_K_out.logits[:, -1, example["clean_answer"]] - \
-                            circuit_no_K_out.logits[:, -1, example["patch_answer"]]
+        circuit_no_K_diff = circuit_no_K_out[:, -1, example["clean_answer"]] - \
+                            circuit_no_K_out[:, -1, example["patch_answer"]]
         
         # baseline: how well does the full model do compared to the empty set?
         with model.trace(example["clean_prefix"]), t.inference_mode():
-            model_diff = model.output.logits[:,-1,example["clean_answer"]] - \
-                         model.output.logits[:,-1,example["patch_answer"]]
+            model_diff = model.embed_out.output[:,-1,example["clean_answer"]] - \
+                         model.embed_out.output[:,-1,example["patch_answer"]]
             model_diff = model_diff.save()
         model_diff = model_diff.value
         # model_out = run_with_ablated_features(model, example["clean_prefix"],
@@ -243,7 +243,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    model = LanguageModel(args.model, device_map="cuda:0")
+    model = LanguageModel(args.model, device_map="cuda:0", dispatch=True)
     d_model = model.config.hidden_size
     n_layers = model.config.num_hidden_layers
     dataset = load_examples(args.dataset, args.num_examples, model)
@@ -260,23 +260,25 @@ if __name__ == "__main__":
         from dictionary_learning.dictionary import IdentityDict
         from dictionary_learning.utils import hf_dataset_to_generator
         # compute mean vectors on an unrelated dataset
-        patch_vectors = defaultdict(lambda: t.zeros(model.config.hidden_size).to("cuda"))
+        patch_vectors = defaultdict(lambda: t.zeros(model.config.hidden_size).to("cuda:0"))
         corpus = hf_dataset_to_generator("monology/pile-uncopyrighted")
         for _ in range(100):
             text = model.tokenizer(next(corpus), return_tensors="pt",
                                    max_length=128, padding=True, truncation=True)
             seq_len = text["input_ids"].shape[1]
             attn_acts, mlp_acts, resid_acts = {}, {}, {}
-            with model.trace(text), t.inference_mode():
+            with model.trace(text):
                 token_pos = random.randint(0, seq_len-1)
                 for i in range(len(model.gpt_neox.layers)):
-                    attn_acts[i] = attns[i].output[0, token_pos, :].save()
+                    attn_acts[i] = attns[i].output[0][0, token_pos, :].save()
                     mlp_acts[i] = mlps[i].output[0, token_pos, :].save()
                     resid_acts[i] = resids[i].output[0][0, token_pos, :].save()
+
             for i in range(len(model.gpt_neox.layers)):
                 patch_vectors[attns[i]] += attn_acts[i].value
                 patch_vectors[mlps[i]] += mlp_acts[i].value
                 patch_vectors[resids[i]] += resid_acts[i].value
+
         for i in range(len(model.gpt_neox.layers)):
             dictionaries[attns[i]] = IdentityDict(model.config.hidden_size)
             patch_vectors[attns[i]] = patch_vectors[attns[i]].div(100.)

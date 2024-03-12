@@ -280,12 +280,18 @@ def get_circuit_cluster(dataset,
                         plot_dir="circuits/figures/"):
     
     model = LanguageModel(model_name, device_map=device, dispatch=True)
+
+    embed = model.gpt_neox.embed_in
     attns = [layer.attention for layer in model.gpt_neox.layers]
     mlps = [layer.mlp for layer in model.gpt_neox.layers]
     resids = [layer for layer in model.gpt_neox.layers]
     # /om/user/ericjm/dictionary-circuits/pythia-70m-deduped/
     dictionaries = {}
     for i in range(len(model.gpt_neox.layers)):
+        ae = AutoEncoder(d_model, dict_size).to(device)
+        ae.load_state_dict(t.load(os.path.join(dict_path, f'embed/{dict_id}_{dict_size}/ae.pt')))
+        dictionaries[embed] = ae
+
         ae = AutoEncoder(d_model, dict_size).to(device)
         ae.load_state_dict(t.load(os.path.join(dict_path, f'attn_out_layer{i}/{dict_id}_{dict_size}/ae.pt')))
         dictionaries[attns[i]] = ae
@@ -327,6 +333,7 @@ def get_circuit_cluster(dataset,
             clean_inputs,
             patch_inputs,
             model,
+            embed,
             attns,
             mlps,
             resids,
