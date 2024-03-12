@@ -1,19 +1,20 @@
-from dictionary_learning import AutoEncoder
-from attribution import EffectOut
-import torch as t
-from nnsight import LanguageModel
-from attribution import patching_effect, jvp
-from einops import rearrange
-from activation_utils import SparseAct
-from collections import defaultdict
 import argparse
-from circuit_plotting import plot_circuit
-import json
 import gc
-import os
-from tqdm import tqdm
-from loading_utils import load_examples, load_examples_nopair
+import json
 import math
+import os
+from collections import defaultdict
+
+import torch as t
+from einops import rearrange
+from tqdm import tqdm
+
+from activation_utils import SparseAct
+from attribution import EffectOut, patching_effect, jvp
+from circuit_plotting import plot_circuit
+from dictionary_learning import AutoEncoder
+from loading_utils import load_examples, load_examples_nopair
+from nnsight import LanguageModel
 
 def flatten_index(idxs, shape):
     """
@@ -253,28 +254,39 @@ def get_circuit(
     return nodes, edges
 
 
-def get_circuit_cluster(dataset, model_name="EleutherAI/pythia-70m-deduped", d_model=512,
-                        dict_id=10, dict_size=32768, max_length=64, max_examples=100,
-                        batch_size=2, node_threshold=0.1, edge_threshold=0.01, device="cuda:0",
-                        dataset_name="cluster_circuit", circuit_dir="circuits/", plot_dir="circuits/figures/"):
+def get_circuit_cluster(dataset,
+                        model_name="EleutherAI/pythia-70m-deduped",
+                        d_model=512,
+                        dict_id=10,
+                        dict_size=32768,
+                        max_length=64,
+                        max_examples=100,
+                        batch_size=2,
+                        node_threshold=0.1,
+                        edge_threshold=0.01,
+                        device="cuda:0",
+                        dict_path="/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/",
+                        dataset_name="cluster_circuit",
+                        circuit_dir="circuits/",
+                        plot_dir="circuits/figures/"):
     
     model = LanguageModel(model_name, device_map=device, dispatch=True)
     attns = [layer.attention for layer in model.gpt_neox.layers]
     mlps = [layer.mlp for layer in model.gpt_neox.layers]
     resids = [layer for layer in model.gpt_neox.layers]
-
+    # /om/user/ericjm/dictionary-circuits/pythia-70m-deduped/
     dictionaries = {}
     for i in range(len(model.gpt_neox.layers)):
         ae = AutoEncoder(d_model, dict_size).to(device)
-        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/attn_out_layer{i}/{dict_id}_{dict_size}/ae.pt'))
+        ae.load_state_dict(t.load(os.path.join(dict_path, f'attn_out_layer{i}/{dict_id}_{dict_size}/ae.pt')))
         dictionaries[attns[i]] = ae
 
         ae = AutoEncoder(d_model, dict_size).to(device)
-        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/mlp_out_layer{i}/{dict_id}_{dict_size}/ae.pt'))
+        ae.load_state_dict(t.load(os.path.join(dict_path, f'mlp_out_layer{i}/{dict_id}_{dict_size}/ae.pt')))
         dictionaries[mlps[i]] = ae
 
         ae = AutoEncoder(d_model, dict_size).to(device)
-        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/resid_out_layer{i}/{dict_id}_{dict_size}/ae.pt'))
+        ae.load_state_dict(t.load(os.path.join(dict_path, f'resid_out_layer{i}/{dict_id}_{dict_size}/ae.pt')))
         dictionaries[resids[i]] = ae
 
     examples = load_examples_nopair(dataset, max_examples, model, length=max_length)
