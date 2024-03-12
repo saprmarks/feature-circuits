@@ -250,8 +250,8 @@ if __name__ == "__main__":
 
     dict_cfg = DictionaryCfg("/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/",
                              32768)
-    attns = [layer.attention.dense for layer in model.gpt_neox.layers]
-    mlps = [layer.mlp.dense_4h_to_h for layer in model.gpt_neox.layers]
+    attns = [layer.attention for layer in model.gpt_neox.layers]
+    mlps = [layer.mlp for layer in model.gpt_neox.layers]
     resids = [layer for layer in model.gpt_neox.layers]
     dictionaries = {}
 
@@ -265,9 +265,9 @@ if __name__ == "__main__":
         for _ in range(100):
             text = model.tokenizer(next(corpus), return_tensors="pt",
                                    max_length=128, padding=True, truncation=True)
+            seq_len = text["input_ids"].shape[1]
             attn_acts, mlp_acts, resid_acts = {}, {}, {}
             with model.trace(text), t.inference_mode():
-                seq_len = attns[0].output.shape[1]
                 token_pos = random.randint(0, seq_len-1)
                 for i in range(len(model.gpt_neox.layers)):
                     attn_acts[i] = attns[i].output[0, token_pos, :].save()
