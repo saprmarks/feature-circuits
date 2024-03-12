@@ -89,7 +89,7 @@ def _pe_ig_sparseact(
 
     hidden_states_clean = {}
     is_resids = {}
-    with model.trace(clean):
+    with model.trace(clean), t.inference_mode():
         for submodule in submodules:
             dictionary = dictionaries[submodule]
             x = submodule.output
@@ -145,9 +145,9 @@ def _pe_ig_sparseact(
                         submodule.output[0][:] = dictionary.decode(f.act) + f.res # clean_state.res instead of f.res makes this exactly same as the non-sparseact version
                     else:
                         submodule.output = dictionary.decode(f.act) + f.res # clean_state.res instead of f.res makes this exactly same as the non-sparseact version
-                    metrics.append(metric_fn(model, **metric_kwargs).save())
-        metric = sum([m.value for m in metrics])
-        metric.sum().backward(retain_graph=True) # TODO : why is this necessary? Probably shouldn't be, contact jaden
+                    metrics.append(metric_fn(model, **metric_kwargs))
+            metric = sum([m for m in metrics])
+            metric.sum().backward(retain_graph=True) # TODO : why is this necessary? Probably shouldn't be, contact jaden
         mean_grad = sum([f.act.grad for f in fs]) / steps
         mean_residual_grad = sum([f.res.grad for f in fs]) / steps
         grad = SparseAct(act=mean_grad, res=mean_residual_grad)

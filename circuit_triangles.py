@@ -13,6 +13,7 @@ import gc
 import os
 from tqdm import tqdm
 from loading_utils import load_examples, load_examples_nopair
+import math
 
 def flatten_index(idxs, shape):
     """
@@ -263,8 +264,7 @@ if __name__ == '__main__':
     parser.add_argument('--d_model', type=int, default=512)
     parser.add_argument('--dict_id', type=str, default=10)
     parser.add_argument('--dict_size', type=int, default=32768)
-    # parser.add_argument('--batches', type=int, default=1)
-    parser.add_argument('--batch_size', type=int, default=1)
+    parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--aggregation', type=str, default='sum')
     parser.add_argument('--node_threshold', type=float, default=0.1)
     parser.add_argument('--edge_threshold', type=float, default=0.01)
@@ -362,16 +362,23 @@ if __name__ == '__main__':
         examples = load_examples(data_path, args.num_examples, model, pad_to_length=args.example_length)
 
     batch_size = args.batch_size
-    batches = len(examples) // args.batch_size
+    num_examples = min([args.num_examples, len(examples)])
+    n_batches = math.ceil(num_examples / batch_size)
+    batches = [
+        examples[batch*batch_size:(batch+1)*batch_size] for batch in range(n_batches)
+    ]
+    if num_examples < args.num_examples: # warn the user
+        print(f"Total number of examples is less than {args.num_examples}. Using {num_examples} examples instead.")
+
     if not args.plot_only:
-        for batch in tqdm(range(batches), desc="Batches", total=batches):
-            if batch == batches-1:
-                batch_examples = examples[batch*batch_size:]    # potentially smaller batch in last iteration
-            else:
-                batch_examples = examples[batch*batch_size:(batch+1)*batch_size]
+
+        running_nodes = None
+        running_edges = None
+
+        for batch in tqdm(batches, desc="Batches"):
                 
-            clean_inputs = t.cat([e['clean_prefix'] for e in batch_examples], dim=0).to(device)
-            clean_answer_idxs = t.tensor([e['clean_answer'] for e in batch_examples], dtype=t.long, device=device)
+            clean_inputs = t.cat([e['clean_prefix'] for e in batch], dim=0).to(device)
+            clean_answer_idxs = t.tensor([e['clean_answer'] for e in batch], dtype=t.long, device=device)
 
             if args.nopair:
                 patch_inputs = None
@@ -380,8 +387,8 @@ if __name__ == '__main__':
                         -1 * t.gather(model.embed_out.output[:,-1,:], dim=-1, index=clean_answer_idxs.view(-1, 1)).squeeze(-1)
                     )
             else:
-                patch_inputs = t.cat([e['patch_prefix'] for e in batch_examples], dim=0).to(device)
-                patch_answer_idxs = t.tensor([e['patch_answer'] for e in batch_examples], dtype=t.long, device=device)
+                patch_inputs = t.cat([e['patch_prefix'] for e in batch], dim=0).to(device)
+                patch_answer_idxs = t.tensor([e['patch_answer'] for e in batch], dtype=t.long, device=device)
                 def metric_fn(model):
                     return (
                         t.gather(model.embed_out.output[:,-1,:], dim=-1, index=patch_answer_idxs.view(-1, 1)).squeeze(-1) - \
@@ -402,43 +409,37 @@ if __name__ == '__main__':
                 edge_threshold=args.edge_threshold,
             )
 
-            save_file = f'circuits/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_agg{args.aggregation}_batch{batch}'
-
-            with open(f"{save_file}.pt", "wb") as outfile:
-                save_dict = {
-                    "examples" : batch_examples,
-                    "nodes": dict(nodes), 
-                    "edges": dict(edges)
-                }
-                t.save(save_dict, outfile)
+            if running_nodes is None:
+                running_nodes = {k : len(batch) * nodes[k].to('cpu') for k in nodes.keys() if k != 'y'}
+                running_edges = { k : { kk : len(batch) * edges[k][kk].to('cpu') for kk in edges[k].keys() } for k in edges.keys()}
+            else:
+                for k in nodes.keys():
+                    if k != 'y':
+                        running_nodes[k] += len(batch) * nodes[k].to('cpu')
+                for k in edges.keys():
+                    for v in edges[k].keys():
+                        running_edges[k][v] += len(batch) * edges[k][v].to('cpu')
             
             # memory cleanup
             del nodes, edges
             gc.collect()
 
-    # aggregate over the batches
-    out_dicts = [
-        t.load(f'circuits/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_batch{batch}.pt') for batch in range(batches)
-    ]
-    assert sum([len(d['examples']) for d in out_dicts]) == args.num_examples
-    nodes = {
-        k : sum([len(d['examples']) * d['nodes'][k] for d in out_dicts]) / args.num_examples for k in out_dicts[0]['nodes'].keys()
-    }
-    # need to do something funky to deal with the fact that edges are sparse tensors
-    edges = {k : {v : len(out_dicts[0]['examples']) * out_dicts[0]['edges'][k][v] for v in out_dicts[0]['edges'][k].keys()} for k in out_dicts[0]['edges'].keys()}
-    for k in out_dicts[0]['edges'].keys():
-        for v in out_dicts[0]['edges'][k].keys():
-            for d in out_dicts[1:]:
-                edges[k][v] += len(d['examples']) * d['edges'][k][v]
-            edges[k][v] = 1/args.num_examples * edges[k][v]
+        nodes = {k : v.to(device) / num_examples for k, v in running_nodes.items()}
+        edges = {k : {kk : 1/num_examples * v.to(device) for kk, v in running_edges[k].items()} for k in running_edges.keys()}
 
-    save_dict = {
-        "examples" : [e for d in out_dicts for e in d['examples']],
-        "nodes": nodes,
-        "edges": edges
-    }
-    with open(f'circuits/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_agg{args.aggregation}.pt', 'wb') as outfile:
-        t.save(save_dict, outfile)
+        save_dict = {
+            "examples" : examples,
+            "nodes": nodes,
+            "edges": edges
+        }
+        with open(f'circuits/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}.pt', 'wb') as outfile:
+            t.save(save_dict, outfile)
+
+    else:
+        with open(f'circuits/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}.pt', 'rb') as infile:
+            save_dict = t.load(infile)
+        nodes = save_dict['nodes']
+        edges = save_dict['edges']
 
     # feature annotations
     try:
@@ -455,4 +456,4 @@ if __name__ == '__main__':
         edge_threshold=args.edge_threshold, 
         pen_thickness=args.pen_thickness, 
         annotations=annotations, 
-        save_dir=f'circuits/figures/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{args.num_examples}_agg{args.aggregation}')
+        save_dir=f'circuits/figures/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}')
