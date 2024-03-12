@@ -5,6 +5,7 @@ from tkdict import TKDict
 from numpy import ndindex
 from typing import Dict, Union
 from activation_utils import SparseAct
+import gc
 
 EffectOut = namedtuple('EffectOut', ['effects', 'deltas', 'grads', 'total_effect'])
 
@@ -217,27 +218,30 @@ def _pe_exact_sparseact(
         # iterate over positions and features for which clean and patch differ
         idxs = t.nonzero(patch_state.act - clean_state.act)
         for idx in tqdm(idxs):
-            with model.trace(clean), t.inference_mode():
-                f = clean_state.act.clone()
-                f[tuple(idx)] = patch_state.act[tuple(idx)]
-                x_hat = dictionary.decode(f)
-                if is_resids[submodule]:
-                    submodule.output[0][:] = x_hat + clean_state.res
-                else:
-                    submodule.output = x_hat + clean_state.res
-                metric = metric_fn(model).save()
-            effect.act[tuple(idx)] = (metric.value - metric_clean.value).sum()
+            with t.inference_mode():
+                with model.trace(clean):
+                    f = clean_state.act.clone()
+                    f[tuple(idx)] = patch_state.act[tuple(idx)]
+                    x_hat = dictionary.decode(f)
+                    if is_resids[submodule]:
+                        submodule.output[0][:] = x_hat + clean_state.res
+                    else:
+                        submodule.output = x_hat + clean_state.res
+                    metric = metric_fn(model).save()
+                effect.act[tuple(idx)] = (metric.value - metric_clean.value).sum()
+
         for idx in list(ndindex(effect.resc.shape)):
-            with model.trace(clean), t.inference_mode():
-                res = clean_state.res.clone()
-                res[tuple(idx)] = patch_state.res[tuple(idx)]
-                x_hat = dictionary.decode(clean_state.act)
-                if is_resids[submodule]:
-                    submodule.output[0][:] = x_hat + res
-                else:
-                    submodule.output = x_hat + res
-                metric = metric_fn(model).save()
-            effect.resc[tuple(idx)] = (metric.value - metric_clean.value).sum()
+            with t.inference_mode():
+                with model.trace(clean):
+                    res = clean_state.res.clone()
+                    res[tuple(idx)] = patch_state.res[tuple(idx)]
+                    x_hat = dictionary.decode(clean_state.act)
+                    if is_resids[submodule]:
+                        submodule.output[0][:] = x_hat + res
+                    else:
+                        submodule.output = x_hat + res
+                    metric = metric_fn(model).save()
+                effect.resc[tuple(idx)] = (metric.value - metric_clean.value).sum()
         
         effects[submodule] = effect
         deltas[submodule] = patch_state - clean_state
