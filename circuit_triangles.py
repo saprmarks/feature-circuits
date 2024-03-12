@@ -120,10 +120,10 @@ def get_circuit(
     for i in range(n_layers):
         nodes[f'attn_{i}'] = effects[attns[i]]
         nodes[f'mlp_{i}'] = effects[mlps[i]]
-        nodes[f'resid_{i+1}'] = effects[resids[i]]
+        nodes[f'resid_{i}'] = effects[resids[i]]
 
     edges = defaultdict(lambda:{})
-    edges[f'resid_{len(resids)}'] = { 'y' : effects[resids[-1]].to_tensor().flatten().to_sparse() }
+    edges[f'resid_{len(resids)-1}'] = { 'y' : effects[resids[-1]].to_tensor().flatten().to_sparse() }
 
     def N(upstream, downstream):
         return jvp(
@@ -148,8 +148,8 @@ def get_circuit(
         MR_effect, MR_grad = N(mlp, resid)
         AR_effect, AR_grad = N(attn, resid)
 
-        edges[f'mlp_{layer}'][f'resid_{layer+1}'] = MR_effect
-        edges[f'attn_{layer}'][f'resid_{layer+1}'] = AR_effect
+        edges[f'mlp_{layer}'][f'resid_{layer}'] = MR_effect
+        edges[f'attn_{layer}'][f'resid_{layer}'] = AR_effect
 
         if layer > 0:
             prev_resid = resids[layer-1]
@@ -185,13 +185,13 @@ def get_circuit(
         RR_effect, _ = N(prev_resid, resid)
 
         if layer > 0: 
-            edges[f'resid_{layer}'][f'mlp_{layer}'] = RM_effect
-            edges[f'resid_{layer}'][f'attn_{layer}'] = RA_effect
-            edges[f'resid_{layer}'][f'resid_{layer+1}'] = RR_effect - RMR_effect - RAR_effect
+            edges[f'resid_{layer-1}'][f'mlp_{layer}'] = RM_effect
+            edges[f'resid_{layer-1}'][f'attn_{layer}'] = RA_effect
+            edges[f'resid_{layer-1}'][f'resid_{layer}'] = RR_effect - RMR_effect - RAR_effect
         else:
             edges['embed'][f'mlp_{layer}'] = RM_effect
             edges['embed'][f'attn_{layer}'] = RA_effect
-            edges['embed'][f'resid_1'] = RR_effect - RMR_effect - RAR_effect
+            edges['embed'][f'resid_0'] = RR_effect - RMR_effect - RAR_effect
 
     # rearrange weight matrices
     for child in edges:
