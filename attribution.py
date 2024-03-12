@@ -212,7 +212,7 @@ def _pe_exact_sparseact(
         dictionary = dictionaries[submodule]
         clean_state = hidden_states_clean[submodule]
         patch_state = hidden_states_patch[submodule]
-        effect = SparseAct(act=t.zeros_like(clean_state.act), res=t.zeros_like(clean_state.res))
+        effect = SparseAct(act=t.zeros_like(clean_state.act), resc=t.zeros(*clean_state.res.shape[:-1]))
         
         # iterate over positions and features for which clean and patch differ
         idxs = t.nonzero(patch_state.act - clean_state.act)
@@ -227,7 +227,7 @@ def _pe_exact_sparseact(
                     submodule.output = x_hat + clean_state.res
                 metric = metric_fn(model).save()
             effect.act[tuple(idx)] = (metric.value - metric_clean.value).sum()
-        for idx in list(ndindex(*clean_state.res.shape[:-1])):
+        for idx in list(ndindex(effect.resc.shape)):
             with model.trace(clean), t.inference_mode():
                 res = clean_state.res.clone()
                 res[tuple(idx)] = patch_state.res[tuple(idx)]
@@ -237,8 +237,9 @@ def _pe_exact_sparseact(
                 else:
                     submodule.output = x_hat + res
                 metric = metric_fn(model).save()
-            effect.res[tuple(idx)] = (metric.value - metric_clean.value).sum()
+            effect.resc[tuple(idx)] = (metric.value - metric_clean.value).sum()
         
+        effects[submodule] = effect
         deltas[submodule] = patch_state - clean_state
     total_effect = total_effect if total_effect is not None else None
 
