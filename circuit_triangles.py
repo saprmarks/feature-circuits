@@ -250,9 +250,121 @@ def get_circuit(
     else:
         raise ValueError(f"Unknown aggregation: {aggregation}")
 
-
-
     return nodes, edges
+
+
+def get_circuit_cluster(dataset, model_name="EleutherAI/pythia-70m-deduped", d_model=512,
+                        dict_id=10, dict_size=32768, max_length=64, max_examples=100,
+                        batch_size=2, node_threshold=0.1, edge_threshold=0.01, device="cuda:0",
+                        dataset_name="cluster_circuit", circuit_dir="circuits/", plot_dir="circuits/figures/"):
+    
+    model = LanguageModel(model_name, device_map=device, dispatch=True)
+    attns = [layer.attention for layer in model.gpt_neox.layers]
+    mlps = [layer.mlp for layer in model.gpt_neox.layers]
+    resids = [layer for layer in model.gpt_neox.layers]
+
+    dictionaries = {}
+    for i in range(len(model.gpt_neox.layers)):
+        ae = AutoEncoder(d_model, dict_size).to(device)
+        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/attn_out_layer{i}/{dict_id}_{dict_size}/ae.pt'))
+        dictionaries[attns[i]] = ae
+
+        ae = AutoEncoder(d_model, dict_size).to(device)
+        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/mlp_out_layer{i}/{dict_id}_{dict_size}/ae.pt'))
+        dictionaries[mlps[i]] = ae
+
+        ae = AutoEncoder(d_model, dict_size).to(device)
+        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/resid_out_layer{i}/{dict_id}_{dict_size}/ae.pt'))
+        dictionaries[resids[i]] = ae
+
+    examples = load_examples_nopair(dataset, max_examples, model, length=max_length)
+
+    num_examples = min(len(examples), max_examples)
+    n_batches = math.ceil(num_examples / batch_size)
+    batches = [
+        examples[batch*batch_size:(batch+1)*batch_size] for batch in range(n_batches)
+    ]
+    if num_examples < max_examples: # warn the user
+        print(f"Total number of examples is less than {max_examples}. Using {num_examples} examples instead.")
+
+    running_nodes = None
+    running_edges = None
+
+    for batch in tqdm(batches, desc="Batches"):
+        clean_inputs = t.cat([e['clean_prefix'] for e in batch], dim=0).to(device)
+        clean_answer_idxs = t.tensor([e['clean_answer'] for e in batch], dtype=t.long, device=device)
+
+        patch_inputs = None
+        def metric_fn(model):
+            return (
+                -1 * t.gather(
+                    t.nn.functional.log_softmax(model.embed_out.output[:,-1,:], dim=-1), dim=-1, index=clean_answer_idxs.view(-1, 1)
+                ).squeeze(-1)
+            )
+        
+        nodes, edges = get_circuit(
+            clean_inputs,
+            patch_inputs,
+            model,
+            attns,
+            mlps,
+            resids,
+            dictionaries,
+            metric_fn,
+            aggregation="sum",
+            node_threshold=node_threshold,
+            edge_threshold=edge_threshold,
+        )
+
+        if running_nodes is None:
+            running_nodes = {k : len(batch) * nodes[k].to('cpu') for k in nodes.keys() if k != 'y'}
+            running_edges = { k : { kk : len(batch) * edges[k][kk].to('cpu') for kk in edges[k].keys() } for k in edges.keys()}
+        else:
+            for k in nodes.keys():
+                if k != 'y':
+                    running_nodes[k] += len(batch) * nodes[k].to('cpu')
+            for k in edges.keys():
+                for v in edges[k].keys():
+                    running_edges[k][v] += len(batch) * edges[k][v].to('cpu')
+        
+        # memory cleanup
+        del nodes, edges
+        gc.collect()
+
+    nodes = {k : v.to(device) / num_examples for k, v in running_nodes.items()}
+    edges = {k : {kk : 1/num_examples * v.to(device) for kk, v in running_edges[k].items()} for k in running_edges.keys()}
+
+    save_dict = {
+        "examples" : examples,
+        "nodes": nodes,
+        "edges": edges
+    }
+    save_basename = f"{dataset_name}_dict{dict_id}_node{node_threshold}_edge{edge_threshold}_n{num_examples}_aggsum"
+    with open(f'{circuit_dir}/{save_basename}.pt', 'wb') as outfile:
+        t.save(save_dict, outfile)
+
+    # with open(f'circuits/{save_basename}_dict{dict_id}_node{node_threshold}_edge{edge_threshold}_n{num_examples}_aggsum.pt', 'rb') as infile:
+    #     save_dict = t.load(infile)
+    nodes = save_dict['nodes']
+    edges = save_dict['edges']
+
+    # feature annotations
+    try:
+        with open(f'{dict_id}_{dict_size}_annotations.json', 'r') as f:
+            annotations = json.load(f)
+    except:
+        annotations = None
+
+    plot_circuit(
+        nodes, 
+        edges, 
+        layers=len(model.gpt_neox.layers), 
+        node_threshold=node_threshold, 
+        edge_threshold=edge_threshold, 
+        pen_thickness=0.01, 
+        annotations=annotations, 
+        save_dir=os.path.join(plot_dir, save_basename))
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -384,7 +496,9 @@ if __name__ == '__main__':
                 patch_inputs = None
                 def metric_fn(model):
                     return (
-                        -1 * t.gather(model.embed_out.output[:,-1,:], dim=-1, index=clean_answer_idxs.view(-1, 1)).squeeze(-1)
+                        -1 * t.gather(
+                            t.nn.functional.log_softmax(model.embed_out.output[:,-1,:], dim=-1), dim=-1, index=clean_answer_idxs.view(-1, 1)
+                        ).squeeze(-1)
                     )
             else:
                 patch_inputs = t.cat([e['patch_prefix'] for e in batch], dim=0).to(device)
