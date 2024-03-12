@@ -78,6 +78,7 @@ def get_circuit(
         clean,
         patch,
         model,
+        embed,
         attns,
         mlps,
         resids,
@@ -88,7 +89,7 @@ def get_circuit(
         node_threshold=0.1,
         edge_threshold=0.01,
 ):
-    all_submods = [submod for layer_submods in zip(mlps, attns, resids) for submod in layer_submods]
+    all_submods = [embed] + [submod for layer_submods in zip(mlps, attns, resids) for submod in layer_submods]
     
     # first get the patching effect of everything on y
     effects, deltas, grads, total_effect = patching_effect(
@@ -114,13 +115,14 @@ def get_circuit(
     n_layers = len(resids)
 
     nodes = {'y' : total_effect}
+    nodes['embed'] = effects[embed]
     for i in range(n_layers):
         nodes[f'attn_{i}'] = effects[attns[i]]
         nodes[f'mlp_{i}'] = effects[mlps[i]]
-        nodes[f'resid_{i}'] = effects[resids[i]]
+        nodes[f'resid_{i+1}'] = effects[resids[i]]
 
     edges = defaultdict(lambda:{})
-    edges[f'resid_{len(resids) - 1}'] = { 'y' : effects[resids[-1]].to_tensor().flatten().to_sparse() }
+    edges[f'resid_{len(resids)}'] = { 'y' : effects[resids[-1]].to_tensor().flatten().to_sparse() }
 
     def N(upstream, downstream):
         return jvp(
@@ -145,43 +147,50 @@ def get_circuit(
         MR_effect, MR_grad = N(mlp, resid)
         AR_effect, AR_grad = N(attn, resid)
 
-        edges[f'mlp_{layer}'][f'resid_{layer}'] = MR_effect
-        edges[f'attn_{layer}'][f'resid_{layer}'] = AR_effect
+        edges[f'mlp_{layer}'][f'resid_{layer+1}'] = MR_effect
+        edges[f'attn_{layer}'][f'resid_{layer+1}'] = AR_effect
 
         if layer > 0:
-            prev_resid = resids[layer - 1]
+            prev_resid = resids[layer-1]
+        else:
+            prev_resid = embed
 
-            RM_effect, _ = N(prev_resid, mlp)
-            RA_effect, _ = N(prev_resid, attn)
+        RM_effect, _ = N(prev_resid, mlp)
+        RA_effect, _ = N(prev_resid, attn)
 
-            edges[f'resid_{layer - 1}'][f'mlp_{layer}'] = RM_effect
-            edges[f'resid_{layer - 1}'][f'attn_{layer}'] = RA_effect
+        MR_grad = MR_grad.coalesce()
+        AR_grad = AR_grad.coalesce()
 
-            MR_grad = MR_grad.coalesce()
-            AR_grad = AR_grad.coalesce()
+        RMR_effect = jvp(
+            clean,
+            model,
+            dictionaries,
+            mlp,
+            features_by_submod[resid],
+            prev_resid,
+            {feat_idx : unflatten(MR_grad[feat_idx].to_dense()) for feat_idx in features_by_submod[resid]},
+            deltas[prev_resid],
+        )
+        RAR_effect = jvp(
+            clean,
+            model,
+            dictionaries,
+            attn,
+            features_by_submod[resid],
+            prev_resid,
+            {feat_idx : unflatten(AR_grad[feat_idx].to_dense()) for feat_idx in features_by_submod[resid]},
+            deltas[prev_resid],
+        )
+        RR_effect, _ = N(prev_resid, resid)
 
-            RMR_effect = jvp(
-                clean,
-                model,
-                dictionaries,
-                mlp,
-                features_by_submod[resid],
-                prev_resid,
-                {feat_idx : unflatten(MR_grad[feat_idx].to_dense()) for feat_idx in features_by_submod[resid]},
-                deltas[prev_resid],
-            )
-            RAR_effect = jvp(
-                clean,
-                model,
-                dictionaries,
-                attn,
-                features_by_submod[resid],
-                prev_resid,
-                {feat_idx : unflatten(AR_grad[feat_idx].to_dense()) for feat_idx in features_by_submod[resid]},
-                deltas[prev_resid],
-            )
-            RR_effect, _ = N(prev_resid, resid)
-            edges[f'resid_{layer - 1}'][f'resid_{layer}'] = RR_effect - RMR_effect - RAR_effect
+        if layer > 0: 
+            edges[f'resid_{layer}'][f'mlp_{layer}'] = RM_effect
+            edges[f'resid_{layer}'][f'attn_{layer}'] = RA_effect
+            edges[f'resid_{layer}'][f'resid_{layer+1}'] = RR_effect - RMR_effect - RAR_effect
+        else:
+            edges['embed'][f'mlp_{layer}'] = RM_effect
+            edges['embed'][f'attn_{layer}'] = RA_effect
+            edges['embed'][f'resid_1'] = RR_effect - RMR_effect - RAR_effect
 
     # rearrange weight matrices
     for child in edges:
@@ -324,6 +333,7 @@ if __name__ == '__main__':
 
     model = LanguageModel(args.model, device_map=device, dispatch=True)
 
+    embed = model.gpt_neox.embed_in
     attns = [layer.attention for layer in model.gpt_neox.layers]
     mlps = [layer.mlp for layer in model.gpt_neox.layers]
     resids = [layer for layer in model.gpt_neox.layers]
@@ -331,11 +341,15 @@ if __name__ == '__main__':
     dictionaries = {}
     if args.dict_id == 'id':
         from dictionary_learning.dictionary import IdentityDict
+        dictionaries[embed] = IdentityDict(args.d_model)
         for i in range(len(model.gpt_neox.layers)):
             dictionaries[attns[i]] = IdentityDict(args.d_model)
             dictionaries[mlps[i]] = IdentityDict(args.d_model)
             dictionaries[resids[i]] = IdentityDict(args.d_model)
     else:
+        ae = AutoEncoder(args.d_model, args.dict_size).to(device)
+        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/embed/{args.dict_id}_{args.dict_size}/ae.pt'))
+        dictionaries[embed] = ae
         for i in range(len(model.gpt_neox.layers)):
             ae = AutoEncoder(args.d_model, args.dict_size).to(device)
             ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/attn_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
@@ -399,6 +413,7 @@ if __name__ == '__main__':
                 clean_inputs,
                 patch_inputs,
                 model,
+                embed,
                 attns,
                 mlps,
                 resids,
