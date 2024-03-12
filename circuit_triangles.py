@@ -373,7 +373,7 @@ def get_circuit_cluster(dataset,
         layers=len(model.gpt_neox.layers), 
         node_threshold=node_threshold, 
         edge_threshold=edge_threshold, 
-        pen_thickness=0.01, 
+        pen_thickness=1, 
         annotations=annotations, 
         save_dir=os.path.join(plot_dir, save_basename))
 
