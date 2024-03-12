@@ -45,7 +45,9 @@ def row_filter(X, row_idxs):
     filtered_indices[0] = inverse_indices
 
     # Create the new sparse tensor
-    new_size = t.Size([len(row_idxs), X.size(1)])
+    new_size = t.tensor(X.size())
+    new_size[0] = len(row_idxs)
+    new_size = t.Size(new_size)
     new_tensor = t.sparse_coo_tensor(filtered_indices, filtered_values, new_size)
     return new_tensor
 
