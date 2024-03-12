@@ -7,12 +7,12 @@ from typing import Dict, Union
 from activation_utils import SparseAct
 import gc
 
-DEBUGGING = True
+DEBUGGING = False
 
-if not DEBUGGING:
-    tracer_kwargs = {'validate' : False, 'scan' : False}
-else:
+if DEBUGGING:
     tracer_kwargs = {'validate' : True, 'scan' : True}
+else:
+    tracer_kwargs = {'validate' : False, 'scan' : False}
 
 EffectOut = namedtuple('EffectOut', ['effects', 'deltas', 'grads', 'total_effect'])
 
