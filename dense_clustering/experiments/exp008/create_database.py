@@ -13,6 +13,7 @@ from collections import defaultdict
 import pickle
 import h5py
 import gzip
+import glob
 import io
 
 import numpy as np
@@ -130,9 +131,25 @@ for clusteri in tqdm(range(4000)):
         # actually only include at most the last 100 tokens
         prompt = tokens[max(0, token_idx-100):token_idx]
         token = tokens[token_idx]
-        contexts[idx] = {"y": token, "context": prompt, "document_idx": document_idx}
+        contexts[idx.item()] = {"answer": token, "context": prompt, "document_idx": document_idx}
 
     cluster_data['contexts'] = contexts
+
+    # add the cluster's circuit image, if it exists
+    # these images are at /om/user/ericjm/results/dictionary-circuits/dense_clustering/exp008/circuits/plots/{clusteri}_dict10_node0.1_edge0.01_n27_aggsum.png
+    # except the n27 could be a different number depending on the clusteri, so we really want to match
+    # with a regex or something
+    circuit_image_glob = f"/om/user/ericjm/results/dictionary-circuits/dense_clustering/exp008/circuits/plots/{clusteri}_dict10_node0.1_edge0.01_n*_aggsum.png"
+    circuit_image_paths = glob.glob(circuit_image_glob)
+    if len(circuit_image_paths) > 0:
+        circuit_image_path = circuit_image_paths[0]
+        if len(circuit_image_paths) > 1:
+            print(f"Warning: multiple circuit images found for cluster {clusteri}. Using the first one.")
+        with open(circuit_image_path, "rb") as f:
+            circuit_image = f.read()
+    else:
+        circuit_image = None
+    cluster_data['circuit_image'] = circuit_image
 
     # pickle and compress the `cluster_data`
     pickled_data = pickle.dumps(cluster_data)
