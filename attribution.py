@@ -7,6 +7,13 @@ from typing import Dict, Union
 from activation_utils import SparseAct
 import gc
 
+DEBUGGING = False
+
+if DEBUGGING:
+    tracer_kwargs = {'validate' : True, 'scan' : True}
+else:
+    tracer_kwargs = {'validate' : False, 'scan' : False}
+
 EffectOut = namedtuple('EffectOut', ['effects', 'deltas', 'grads', 'total_effect'])
 
 def _pe_attrib_all_folded_sparseact(
@@ -18,14 +25,20 @@ def _pe_attrib_all_folded_sparseact(
         metric_fn,
         metric_kwargs=dict(),
 ):
+    
+    # first run through a test input to figure out which hidden states are tuples
+    is_tuple = {}
+    with model.trace("_"):
+        for submodule in submodules:
+            is_tuple[submodule] = type(submodule.output.shape) == tuple
+
     hidden_states_clean = {}
     grads = {}
-    with model.trace(clean):
+    with model.trace(clean, **tracer_kwargs):
         for submodule in submodules:
             dictionary = dictionaries[submodule]
             x = submodule.output
-            is_resid = (type(x.shape) == tuple)
-            if is_resid:
+            if is_tuple[submodule]:
                 x = x[0]
             x_hat, f = dictionary(x, output_features=True) # x_hat implicitly depends on f
             residual = x - x_hat
@@ -33,7 +46,7 @@ def _pe_attrib_all_folded_sparseact(
             grads[submodule] = hidden_states_clean[submodule].grad.save()
             residual.grad = t.zeros_like(residual)
             x_recon = x_hat + residual
-            if is_resid:
+            if is_tuple[submodule]:
                 submodule.output[0][:] = x_recon
             else:
                 submodule.output = x_recon
@@ -50,7 +63,7 @@ def _pe_attrib_all_folded_sparseact(
         total_effect = None
     else:
         hidden_states_patch = {}
-        with model.trace(patch), t.inference_mode():
+        with model.trace(patch, **tracer_kwargs), t.inference_mode():
             for submodule in submodules:
                 dictionary = dictionaries[submodule]
                 x = submodule.output
@@ -87,15 +100,19 @@ def _pe_ig_sparseact(
         steps=10,
         metric_kwargs=dict(),
 ):
+    
+    # first run through a test input to figure out which hidden states are tuples
+    is_tuple = {}
+    with model.trace("_"):
+        for submodule in submodules:
+            is_tuple[submodule] = type(submodule.output.shape) == tuple
 
     hidden_states_clean = {}
-    is_resids = {}
-    with model.trace(clean), t.inference_mode():
+    with model.trace(clean, **tracer_kwargs), t.inference_mode():
         for submodule in submodules:
             dictionary = dictionaries[submodule]
             x = submodule.output
-            is_resids[submodule] = (type(x.shape) == tuple)
-            if is_resids[submodule]:
+            if is_tuple[submodule]:
                 x = x[0]
             f = dictionary.encode(x)
             x_hat = dictionary.decode(f)
@@ -111,11 +128,11 @@ def _pe_ig_sparseact(
         total_effect = None
     else:
         hidden_states_patch = {}
-        with model.trace(patch), t.inference_mode():
+        with model.trace(patch, **tracer_kwargs), t.inference_mode():
             for submodule in submodules:
                 dictionary = dictionaries[submodule]
                 x = submodule.output
-                if is_resids[submodule]:
+                if is_tuple[submodule]:
                     x = x[0]
                 f = dictionary.encode(x)
                 x_hat = dictionary.decode(f)
@@ -132,7 +149,7 @@ def _pe_ig_sparseact(
         dictionary = dictionaries[submodule]
         clean_state = hidden_states_clean[submodule]
         patch_state = hidden_states_patch[submodule]
-        with model.trace() as tracer:
+        with model.trace(**tracer_kwargs) as tracer:
             metrics = []
             fs = []
             for step in range(steps):
@@ -141,8 +158,8 @@ def _pe_ig_sparseact(
                 f.act.retain_grad()
                 f.res.retain_grad()
                 fs.append(f)
-                with tracer.invoke(clean):
-                    if is_resids[submodule]:
+                with tracer.invoke(clean, scan=tracer_kwargs['scan']):
+                    if is_tuple[submodule]:
                         submodule.output[0][:] = dictionary.decode(f.act) + f.res # clean_state.res instead of f.res makes this exactly same as the non-sparseact version
                     else:
                         submodule.output = dictionary.decode(f.act) + f.res # clean_state.res instead of f.res makes this exactly same as the non-sparseact version
@@ -170,14 +187,19 @@ def _pe_exact_sparseact(
     dictionaries,
     metric_fn,
     ):
+
+    # first run through a test input to figure out which hidden states are tuples
+    is_tuple = {}
+    with model.trace("_"):
+        for submodule in submodules:
+            is_tuple[submodule] = type(submodule.output.shape) == tuple
+
     hidden_states_clean = {}
-    is_resids = {}
-    with model.trace(clean), t.inference_mode():
+    with model.trace(clean, **tracer_kwargs), t.inference_mode():
         for submodule in submodules:
             dictionary = dictionaries[submodule]
             x = submodule.output
-            is_resids[submodule] = (type(x.shape) == tuple)
-            if is_resids[submodule]:
+            if is_tuple[submodule]:
                 x = x[0]
             f = dictionary.encode(x)
             x_hat = dictionary.decode(f)
@@ -193,11 +215,11 @@ def _pe_exact_sparseact(
         total_effect = None
     else:
         hidden_states_patch = {}
-        with model.trace(patch), t.inference_mode():
+        with model.trace(patch, **tracer_kwargs), t.inference_mode():
             for submodule in submodules:
                 dictionary = dictionaries[submodule]
                 x = submodule.output
-                if is_resids[submodule]:
+                if is_tuple[submodule]:
                     x = x[0]
                 f = dictionary.encode(x)
                 x_hat = dictionary.decode(f)
@@ -219,11 +241,11 @@ def _pe_exact_sparseact(
         idxs = t.nonzero(patch_state.act - clean_state.act)
         for idx in tqdm(idxs):
             with t.inference_mode():
-                with model.trace(clean):
+                with model.trace(clean, **tracer_kwargs):
                     f = clean_state.act.clone()
                     f[tuple(idx)] = patch_state.act[tuple(idx)]
                     x_hat = dictionary.decode(f)
-                    if is_resids[submodule]:
+                    if is_tuple[submodule]:
                         submodule.output[0][:] = x_hat + clean_state.res
                     else:
                         submodule.output = x_hat + clean_state.res
@@ -232,11 +254,11 @@ def _pe_exact_sparseact(
 
         for idx in list(ndindex(effect.resc.shape)):
             with t.inference_mode():
-                with model.trace(clean):
+                with model.trace(clean, **tracer_kwargs):
                     res = clean_state.res.clone()
                     res[tuple(idx)] = patch_state.res[tuple(idx)]
                     x_hat = dictionary.decode(clean_state.act)
-                    if is_resids[submodule]:
+                    if is_tuple[submodule]:
                         submodule.output[0][:] = x_hat + res
                     else:
                         submodule.output = x_hat + res
@@ -290,6 +312,12 @@ def jvp(
         else:
             return t.sparse_coo_tensor(t.zeros((2, 0), dtype=t.long), t.zeros(0)).to(model.device), t.sparse_coo_tensor(t.zeros((2, 0), dtype=t.long), t.zeros(0)).to(model.device)
 
+    # first run through a test input to figure out which hidden states are tuples
+    is_tuple = {}
+    with model.trace("_"):
+        is_tuple[upstream_submod] = type(upstream_submod.output.shape) == tuple
+        is_tuple[downstream_submod] = type(downstream_submod.output.shape) == tuple
+
     downstream_dict, upstream_dict = dictionaries[downstream_submod], dictionaries[upstream_submod]
 
     vjv_indices = {}
@@ -298,21 +326,21 @@ def jvp(
         jv_indices = {}
         jv_values = {}
 
-    with model.trace(input):
+    with model.trace(input, **tracer_kwargs):
         # first specify forward pass modifications
         x = upstream_submod.output
         is_resid = (type(x.shape) == tuple)
-        if is_resid:
+        if is_tuple[upstream_submod]:
             x = x[0]
         x_hat, f = upstream_dict(x, output_features=True)
         x_res = x - x_hat
         upstream_act = SparseAct(act=f, res=x_res).save()
-        if is_resid:
+        if is_tuple[upstream_submod]:
             upstream_submod.output[0][:] = x_hat + x_res
         else:
             upstream_submod.output = x_hat + x_res
         y = downstream_submod.output
-        if type(y.shape) == tuple:
+        if is_tuple[downstream_submod]:
             y = y[0]
         y_hat, g = downstream_dict(y, output_features=True)
         y_res = y - y_hat

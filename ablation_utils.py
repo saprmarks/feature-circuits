@@ -7,8 +7,8 @@ from collections import defaultdict
 from dictionary_learning.dictionary import AutoEncoder
 
 def run_with_ablated_features(model, example, dictionary_size, features, dictionaries,
-                              return_submodules=None, inverse=False, add_error=False,
-                              patch_type="zero", patch_vectors=None):
+                              return_submodules=None, inverse=False, patch_type='zero',
+                              patch_vectors=None, add_error=False):
     """
     Setting `inverse = True` ablates everything EXCEPT the provided features.
     """
@@ -27,17 +27,14 @@ def run_with_ablated_features(model, example, dictionary_size, features, diction
         submodule_type, layer_and_feat_idx = feature.split("_")
         layer, feat_idx = layer_and_feat_idx.split("/")
         features_per_layer[int(layer)][submodule_type].append(int(feat_idx))
-
+    
+    diff = {}
     def _ablate_features(submodule_type, layer, feature_list):
         submodule_name = submodule_type_to_name(submodule_type).format(layer)
-        is_resid = "mlp" not in submodule_name and "attention" not in submodule_name
         submodule = load_submodule(model, submodule_name)
-        print(submodule)
-        print(submodule in dictionaries)
-        print(list(dictionaries.keys())[1])
 
         # if there are no features to ablate, just return the submodule output
-        if len(feature_list) == 0 and return_submodules and submodule_name in return_submodules:
+        if len(feature_list) == 0 and return_submodules is not None and submodule_name in return_submodules:
             saved_submodules[submodule_name] = submodule.output.save()
             return
 
@@ -45,11 +42,12 @@ def run_with_ablated_features(model, example, dictionary_size, features, diction
         autoencoder = dictionaries[submodule]
 
         if patch_type == "zero":
-            patch_vector = t.zeros(dictionary_size)     # do zero ablation
+            patch_vector = t.zeros(dictionary_size).to("cuda:0")
         elif patch_type == "mean":
             patch_vector = patch_vectors[submodule]
 
         # encode activations into features
+        is_resid = (type(submodule.output.shape) == tuple)
         if is_resid:
             x = submodule.output[0]
         else:
@@ -60,6 +58,7 @@ def run_with_ablated_features(model, example, dictionary_size, features, diction
 
         if inverse:
             patch_copy = patch_vector.clone().repeat(f.shape[1], 1)
+            diff[submodule] = (patch_copy[:, feature_list] - f[:, :, feature_list]).save()
             patch_copy[:, feature_list] = f[:, :, feature_list]
             f[:, :, feature_list] = patch_copy[:, feature_list]                  # ablate f everywhere except feature indices
         else:
@@ -78,7 +77,7 @@ def run_with_ablated_features(model, example, dictionary_size, features, diction
         if return_submodules is not None and submodule_name in return_submodules:
             saved_submodules[submodule_name] = submodule.output.save()
 
-    with model.trace(example): #, t.inference_mode():
+    with model.trace(example):
         # from lowest layer to highest (does this matter in nnsight?)
         for layer in sorted(features_per_layer):
             for submodule_type in features_per_layer[layer]:
@@ -94,7 +93,9 @@ def run_with_ablated_features(model, example, dictionary_size, features, diction
                             layer = int(submodule_parts[idx+1])
                             break
                     _ablate_features(submodule_type, layer, [])
-        model_out = model.output.save()
+        model_out = model.embed_out.output.save()
+    for submodule in diff:
+        print(diff[submodule].value)
     saved_submodules["model"] = model_out.value
 
     return saved_submodules
