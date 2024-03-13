@@ -8,7 +8,7 @@ from dictionary_learning.dictionary import AutoEncoder
 
 def run_with_ablated_features(model, example, dictionary_size, features, dictionaries,
                               return_submodules=None, inverse=False, patch_type='zero',
-                              patch_vectors=None, add_error=False):
+                              mean_vectors=None):
     """
     Setting `inverse = True` ablates everything EXCEPT the provided features.
     """
@@ -28,15 +28,14 @@ def run_with_ablated_features(model, example, dictionary_size, features, diction
         layer, feat_idx = layer_and_feat_idx.split("/")
         features_per_layer[int(layer)][submodule_type].append(int(feat_idx))
     
-    diff = {}
     def _ablate_features(submodule_type, layer, feature_list):
         submodule_name = submodule_type_to_name(submodule_type).format(layer)
         submodule = load_submodule(model, submodule_name)
 
         # if there are no features to ablate, just return the submodule output
-        if len(feature_list) == 0 and return_submodules is not None and submodule_name in return_submodules:
-            saved_submodules[submodule_name] = submodule.output.save()
-            return
+        # if len(feature_list) == 0 and return_submodules is not None and submodule_name in return_submodules:
+        #     saved_submodules[submodule_name] = submodule.output.save()
+        #     return
 
         # load autoencoder
         autoencoder = dictionaries[submodule]
@@ -44,30 +43,36 @@ def run_with_ablated_features(model, example, dictionary_size, features, diction
         if patch_type == "zero":
             patch_vector = t.zeros(dictionary_size).to("cuda:0")
         elif patch_type == "mean":
-            patch_vector = patch_vectors[submodule]
+            patch_vector = mean_vectors[submodule]
 
         # encode activations into features
         is_resid = (type(submodule.output.shape) == tuple)
         if is_resid:
-            x = submodule.output[0]
+            x_clean = submodule.output[0]
         else:
-            x = submodule.output
-        f = autoencoder.encode(x)
-        x_hat_orig = autoencoder.decode(f)
-        error = x - x_hat_orig
+            x_clean = submodule.output
+        f_clean = autoencoder.encode(x_clean)
+        x_hat_clean = autoencoder.decode(f_clean)
+        example_error = x_clean - x_hat_clean
 
-        if inverse:
-            patch_copy = patch_vector.clone().repeat(f.shape[1], 1)
-            diff[submodule] = (patch_copy[:, feature_list] - f[:, :, feature_list]).save()
-            patch_copy[:, feature_list] = f[:, :, feature_list]
-            f[:, :, feature_list] = patch_copy[:, feature_list]                  # ablate f everywhere except feature indices
-        else:
-            f[:, :, feature_list] = patch_vector[feature_list]   # ablate f at feature indices
+        if inverse:     # decode(f) yields x_hat_C
+            x_bar = mean_vectors[submodule]
+            x_hat_bar = autoencoder.decode(patch_vector)
+            mean_error = x_bar - x_hat_bar
 
+            patch_copy = patch_vector.clone().detach().repeat(f_clean.shape[0], f_clean.shape[1], 1)
+            patch_copy[:, :, feature_list] = f_clean[:, :, feature_list]
+            f_C = patch_copy               # ablate f everywhere except feature indices
+            x_hat_C = autoencoder.decode(f_C)
+            x_hat = x_hat_C + mean_error
+
+        else:           # decode(f) yields x_hat_noC
+            f_noC = f_clean.clone().detach()
+            f_noC[:, :, feature_list] = patch_vector[feature_list]   # ablate f at feature indices
+            x_hat_noC = autoencoder.decode(f_noC)
+            x_hat = x_hat_noC + example_error
+        
         # replace submodule w/ autoencoder out
-        x_hat = autoencoder.decode(f)
-        if add_error:
-            x_hat += error
         if is_resid:
             submodule.output = (x_hat, *submodule.output[1:])
         else:
@@ -85,7 +90,6 @@ def run_with_ablated_features(model, example, dictionary_size, features, diction
         if return_submodules is not None:
             for submodule_name in return_submodules:
                 if submodule_name not in saved_submodules.keys():
-                    print(submodule_name)
                     submodule_type = "mlp" if "mlp" in submodule_name else "attn" if "attention" in submodule_name else "resid"
                     submodule_parts = submodule_name.split(".")
                     for idx, part in enumerate(submodule_parts):
@@ -94,8 +98,7 @@ def run_with_ablated_features(model, example, dictionary_size, features, diction
                             break
                     _ablate_features(submodule_type, layer, [])
         model_out = model.embed_out.output.save()
-    for submodule in diff:
-        print(diff[submodule].value)
+        
     saved_submodules["model"] = model_out.value
 
     return saved_submodules

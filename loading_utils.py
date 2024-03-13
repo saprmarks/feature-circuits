@@ -141,6 +141,8 @@ def get_annotation(dataset, model, data):
 
 
 def load_submodule(model, submodule_str):
+    return eval(submodule_str)
+
     if "." not in submodule_str:
         return getattr(model, submodule_str)
     
@@ -149,7 +151,7 @@ def load_submodule(model, submodule_str):
     for module in submodules:
         if module == "model":
             continue
-        if not curr_module:
+        if curr_module is None:
             curr_module = getattr(model, module)
             continue
         curr_module = getattr(curr_module, module)
@@ -158,11 +160,11 @@ def load_submodule(model, submodule_str):
 
 def submodule_type_to_name(submodule_type):
     if submodule_type == "mlp":
-        return "model.gpt_neox.layers.{}.mlp.dense_4h_to_h"
+        return "model.gpt_neox.layers[{}].mlp"
     elif submodule_type == "attn":
-        return "model.gpt_neox.layers.{}.attention.dense"
+        return "model.gpt_neox.layers[{}].attention"
     elif submodule_type.startswith("resid"):
-        return "model.gpt_neox.layers.{}"
+        return "model.gpt_neox.layers[{}]"
     raise ValueError("Unrecognized submodule type. Please select from {mlp, attn, resid}")
 
 
