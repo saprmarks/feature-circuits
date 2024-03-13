@@ -3,6 +3,7 @@ import re
 import os
 
 def get_name(component, layer, idx):
+    if component == 'resid': layer += 1
     match idx:
         case (seq, feat):
             if feat == 32768: feat = 'res'
@@ -70,16 +71,20 @@ def plot_circuit(nodes, edges, layers=6, node_threshold=0.1, edge_threshold=0.01
     G.graph_attr.update(rankdir='BT', newrank='true')
     G.node_attr.update(shape="box", style="rounded")
 
-    nodes_by_submod = {}
+    nodes_by_submod = {
+        'resid_-1' : {tuple(idx.tolist()) : nodes['embed'].to_tensor()[tuple(idx)].item() for idx in (nodes['embed'].to_tensor().abs() > node_threshold).nonzero()}
+    }
     for layer in range(layers):
         for component in ['attn', 'mlp', 'resid']:
             submod_nodes = nodes[f'{component}_{layer}'].to_tensor()
             nodes_by_submod[f'{component}_{layer}'] = {
                 tuple(idx.tolist()) : submod_nodes[tuple(idx)].item() for idx in (submod_nodes.abs() > node_threshold).nonzero()
             }
+    edges['resid_-1'] = edges['embed']
 
-    for layer in range(layers):
+    for layer in range(-1, layers):
         for component in ['attn', 'mlp', 'resid']:
+            if layer == -1 and component != 'resid': continue
             with G.subgraph(name=f'layer {layer} {component}') as subgraph:
                 subgraph.attr(rank='same')
                 max_seq_pos = None
@@ -110,6 +115,7 @@ def plot_circuit(nodes, edges, layers=6, node_threshold=0.1, edge_threshold=0.01
 
         
         for component in ['attn', 'mlp']:
+            if layer == -1: continue
             for upstream_idx in nodes_by_submod[f'{component}_{layer}'].keys():
                 for downstream_idx in nodes_by_submod[f'resid_{layer}'].keys():
                     weight = edges[f'{component}_{layer}'][f'resid_{layer}'][tuple(downstream_idx)][tuple(upstream_idx)].item()
@@ -122,20 +128,20 @@ def plot_circuit(nodes, edges, layers=6, node_threshold=0.1, edge_threshold=0.01
                             color = 'red' if weight < 0 else 'blue'
                         )
         
-        if layer > 0:
-            # add edges to previous layer resid
-            for component in ['attn', 'mlp', 'resid']:
-                for upstream_idx in nodes_by_submod[f'resid_{layer-1}'].keys():
-                    for downstream_idx in nodes_by_submod[f'{component}_{layer}'].keys():
-                        weight = edges[f'resid_{layer-1}'][f'{component}_{layer}'][tuple(downstream_idx)][tuple(upstream_idx)].item()
-                        if abs(weight) > edge_threshold:
-                            uname = get_name('resid', layer-1, upstream_idx)
-                            dname = get_name(component, layer, downstream_idx)
-                            G.edge(
-                                uname, dname,
-                                penwidth=str(abs(weight) * pen_thickness),
-                                color = 'red' if weight < 0 else 'blue'
-                            )
+        # add edges to previous layer resid
+        for component in ['attn', 'mlp', 'resid']:
+            if layer == -1: continue
+            for upstream_idx in nodes_by_submod[f'resid_{layer-1}'].keys():
+                for downstream_idx in nodes_by_submod[f'{component}_{layer}'].keys():
+                    weight = edges[f'resid_{layer-1}'][f'{component}_{layer}'][tuple(downstream_idx)][tuple(upstream_idx)].item()
+                    if abs(weight) > edge_threshold:
+                        uname = get_name('resid', layer-1, upstream_idx)
+                        dname = get_name(component, layer, downstream_idx)
+                        G.edge(
+                            uname, dname,
+                            penwidth=str(abs(weight) * pen_thickness),
+                            color = 'red' if weight < 0 else 'blue'
+                        )
 
 
     # the cherry on top
