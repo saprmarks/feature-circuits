@@ -503,7 +503,10 @@ if __name__ == '__main__':
     else:
         data_path = f"/share/projects/dictionary_circuits/data/phenomena/{args.dataset}.json"
         save_basename = args.dataset
-        examples = load_examples(data_path, args.num_examples, model, pad_to_length=args.example_length)
+        if args.aggregation == "sum":
+            examples = load_examples(data_path, args.num_examples, model, pad_to_length=args.example_length)
+        else:
+            examples = load_examples(data_path, args.num_examples, model, length=args.example_length)
 
     
     batch_size = args.batch_size
