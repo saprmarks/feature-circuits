@@ -15,12 +15,6 @@ import json
 from tqdm import tqdm
 import numpy as np
 
-# Load feature lists
-feature_list_sparse_RC = load_feature_list_from_file_rc("", f'/home/can/dictionary-circuits/feature_annotation/sets/sparse_RC_set.txt')
-feature_list_dense_RC = load_feature_list_from_file_rc("", f'/home/can/dictionary-circuits/feature_annotation/sets/dense_RC_set.txt')
-feature_list_sparse_bib = load_feature_list_from_file_bib("", f'/home/can/dictionary-circuits/feature_annotation/sets/sparse_BiB_set.txt')
-feature_list_dense_bib = load_feature_list_from_file_bib("", f'/home/can/dictionary-circuits/feature_annotation/sets/dense_BiB_set.txt')
-all_features_in_circuits = feature_list_sparse_RC + feature_list_dense_RC + feature_list_sparse_bib + feature_list_dense_bib
 
 # EXAMPLE
 # feature_list = [
@@ -32,11 +26,19 @@ all_features_in_circuits = feature_list_sparse_RC + feature_list_dense_RC + feat
 # ]
 
 # Define parameters
-SET_NAME = "sparse_rc_reduce"
-feature_list = load_feature_list_from_file_bib("", f'/home/can/dictionary-circuits/feature_annotation/sets/rc_reduce.txt')
+SET_NAME = "sparse_rc"
+TRAINING_RUN_NAME = "10_32768"
+
+# Load feature lists
+feature_list_sparse_RC = load_feature_list_from_file_rc(SET_NAME, f'/home/can/dictionary-circuits/feature_annotation/sets/sparse_RC_set.txt', TRAINING_RUN_NAME)
+feature_list_dense_RC = load_feature_list_from_file_rc(SET_NAME, f'/home/can/dictionary-circuits/feature_annotation/sets/dense_RC_set.txt', TRAINING_RUN_NAME)
+feature_list_sparse_bib = load_feature_list_from_file_bib(SET_NAME, f'/home/can/dictionary-circuits/feature_annotation/sets/sparse_BiB_set.txt', TRAINING_RUN_NAME)
+feature_list_dense_bib = load_feature_list_from_file_bib(SET_NAME, f'/home/can/dictionary-circuits/feature_annotation/sets/dense_BiB_set.txt', TRAINING_RUN_NAME)
+all_features_in_circuits = feature_list_sparse_RC + feature_list_dense_RC + feature_list_sparse_bib + feature_list_dense_bib
+
+feature_list = feature_list_sparse_RC
 
 N_SAMPLES = 25
-TRAINING_RUN_NAME = "10_32768"
 SUBMODULE_TYPES = ['attn', 'mlp', 'resid']
 N_LAYERS = 6
 N_CTXS = 256
@@ -46,7 +48,8 @@ K = 10
 device = 'cuda:0'
 output_file_name = f'{SET_NAME}_{TRAINING_RUN_NAME}_contexts'
 
-set_arg_1, set_arg_2, _ = SET_NAME.split('_')
+
+set_arg_1, set_arg_2= SET_NAME.split('_')
 if set_arg_1 == 'sparse':
     USE_SPARSE_DICTIONARIES = True
     N_FEATURES = 512*64
