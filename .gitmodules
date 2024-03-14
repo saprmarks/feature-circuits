@@ -1,0 +1,3 @@
+[submodule "dictionary_learning"]
+	path = dictionary_learning
+	url = https://github.com/saprmarks/dictionary_learning.git
