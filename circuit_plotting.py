@@ -64,32 +64,18 @@ def plot_circuit(nodes, edges, layers=6, node_threshold=0.1, edge_threshold=0.01
             return name
     else:
         def get_label(name):
-            # match name.split(', '):
-            #     case seq, feat:
-            #         if feat in annotations:
-            #             component = feat.split('/')[0]
-            #             component = feat.split('_')[0]
-            #             return f'{seq}, {annotations[feat]} ({component})'
-            #         return name
-            #     case [feat]:
-            #         if feat in annotations:
-            #             component = feat.split('/')[0]
-            #             component = feat.split('_')[0]
-            #             return f'{annotations[feat]} ({component})'
-            name_parts = name.split(', ')
-            if len(name_parts) == 2:
-                seq, feat = name_parts
-                if feat in annotations:
-                    component = feat.split('/')[0]
-                    component = feat.split('_')[0]
-                    return f'{seq}, {annotations[feat]} ({component})'
-                return name
-            elif len(name_parts) == 1:
-                feat = name_parts[0]
-                if feat in annotations:
-                    component = feat.split('/')[0]
-                    component = feat.split('_')[0]
-                    return f'{annotations[feat]} ({component})'
+            match name.split(', '):
+                case seq, feat:
+                    if feat in annotations:
+                        component = feat.split('/')[0]
+                        component = feat.split('_')[0]
+                        return f'{seq}, {annotations[feat]} ({component})'
+                    return name
+                case [feat]:
+                    if feat in annotations:
+                        component = feat.split('/')[0]
+                        component = feat.split('_')[0]
+                        return f'{annotations[feat]} ({component})'
 
     G = Digraph(name='Feature circuit')
     G.graph_attr.update(rankdir='BT', newrank='true')
@@ -122,18 +108,12 @@ def plot_circuit(nodes, edges, layers=6, node_threshold=0.1, edge_threshold=0.01
                         subgraph.node(name, label=get_label(name), fillcolor=fillhex, fontcolor=texthex,
                                       style='filled')
                     # if sequence position is present, separate nodes by sequence position
-                    # match idx:
-                    #     case (seq, _):
-                        # subgraph.node(f'{component}_{layer}_#{seq}_pre', style='invis'), subgraph.node(f'{component}_{layer}_#{seq}_post', style='invis')
-                        # subgraph.edge(f'{component}_{layer}_#{seq}_pre', name, style='invis'), subgraph.edge(name, f'{component}_{layer}_#{seq}_post', style='invis')
-                        # if max_seq_pos is None or seq > max_seq_pos:
-                        #     max_seq_pos = seq
-                    if isinstance(idx, tuple) and len(idx) == 2:
-                        seq, _ = idx
-                        subgraph.node(f'{component}_{layer}_#{seq}_pre', style='invis'), subgraph.node(f'{component}_{layer}_#{seq}_post', style='invis')
-                        subgraph.edge(f'{component}_{layer}_#{seq}_pre', name, style='invis'), subgraph.edge(name, f'{component}_{layer}_#{seq}_post', style='invis')
-                        if max_seq_pos is None or seq > max_seq_pos:
-                            max_seq_pos = seq
+                    match idx:
+                        case (seq, _):
+                            subgraph.node(f'{component}_{layer}_#{seq}_pre', style='invis'), subgraph.node(f'{component}_{layer}_#{seq}_post', style='invis')
+                            subgraph.edge(f'{component}_{layer}_#{seq}_pre', name, style='invis'), subgraph.edge(name, f'{component}_{layer}_#{seq}_post', style='invis')
+                            if max_seq_pos is None or seq > max_seq_pos:
+                                max_seq_pos = seq
 
                 if max_seq_pos is None: continue
                 # make sure the auxiliary ordering nodes are in right order
