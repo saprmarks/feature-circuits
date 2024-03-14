@@ -494,29 +494,21 @@ if __name__ == '__main__':
             ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/resid_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
             dictionaries[resids[i]] = ae
     
-    # if args.nopair:
-    #     data_path = f"{args.dataset}"
-    #     save_basename = os.path.splitext(os.path.basename(args.dataset))[0]
-    # else:
-    #     data_path = f"/share/projects/dictionary_circuits/data/phenomena/{args.dataset}.json"
-    #     save_basename = args.dataset
+    if args.nopair:
+        data_path = f"{args.dataset}"
+        save_basename = os.path.splitext(os.path.basename(args.dataset))[0]
+    else:
+        data_path = f"/share/projects/dictionary_circuits/data/phenomena/{args.dataset}.json"
+        save_basename = args.dataset
 
-    # if args.nopair:
-    #     examples = load_examples_nopair(data_path, args.num_examples, model, length=args.example_length)
-    # else:
-    #     examples = load_examples(data_path, args.num_examples, model, pad_to_length=args.example_length)
+    if args.nopair:
+        examples = load_examples_nopair(data_path, args.num_examples, model, length=args.example_length)
+    else:
+        if args.aggregation == "sum":
+            examples = load_examples(data_path, args.num_examples, model, pad_to_length=args.example_length)
+        else:
+            examples = load_examples(data_path, args.num_examples, model, length=args.example_length)
 
-    save_basename = "can_clusters_test"
-    examples = load_cluster_nopair(
-        samples_path="/home/can/feature_clustering/clustering_pythia-70m-deduped_tloss0.1_nsamples8192_npos64_filtered-induction_attn-mlp-resid/samples8192.json",
-        clusters_map_path="/home/can/feature_clustering/app_clusters/lin_effects_final-5-pos_nsamples8192_nctx64.json",
-        n_total_clusters=750,
-        cluster_idx=232,
-        num_examples=100, # load all
-        model=model,
-        length=None
-    )
-    
     batch_size = args.batch_size
     num_examples = min([args.num_examples, len(examples)])
     n_batches = math.ceil(num_examples / batch_size)
