@@ -504,7 +504,10 @@ if __name__ == '__main__':
     if args.nopair:
         examples = load_examples_nopair(data_path, args.num_examples, model, length=args.example_length)
     else:
-        examples = load_examples(data_path, args.num_examples, model, pad_to_length=args.example_length)
+        if args.aggregation == "sum":
+            examples = load_examples(data_path, args.num_examples, model, pad_to_length=args.example_length)
+        else:
+            examples = load_examples(data_path, args.num_examples, model, length=args.example_length)
 
     batch_size = args.batch_size
     num_examples = min([args.num_examples, len(examples)])
