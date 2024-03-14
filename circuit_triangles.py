@@ -13,7 +13,7 @@ from activation_utils import SparseAct
 from attribution import EffectOut, patching_effect, jvp
 from circuit_plotting import plot_circuit
 from dictionary_learning import AutoEncoder
-from loading_utils import load_examples, load_examples_nopair
+from loading_utils import load_examples, load_examples_nopair, load_cluster_nopair
 from nnsight import LanguageModel
 
 def flatten_index(idxs, shape):
@@ -406,10 +406,10 @@ if __name__ == '__main__':
     parser.add_argument('--dict_size', type=int, default=32768)
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--aggregation', type=str, default='sum')
-    parser.add_argument('--node_threshold', type=float, default=0.1)
-    parser.add_argument('--edge_threshold', type=float, default=0.01)
+    parser.add_argument('--node_threshold', type=float, default=0.2)
+    parser.add_argument('--edge_threshold', type=float, default=0.02)
     parser.add_argument('--pen_thickness', type=float, default=1)
-    parser.add_argument('--nopair', default=False, action="store_true")
+    parser.add_argument('--nopair', default=True, action="store_true")
     parser.add_argument('--plot_circuit', default=False, action='store_true')
     parser.add_argument('--plot_only', action="store_true")
     parser.add_argument('--seed', type=int, default=12)
@@ -494,18 +494,29 @@ if __name__ == '__main__':
             ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/resid_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
             dictionaries[resids[i]] = ae
     
-    if args.nopair:
-        data_path = f"{args.dataset}"
-        save_basename = os.path.splitext(os.path.basename(args.dataset))[0]
-    else:
-        data_path = f"/share/projects/dictionary_circuits/data/phenomena/{args.dataset}.json"
-        save_basename = args.dataset
+    # if args.nopair:
+    #     data_path = f"{args.dataset}"
+    #     save_basename = os.path.splitext(os.path.basename(args.dataset))[0]
+    # else:
+    #     data_path = f"/share/projects/dictionary_circuits/data/phenomena/{args.dataset}.json"
+    #     save_basename = args.dataset
 
-    if args.nopair:
-        examples = load_examples_nopair(data_path, args.num_examples, model, length=args.example_length)
-    else:
-        examples = load_examples(data_path, args.num_examples, model, pad_to_length=args.example_length)
+    # if args.nopair:
+    #     examples = load_examples_nopair(data_path, args.num_examples, model, length=args.example_length)
+    # else:
+    #     examples = load_examples(data_path, args.num_examples, model, pad_to_length=args.example_length)
 
+    save_basename = "can_clusters_test"
+    examples = load_cluster_nopair(
+        samples_path="/home/can/feature_clustering/clustering_pythia-70m-deduped_tloss0.1_nsamples8192_npos64_filtered-induction_attn-mlp-resid/samples8192.json",
+        clusters_map_path="/home/can/feature_clustering/app_clusters/lin_effects_final-5-pos_nsamples8192_nctx64.json",
+        n_total_clusters=750,
+        cluster_idx=232,
+        num_examples=100, # load all
+        model=model,
+        length=None
+    )
+    
     batch_size = args.batch_size
     num_examples = min([args.num_examples, len(examples)])
     n_batches = math.ceil(num_examples / batch_size)
