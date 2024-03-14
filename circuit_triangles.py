@@ -13,7 +13,7 @@ from activation_utils import SparseAct
 from attribution import EffectOut, patching_effect, jvp
 from circuit_plotting import plot_circuit
 from dictionary_learning import AutoEncoder
-from loading_utils import load_examples, load_examples_nopair, load_cluster_nopair
+from loading_utils import load_examples, load_examples_nopair
 from nnsight import LanguageModel
 
 def flatten_index(idxs, shape):
@@ -277,7 +277,9 @@ def get_circuit_cluster(dataset,
                         dict_path="/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/",
                         dataset_name="cluster_circuit",
                         circuit_dir="circuits/",
-                        plot_dir="circuits/figures/"):
+                        plot_dir="circuits/figures/",
+                        model=None,
+                        dictionaries=None,):
     
     model = LanguageModel(model_name, device_map=device, dispatch=True)
 
@@ -497,18 +499,13 @@ if __name__ == '__main__':
     if args.nopair:
         data_path = f"{args.dataset}"
         save_basename = os.path.splitext(os.path.basename(args.dataset))[0]
+        examples = load_examples_nopair(data_path, args.num_examples, model, length=args.example_length)
     else:
         data_path = f"/share/projects/dictionary_circuits/data/phenomena/{args.dataset}.json"
         save_basename = args.dataset
+        examples = load_examples(data_path, args.num_examples, model, pad_to_length=args.example_length)
 
-    if args.nopair:
-        examples = load_examples_nopair(data_path, args.num_examples, model, length=args.example_length)
-    else:
-        if args.aggregation == "sum":
-            examples = load_examples(data_path, args.num_examples, model, pad_to_length=args.example_length)
-        else:
-            examples = load_examples(data_path, args.num_examples, model, length=args.example_length)
-
+    
     batch_size = args.batch_size
     num_examples = min([args.num_examples, len(examples)])
     n_batches = math.ceil(num_examples / batch_size)

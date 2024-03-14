@@ -105,7 +105,7 @@ def load_examples_nopair(dataset, num_examples, model, length=None):
 
     return examples
 
-def load_cluster_nopair(samples_path, clusters_map_path, n_total_clusters, cluster_idx, num_examples, model, length=None):
+def load_cluster_dict(samples_path, clusters_map_path, n_total_clusters, cluster_idx):
     n_total_clusters = str(n_total_clusters)
 
     # From the clusters list, create a dictionary mapping cluster index to token indices
@@ -122,7 +122,7 @@ def load_cluster_nopair(samples_path, clusters_map_path, n_total_clusters, clust
     sample_indices = cluster_to_sample_indices[cluster_idx]
     cluster_samples_dict = {i: samples[i] for i in sample_indices}
 
-    return load_examples_nopair(cluster_samples_dict, num_examples, model, length)
+    return cluster_samples_dict
 
 def get_annotation(dataset, model, data):
     # First, understand which dataset we're working with
@@ -238,18 +238,3 @@ def load_submodule_and_dictionary(model, submod_name, dict_cfg: DictionaryCfg):
     submodule = load_submodule(model, submod_name)
     dictionary = load_dictionary(model, submod_layer, submodule, submod_type, dict_cfg)
     return submodule, dictionary
-
-if __name__ == "__main__":
-    from nnsight import LanguageModel
-    model = LanguageModel("EleutherAI/pythia-70m-deduped")
-
-    cluster_examples = load_cluster_nopair(
-        samples_path="/home/can/feature_clustering/clustering_pythia-70m-deduped_tloss0.1_nsamples8192_npos64_filtered-induction_attn-mlp-resid/samples8192.json",
-        clusters_map_path="/home/can/feature_clustering/app_clusters/lin_effects_final-5-pos_nsamples8192_nctx64.json",
-        n_total_clusters=750,
-        cluster_idx=669,
-        num_examples=100, # load all
-        model=model,
-        length=None
-    )
-    # print(cluster_examples)
