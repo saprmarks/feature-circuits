@@ -6,6 +6,7 @@ import torch as t
 import torch.nn.functional as F
 from dictionary_learning.dictionary import AutoEncoder
 from dataclasses import dataclass
+from collections import defaultdict
 
 @dataclass
 class DictionaryCfg(): # TODO Move to dictionary_learning repo?
@@ -104,6 +105,24 @@ def load_examples_nopair(dataset, num_examples, model, length=None):
 
     return examples
 
+def load_cluster_dict(samples_path, clusters_map_path, n_total_clusters, cluster_idx):
+    n_total_clusters = str(n_total_clusters)
+
+    # From the clusters list, create a dictionary mapping cluster index to token indices
+    cluster_maps = json.load(open(clusters_map_path))
+    cluster_map = cluster_maps[n_total_clusters]
+    cluster_to_sample_indices = defaultdict(list)
+    for i, cluster in enumerate(cluster_map):
+        cluster_to_sample_indices[cluster].append(i)
+
+    # Load samples
+    samples = json.load(open(samples_path))
+    samples = {i: samples[k] for i, k in enumerate(samples.keys())}
+
+    sample_indices = cluster_to_sample_indices[cluster_idx]
+    cluster_samples_dict = {i: samples[i] for i in sample_indices}
+
+    return cluster_samples_dict
 
 def get_annotation(dataset, model, data):
     # First, understand which dataset we're working with
@@ -141,6 +160,8 @@ def get_annotation(dataset, model, data):
 
 
 def load_submodule(model, submodule_str):
+    return eval(submodule_str)
+
     if "." not in submodule_str:
         return getattr(model, submodule_str)
     
@@ -149,7 +170,7 @@ def load_submodule(model, submodule_str):
     for module in submodules:
         if module == "model":
             continue
-        if not curr_module:
+        if curr_module is None:
             curr_module = getattr(model, module)
             continue
         curr_module = getattr(curr_module, module)
@@ -158,11 +179,11 @@ def load_submodule(model, submodule_str):
 
 def submodule_type_to_name(submodule_type):
     if submodule_type == "mlp":
-        return "model.gpt_neox.layers.{}.mlp.dense_4h_to_h"
+        return "model.gpt_neox.layers[{}].mlp"
     elif submodule_type == "attn":
-        return "model.gpt_neox.layers.{}.attention.dense"
+        return "model.gpt_neox.layers[{}].attention"
     elif submodule_type.startswith("resid"):
-        return "model.gpt_neox.layers.{}"
+        return "model.gpt_neox.layers[{}]"
     raise ValueError("Unrecognized submodule type. Please select from {mlp, attn, resid}")
 
 
