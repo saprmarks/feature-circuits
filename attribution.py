@@ -1,11 +1,9 @@
 from collections import namedtuple
 import torch as t
 from tqdm import tqdm
-from tkdict import TKDict
 from numpy import ndindex
 from typing import Dict, Union
 from activation_utils import SparseAct
-import gc
 
 DEBUGGING = False
 
@@ -67,8 +65,7 @@ def _pe_attrib_all_folded_sparseact(
             for submodule in submodules:
                 dictionary = dictionaries[submodule]
                 x = submodule.output
-                is_resid = (type(x.shape) == tuple)
-                if is_resid:
+                if is_tuple[submodule]:
                     x = x[0]
                 x_hat, f = dictionary(x, output_features=True)
                 residual = x - x_hat
@@ -108,7 +105,7 @@ def _pe_ig_sparseact(
             is_tuple[submodule] = type(submodule.output.shape) == tuple
 
     hidden_states_clean = {}
-    with model.trace(clean, **tracer_kwargs), t.inference_mode():
+    with model.trace(clean, **tracer_kwargs), t.no_grad():
         for submodule in submodules:
             dictionary = dictionaries[submodule]
             x = submodule.output
@@ -128,7 +125,7 @@ def _pe_ig_sparseact(
         total_effect = None
     else:
         hidden_states_patch = {}
-        with model.trace(patch, **tracer_kwargs), t.inference_mode():
+        with model.trace(patch, **tracer_kwargs), t.no_grad():
             for submodule in submodules:
                 dictionary = dictionaries[submodule]
                 x = submodule.output
@@ -160,21 +157,22 @@ def _pe_ig_sparseact(
                 fs.append(f)
                 with tracer.invoke(clean, scan=tracer_kwargs['scan']):
                     if is_tuple[submodule]:
-                        submodule.output[0][:] = dictionary.decode(f.act) + f.res # clean_state.res instead of f.res makes this exactly same as the non-sparseact version
+                        submodule.output[0][:] = dictionary.decode(f.act) + f.res
                     else:
-                        submodule.output = dictionary.decode(f.act) + f.res # clean_state.res instead of f.res makes this exactly same as the non-sparseact version
+                        submodule.output = dictionary.decode(f.act) + f.res
                     metrics.append(metric_fn(model, **metric_kwargs))
             metric = sum([m for m in metrics])
             metric.sum().backward(retain_graph=True) # TODO : why is this necessary? Probably shouldn't be, contact jaden
+
         mean_grad = sum([f.act.grad for f in fs]) / steps
         mean_residual_grad = sum([f.res.grad for f in fs]) / steps
         grad = SparseAct(act=mean_grad, res=mean_residual_grad)
         delta = (patch_state - clean_state).detach() if patch_state is not None else -clean_state.detach()
         effect = grad @ delta
+
         effects[submodule] = effect
         deltas[submodule] = delta
         grads[submodule] = grad
-    total_effect = total_effect if total_effect is not None else None
 
     return EffectOut(effects, deltas, grads, total_effect)
 
@@ -329,7 +327,6 @@ def jvp(
     with model.trace(input, **tracer_kwargs):
         # first specify forward pass modifications
         x = upstream_submod.output
-        is_resid = (type(x.shape) == tuple)
         if is_tuple[upstream_submod]:
             x = x[0]
         x_hat, f = upstream_dict(x, output_features=True)
