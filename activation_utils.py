@@ -9,29 +9,24 @@ class SparseAct():
             act: TensorType["batch_size", "n_ctx", "d_dictionary"] = None, 
             res: TensorType["batch_size", "n_ctx", "d_model"] = None,
             resc: TensorType["batch_size", "n_ctx"] = None, # contracted residual
-            # dense_act: TensorType["batch_size", "n_ctx", "d_model"] = None, 
-            # dictionary: AutoEncoder = None,
             ) -> None:
 
-            # def is_dense_init(dense_act, dictionary, act, res):
-            #     """Check if initialization is for dense activation mode."""
-            #     return dense_act is not None and dictionary is not None and act is None and res is None
-
-            # def is_sparse_init(dense_act, dictionary, act, res):
-            #     """Check if initialization is for sparse activation mode."""
-            #     return dense_act is None and dictionary is None and act is not None and res is not None
-
-            # if is_dense_init(dense_act, dictionary, act, res):
-            #     self.act = dictionary.encode(dense_act)
-            #     reconstructed_act = dictionary.decode(self.act)
-            #     self.res = dense_act - reconstructed_act
-            # elif is_sparse_init(dense_act, dictionary, act, res):
             self.act = act
             self.res = res
             self.resc = resc
-            # else:
-            #     raise ValueError("Please initialize SparseAct with either (dense_act and dictionary) XOR (act and res) arguments.")
 
+    def _map(self, f, aux=None) -> 'SparseAct':
+        kwargs = {}
+        if isinstance(aux, SparseAct):
+            for attr in ['act', 'res', 'resc']:
+                if getattr(self, attr) is not None and getattr(aux, attr) is not None:
+                    kwargs[attr] = f(getattr(self, attr), getattr(aux, attr))
+        else:
+            for attr in ['act', 'res', 'resc']:
+                if getattr(self, attr) is not None:
+                    kwargs[attr] = f(getattr(self, attr), aux)
+        return SparseAct(**kwargs)
+        
     def __mul__(self, other) -> 'SparseAct':
         if isinstance(other, SparseAct):
             # Handle SparseAct * SparseAct
@@ -52,7 +47,7 @@ class SparseAct():
     
     def __matmul__(self, other: SparseAct) -> SparseAct:
         # dot product between two SparseActs, except only the residual is contracted
-        return SparseAct(act = self.act * other.act, resc=(self.res * other.res).sum(dim=-1, keepdim=True))
+        return SparseAct(act = self.act * other.act, res=self.res * other.res, resc=(self.res * other.res).sum(dim=-1, keepdim=True))
     
     def __add__(self, other) -> SparseAct:
         if isinstance(other, SparseAct):
@@ -119,6 +114,9 @@ class SparseAct():
         res_result = -self.res
         return SparseAct(act=sparse_result, res=res_result)
     
+    def __invert__(self) -> SparseAct:
+        return self._map(lambda x, _: ~x)
+    
     def __getitem__(self, index: int):
         return self.act[index]
     
@@ -127,9 +125,11 @@ class SparseAct():
             return f"SparseAct(act={self.act}, resc={self.resc})"
         if self.resc is None:
             return f"SparseAct(act={self.act}, res={self.res})"
-        raise ValueError("SparseAct has both residual and contracted residual. This is an unsupported state.")
+        else:
+            return f"SparseAct(act={self.act}, res={self.res}, resc={self.resc})"
+        # raise ValueError("SparseAct has both residual and contracted residual. This is an unsupported state.")
     
-    def sum(self, dim: int):
+    def sum(self, dim=None):
         kwargs = {}
         for attr in ['act', 'res', 'resc']:
             if getattr(self, attr) is not None:
@@ -189,6 +189,31 @@ class SparseAct():
             if getattr(self, attr) is not None:
                 setattr(self, attr, getattr(self, attr).to(device))
         return self
+    
+    def __gt__(self, other):
+        return self._map(lambda x, y: x > y, other)
+    
+    def __lt__(self, other):
+        return self._map(lambda x, y: x < y, other)
+    
+    def nonzero(self):
+        return self._map(lambda x, _: x.nonzero())
+    
+    def squeeze(self, dim):
+        return self._map(lambda x, _: x.squeeze(dim=dim))
+    
+    def expand_as(self, other):
+        return self._map(lambda x, y: x.expand_as(y), other)
+    
+    def zeros_like(self):
+        return self._map(lambda x, _: t.zeros_like(x))
+    
+    def ones_like(self):
+        return self._map(lambda x, _: t.ones_like(x))
+    
+    def abs(self):
+        return self._map(lambda x, _: x.abs())
+                    
 
 
 if __name__ == "__main__":
