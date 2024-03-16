@@ -113,11 +113,28 @@ class SparseAct():
                     kwargs[attr] = other / getattr(self, attr)
         return SparseAct(**kwargs)
 
-
     def __neg__(self) -> SparseAct:
         sparse_result = -self.act
         res_result = -self.res
         return SparseAct(act=sparse_result, res=res_result)
+    
+    def __gt__(self, other) -> SparseAct:
+        if isinstance(other, (int, float)):
+            kwargs = {}
+            for attr in ['act', 'res', 'resc']:
+                if getattr(self, attr) is not None:
+                    kwargs[attr] = getattr(self, attr) > other
+            return SparseAct(**kwargs)
+        raise ValueError("SparseAct can only be compared to a scalar.")
+    
+    def __lt__(self, other) -> SparseAct:
+        if isinstance(other, (int, float)):
+            kwargs = {}
+            for attr in ['act', 'res', 'resc']:
+                if getattr(self, attr) is not None:
+                    kwargs[attr] = getattr(self, attr) < other
+            return SparseAct(**kwargs)
+        raise ValueError("SparseAct can only be compared to a scalar.")
     
     def __getitem__(self, index: int):
         return self.act[index]
@@ -141,6 +158,20 @@ class SparseAct():
         for attr in ['act', 'res', 'resc']:
             if getattr(self, attr) is not None:
                 kwargs[attr] = getattr(self, attr).mean(dim)
+        return SparseAct(**kwargs)
+    
+    def nonzero(self):
+        kwargs = {}
+        for attr in ['act', 'res', 'resc']:
+            if getattr(self, attr) is not None:
+                kwargs[attr] = getattr(self, attr).nonzero()
+        return SparseAct(**kwargs)
+    
+    def squeeze(self, dim: int):
+        kwargs = {}
+        for attr in ['act', 'res', 'resc']:
+            if getattr(self, attr) is not None:
+                kwargs[attr] = getattr(self, attr).squeeze(dim)
         return SparseAct(**kwargs)
 
     @property
