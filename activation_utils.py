@@ -47,7 +47,7 @@ class SparseAct():
     
     def __matmul__(self, other: SparseAct) -> SparseAct:
         # dot product between two SparseActs, except only the residual is contracted
-        return SparseAct(act = self.act * other.act, res=self.res * other.res, resc=(self.res * other.res).sum(dim=-1, keepdim=True))
+        return SparseAct(act = self.act * other.act, resc=(self.res * other.res).sum(dim=-1, keepdim=True))
     
     def __add__(self, other) -> SparseAct:
         if isinstance(other, SparseAct):
@@ -126,8 +126,7 @@ class SparseAct():
         if self.resc is None:
             return f"SparseAct(act={self.act}, res={self.res})"
         else:
-            return f"SparseAct(act={self.act}, res={self.res}, resc={self.resc})"
-        # raise ValueError("SparseAct has both residual and contracted residual. This is an unsupported state.")
+            raise ValueError("SparseAct has both residual and contracted residual. This is an unsupported state.")
     
     def sum(self, dim=None):
         kwargs = {}

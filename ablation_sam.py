@@ -141,7 +141,10 @@ if __name__ == '__main__':
             t.gather(model.embed_out.output[:,-1,:], dim=-1, index=clean_answer_idxs.view(-1, 1)).squeeze(-1)
         )
     
-    # if args.ablation == 'resample': ablation_fn = lambda x: x[t.randperm(x.act.shape[0])] # TODO this is wrong for SparseActs
+    if args.ablation == 'resample': 
+        def ablation_fn(x):
+            idxs = t.multinomial(t.ones(x.act.shape[0]), x.act.shape[0], replacement=True).to(x.act.device)
+            return SparseAct(act=x.act[idxs], res=x.res[idxs])
     if args.ablation == 'zero': ablation_fn = lambda x: x.zeros_like()
     if args.ablation == 'mean': ablation_fn = lambda x: x.mean(dim=0).expand_as(x)
 
