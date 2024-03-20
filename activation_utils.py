@@ -47,7 +47,9 @@ class SparseAct():
     
     def __matmul__(self, other: SparseAct) -> SparseAct:
         # dot product between two SparseActs, except only the residual is contracted
-        return SparseAct(act = self.act * other.act, res=self.res * other.res, resc=(self.res * other.res).sum(dim=-1, keepdim=True))
+        if self.resc is not None or other.resc is not None or self.res is None or other.res is None:
+            raise ValueError("Both SparseActs must have a residual and no contracted residual to perform a dot product.")
+        return SparseAct(act = self.act * other.act, res=None, resc=(self.res * other.res).sum(dim=-1, keepdim=True))
     
     def __add__(self, other) -> SparseAct:
         if isinstance(other, SparseAct):

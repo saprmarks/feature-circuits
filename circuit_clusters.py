@@ -6,13 +6,14 @@ import gc
 import json
 import torch as t
 from tqdm import tqdm
-from loading_utils import load_cluster_dict, load_examples_nopair
+from loading_utils import load_examples_nopair
 from circuit_triangles import get_circuit
 from tqdm import trange
 from nnsight import LanguageModel
 from circuit_plotting import plot_circuit
 from dictionary_learning import AutoEncoder
 import argparse
+from collections import defaultdict
 
 def get_circuit_clusters(dataset,
                         model,
@@ -128,10 +129,10 @@ def get_circuit_clusters(dataset,
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--cluster_param_string", type=str, default="lin_effects_final-5-pos_nsamples8192_nctx64")
-    parser.add_argument("--clusters_path", type=str, default="/home/can/feature_clustering/app_clusters/lin_effects_final-5-pos_nsamples8192_nctx64.json")
-    parser.add_argument("--samples_path", type=str, default="/home/can/feature_clustering/clustering_pythia-70m-deduped_tloss0.1_nsamples8192_npos64_filtered-induction_attn-mlp-resid/samples8192.json")
-    parser.add_argument("--n_total_clusters", type=int, default=750)
+    parser.add_argument("--cluster_param_string", type=str, default="ERIC-QUANTA-CLUSTERS-ACTIVATIONS")
+    parser.add_argument("--clusters_path", type=str, default="/home/can/feature_clustering/app_clusters/")
+    parser.add_argument("--samples_path", type=str, default="/home/can/feature_clustering/app_contexts/ERIC-QUANTA-CONTEXTS.json")
+    parser.add_argument("--n_total_clusters", type=int, default=700)
     parser.add_argument("--start_at_cluster", type=int, default=0)
     parser.add_argument("--d_model", type=int, default=512)
     parser.add_argument("--dict_size", type=int, default=32768)
@@ -139,7 +140,7 @@ if __name__ == "__main__":
     parser.add_argument("--dict_id", type=int, default=10)
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--model_name", type=str, default="EleutherAI/pythia-70m-deduped")
-    parser.add_argument("--batch_size", type=int, default=8)
+    parser.add_argument("--batch_size", type=int, default=4)
     parser.add_argument("--node_threshold", type=float, default=0.1)
     parser.add_argument("--edge_threshold", type=float, default=0.01)
     parser.add_argument("--aggregation", type=str, default="sum")
@@ -152,7 +153,6 @@ if __name__ == "__main__":
     attns = [layer.attention for layer in model.gpt_neox.layers]
     mlps = [layer.mlp for layer in model.gpt_neox.layers]
     resids = [layer for layer in model.gpt_neox.layers]
-    # /om/user/ericjm/dictionary-circuits/pythia-70m-deduped/
     dictionaries = {}
     for i in range(len(model.gpt_neox.layers)):
         ae = AutoEncoder(args.d_model, args.dict_size).to(args.device)
@@ -171,14 +171,26 @@ if __name__ == "__main__":
         ae.load_state_dict(t.load(os.path.join(args.dict_path, f'resid_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt')))
         dictionaries[resids[i]] = ae
 
+    ## Dataset preparation
+    # From the clusters list, create a dictionary mapping the cluster index to sample indices
+    clusters_map_path = args.clusters_path + args.cluster_param_string + ".json"
+    cluster_maps = json.load(open(clusters_map_path))
+    if "ERIC" in args.cluster_param_string:
+        cluster_map = cluster_maps[str(args.n_total_clusters)][0]
+    else:
+        cluster_map = cluster_maps[str(args.n_total_clusters)]
+    cluster_to_sample_indices = defaultdict(list)
+    for i, cluster in enumerate(cluster_map):
+        cluster_to_sample_indices[cluster].append(i)
+
+    # Load samples
+    samples = json.load(open(args.samples_path))
+    samples = {i: samples[k] for i, k in enumerate(samples.keys())}
+        
+    # Iterate over clusters and get circuits
     for cluster_idx in trange(args.start_at_cluster, args.n_total_clusters):
-        save_basename = "can_clusters_test"
-        cluster_dataset = load_cluster_dict(
-            samples_path=args.samples_path,
-            clusters_map_path=args.clusters_path + args.cluster_param_string + ".json",
-            n_total_clusters=args.n_total_clusters,
-            cluster_idx=cluster_idx,
-        )
+        sample_indices = cluster_to_sample_indices[cluster_idx]
+        cluster_dataset = {i: samples[i] for i in sample_indices}
 
         get_circuit_clusters(
             dataset=cluster_dataset,

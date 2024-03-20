@@ -105,25 +105,6 @@ def load_examples_nopair(dataset, num_examples, model, length=None):
 
     return examples
 
-def load_cluster_dict(samples_path, clusters_map_path, n_total_clusters, cluster_idx):
-    n_total_clusters = str(n_total_clusters)
-
-    # From the clusters list, create a dictionary mapping cluster index to token indices
-    cluster_maps = json.load(open(clusters_map_path))
-    cluster_map = cluster_maps[n_total_clusters]
-    cluster_to_sample_indices = defaultdict(list)
-    for i, cluster in enumerate(cluster_map):
-        cluster_to_sample_indices[cluster].append(i)
-
-    # Load samples
-    samples = json.load(open(samples_path))
-    samples = {i: samples[k] for i, k in enumerate(samples.keys())}
-
-    sample_indices = cluster_to_sample_indices[cluster_idx]
-    cluster_samples_dict = {i: samples[i] for i in sample_indices}
-
-    return cluster_samples_dict
-
 def get_annotation(dataset, model, data):
     # First, understand which dataset we're working with
     structure = None
