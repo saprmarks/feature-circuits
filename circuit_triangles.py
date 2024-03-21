@@ -87,6 +87,7 @@ def get_circuit(
         metric_fn,
         metric_kwargs=dict(),
         aggregation='sum', # or 'none' for not aggregating across sequence position
+        nodes_only=False,
         node_threshold=0.1,
         edge_threshold=0.01,
 ):
@@ -121,6 +122,14 @@ def get_circuit(
         nodes[f'attn_{i}'] = effects[attns[i]]
         nodes[f'mlp_{i}'] = effects[mlps[i]]
         nodes[f'resid_{i}'] = effects[resids[i]]
+
+    if nodes_only:
+        if aggregation == 'sum':
+            for k in nodes:
+                if k != 'y':
+                    nodes[k] = nodes[k].sum(dim=1)
+        nodes = {k : v.mean(dim=0) for k, v in nodes.items()}
+        return nodes, None
 
     edges = defaultdict(lambda:{})
     edges[f'resid_{len(resids)-1}'] = { 'y' : effects[resids[-1]].to_tensor().flatten().to_sparse() }
@@ -411,8 +420,9 @@ if __name__ == '__main__':
     parser.add_argument('--node_threshold', type=float, default=0.2)
     parser.add_argument('--edge_threshold', type=float, default=0.02)
     parser.add_argument('--pen_thickness', type=float, default=1)
-    parser.add_argument('--nopair', default=True, action="store_true")
+    parser.add_argument('--nopair', default=False, action="store_true")
     parser.add_argument('--plot_circuit', default=False, action='store_true')
+    parser.add_argument('--nodes_only', default=False, action='store_true')
     parser.add_argument('--plot_only', action="store_true")
     parser.add_argument('--seed', type=int, default=12)
     parser.add_argument('--device', type=str, default='cuda:0')
@@ -555,6 +565,7 @@ if __name__ == '__main__':
                 resids,
                 dictionaries,
                 metric_fn,
+                nodes_only=args.nodes_only,
                 aggregation=args.aggregation,
                 node_threshold=args.node_threshold,
                 edge_threshold=args.edge_threshold,
@@ -562,21 +573,24 @@ if __name__ == '__main__':
 
             if running_nodes is None:
                 running_nodes = {k : len(batch) * nodes[k].to('cpu') for k in nodes.keys() if k != 'y'}
-                running_edges = { k : { kk : len(batch) * edges[k][kk].to('cpu') for kk in edges[k].keys() } for k in edges.keys()}
+                if not args.nodes_only: running_edges = { k : { kk : len(batch) * edges[k][kk].to('cpu') for kk in edges[k].keys() } for k in edges.keys()}
             else:
                 for k in nodes.keys():
                     if k != 'y':
                         running_nodes[k] += len(batch) * nodes[k].to('cpu')
-                for k in edges.keys():
-                    for v in edges[k].keys():
-                        running_edges[k][v] += len(batch) * edges[k][v].to('cpu')
+                if not args.nodes_only:
+                    for k in edges.keys():
+                        for v in edges[k].keys():
+                            running_edges[k][v] += len(batch) * edges[k][v].to('cpu')
             
             # memory cleanup
             del nodes, edges
             gc.collect()
 
         nodes = {k : v.to(device) / num_examples for k, v in running_nodes.items()}
-        edges = {k : {kk : 1/num_examples * v.to(device) for kk, v in running_edges[k].items()} for k in running_edges.keys()}
+        if not args.nodes_only: 
+            edges = {k : {kk : 1/num_examples * v.to(device) for kk, v in running_edges[k].items()} for k in running_edges.keys()}
+        else: edges = None
 
         save_dict = {
             "examples" : examples,
