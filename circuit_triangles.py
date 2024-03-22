@@ -411,7 +411,7 @@ if __name__ == '__main__':
     parser.add_argument('--node_threshold', type=float, default=0.2)
     parser.add_argument('--edge_threshold', type=float, default=0.02)
     parser.add_argument('--pen_thickness', type=float, default=1)
-    parser.add_argument('--nopair', default=True, action="store_true")
+    parser.add_argument('--nopair', default=False, action="store_true")
     parser.add_argument('--plot_circuit', default=False, action='store_true')
     parser.add_argument('--plot_only', action="store_true")
     parser.add_argument('--seed', type=int, default=12)
@@ -507,7 +507,7 @@ if __name__ == '__main__':
             examples = load_examples(data_path, args.num_examples, model, pad_to_length=args.example_length)
         else:
             examples = load_examples(data_path, args.num_examples, model, length=args.example_length)
-
+    print(data_path)
     
     batch_size = args.batch_size
     num_examples = min([args.num_examples, len(examples)])
