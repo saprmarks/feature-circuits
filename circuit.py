@@ -12,7 +12,7 @@ from tqdm import tqdm, trange
 from copy import deepcopy
 from collections import defaultdict
 from loading_utils import (
-    load_examples, load_submodule_and_dictionary, submodule_name_to_type_layer, DictionaryCfg, load_submodules_and_dictionaries
+    load_examples, load_submodules_and_dictionaries_from_generic, submodule_name_to_type_layer, DictionaryCfg
 )
 from acdc import patching_on_y, patching_on_downstream_feature
 from ablation_utils import run_with_ablated_features
@@ -262,20 +262,6 @@ def mean_dag(dag, dim, crosses=True):
         for e in new_dag.edges:
             new_dag.add_edge(e[0], e[1], weight=new_dag.edge_weight(e) / dim_size)
         return new_dag
-    
-def split_dataset(dataset):
-    clean_inputs = t.cat([example['clean_prefix'] for example in dataset], dim=0)
-    patch_inputs = t.cat([example['patch_prefix'] for example in dataset], dim=0)
-    final_token_positions = t.tensor([example['prefix_length_wo_pad'] for example in dataset]).int() # token position before padding, 1-indexed
-    clean_answer_idxs, patch_answer_idxs = [], []
-    for example in dataset:
-        clean_answer_idxs.append(example['clean_answer'])
-        patch_answer_idxs.append(example['patch_answer'])
-    clean_answer_idxs = t.Tensor(clean_answer_idxs).long()
-    patch_answer_idxs = t.Tensor(patch_answer_idxs).long()
-    print(clean_inputs.shape, patch_inputs.shape, clean_answer_idxs.shape, patch_answer_idxs.shape, final_token_positions.shape)
-    return clean_inputs, patch_inputs, clean_answer_idxs, patch_answer_idxs, final_token_positions
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

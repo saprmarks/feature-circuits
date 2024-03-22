@@ -1,5 +1,5 @@
 """
-A TensorDict is a dictionary whose keys may be tensors
+A TKDict is a dictionary whose keys may be tensors
 """
 
 from dataclasses import dataclass
@@ -18,7 +18,7 @@ class TensorKey:
     def __repr__(self):
         return f"TensorKey({self.x})"
     
-class TensorDict:
+class TKDict:
     _dict : dict
 
     def __init__(self, d={}):
@@ -60,14 +60,14 @@ class TensorDict:
         return len(self._dict)
     
     def __repr__(self):
-        return f"""TensorDict({dict({
+        return f"""TKDict({dict({
             k : v for k, v in self.items()
         })})"""
     
 if __name__ == '__main__':
     x = t.tensor([1,2,3])
     y = t.tensor([1,2,3])
-    d = TensorDict({x : 1})
+    d = TKDict({x : 1})
     assert y in d
     d[y] = 2
     assert len(d) == 1
