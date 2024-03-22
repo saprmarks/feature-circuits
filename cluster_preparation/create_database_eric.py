@@ -34,7 +34,8 @@ from sqlitedict import SqliteDict
 n_clusters = 750
 n_ctx = 16
 results_path = "/home/can/feature_clustering/streamlit001/"
-param_string = f"clusters-pythia-70m-deduped-100k-kmeans-30k-dim-{n_clusters}"
+param_string = f"lin_effects_sum-over-pos_nsamples8192_nctx64"
+# lin_effects_sum-over-pos_nsamples8192_nctx64_cluster9of750_dict10_node0.1_edge0.01_n91_aggsum.pt
 
 pile_canonical = "/home/can/data/pile_test_tokenized_600k"
 dataset = datasets.load_from_disk(pile_canonical)
@@ -146,7 +147,7 @@ for clusteri in tqdm(range(n_clusters)):
     # these images are at /om/user/ericjm/results/dictionary-circuits/dense_clustering/exp008/circuits/plots/{clusteri}_dict10_node0.1_edge0.01_n27_aggsum.png
     # except the n27 could be a different number depending on the clusteri, so we really want to match
     # with a regex or something
-    circuit_image_glob = f"/om/user/ericjm/results/dictionary-circuits/dense_clustering/exp008/circuits/plots/{clusteri}_dict10_node0.1_edge0.01_n*_aggsum.png"
+    circuit_image_glob = f"/share/projects/dictionary_circuits/circuits/figures/{param_string}*.png"
     circuit_image_paths = glob.glob(circuit_image_glob)
     if len(circuit_image_paths) > 0:
         circuit_image_path = circuit_image_paths[0]

@@ -164,3 +164,4 @@ phenomena/vocab/*.json
 phenomena/circuits/*
 circuits/*
 nohup.out
+*.sqlite
