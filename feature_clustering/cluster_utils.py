@@ -11,25 +11,27 @@ class ClusterConfig():
     def __init__(self, 
                  model_name, 
                  loss_threshold, 
-                 num_samples,
-                 n_pos, 
+                 n_samples,
+                 n_ctx, 
                  submodules_generic,
                  dictionary_size,
                  results_dir=None,
                  cluster_counts=None,
                  n_submodules=None,
                  random_seed=42,
+                 dict_id=10
                  ):
         self.model_name = model_name
         self.loss_threshold = loss_threshold
-        self.num_samples = num_samples # Not achieving the exact number of samples if num_samples is not divisible by batch_size
-        self.n_pos = n_pos
+        self.n_samples = n_samples # Not achieving the exact number of samples if n_samples is not divisible by batch_size
+        self.n_ctx = n_ctx
         self.submodules_generic = submodules_generic
         self.dictionary_size = dictionary_size
         self.results_dir = results_dir
         self.cluster_counts = cluster_counts
         self.n_submodules = n_submodules
         self.random_seed = random_seed
+        self.dict_id = dict_id
 
 def row_filter(X, row_idxs):
     # Find the positions in indices[1] that are in pos_idxs

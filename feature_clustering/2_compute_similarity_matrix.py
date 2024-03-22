@@ -23,33 +23,22 @@ import sys
 sys.path.append('/home/can/dictionary-circuits/')
 from loading_utils import load_submodules_and_dictionaries_from_generic, DictionaryCfg
 from cluster_utils import ClusterConfig, get_tokenized_context_y, row_filter
+from dictionary_learning import AutoEncoder
+import argparse
 
-# Set enviroment specific constants
-batch_size = 4
-results_dir = "/home/can/feature_clustering/clustering_pythia-70m-deduped_tloss0.1_nsamples32768_npos256_filtered-induction_attn-mlp-resid"
-dictionary_dir="/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped"
-tokenized_dataset_dir = "/home/can/data/pile_test_tokenized_600k/"
-device = "cuda:0"
 
-# Load config, data, model, dictionaries
-ccfg = ClusterConfig(**json.load(open(os.path.join(results_dir, "config.json"), "r")))
-final_token_idxs = torch.load(os.path.join(results_dir, f"final_token_idxs-tloss{ccfg.loss_threshold}-nsamples{ccfg.num_samples}-nctx{ccfg.n_pos}.pt"))
-dataset = datasets.load_from_disk(tokenized_dataset_dir)
-model = LanguageModel("EleutherAI/"+ccfg.model_name, device_map=device)
-dict_cfg = DictionaryCfg(dictionary_size=ccfg.dictionary_size, dictionary_dir=dictionary_dir)
-submodule_names, submodules, dictionaries = load_submodules_and_dictionaries_from_generic(model, ccfg.submodules_generic, dict_cfg)
+
+
+
+
+
+
+
 n_batches = ccfg.num_samples // batch_size # Not achieving the exact number of samples if num_samples is not divisible by batch_size
 ccfg.n_submodules = len(submodule_names[0]) * model.config.num_hidden_layers
 # save n_submodules to the config
 with open(os.path.join(results_dir, "config.json"), "w") as f:
     json.dump(ccfg.__dict__, f)
-
-# Approximate size of activation_results_cpu and lin_effect_results_cpu 
-# Sparse activations
-n_bytes_per_nonzero = 4 # using float32: 4 bytes per non-zero value
-n_nonzero_per_sample = ccfg.n_pos * ccfg.dictionary_size * ccfg.n_submodules # upper bound if dense activations
-total_size = n_nonzero_per_sample * n_batches * batch_size * n_bytes_per_nonzero
-print(f"Total size of generated data (feature activations): {total_size / 1024**3} GB")
 
 # Data loader
 def data_loader(final_token_idxs, batch_size):
@@ -104,9 +93,17 @@ def cache_activations_and_effects(contexts, ys):
     gradients = einops.rearrange(gradients, 'n_submodules batch_size n_pos dictionary_size -> batch_size n_pos (n_submodules dictionary_size)')
     print(f"nonzero activations: {t.nonzero(activations).shape[0]}")
 
-    # Pos aggregation is sum
-    activations = activations.sum(dim=1)
-    gradients = gradients.sum(dim=1)
+    # Aggregation of positional information
+    if aggregation_description == "sum":
+        activations = activations.sum(dim=1)
+        gradients = gradients.sum(dim=1)
+    elif isinstance(aggregation_description, int):
+        if aggregation_description < 0 or aggregation_description > ccfg.n_pos:
+            raise ValueError("Invalid aggregation description.")
+        activations = activations[:, -aggregation_description:]
+        gradients = gradients[:, -aggregation_description:]
+    else:
+        raise ValueError("Invalid aggregation description.")
     
     # Calculate linear effects
     lin_effects = (activations * gradients) # This elementwise mult would not be faster when setting activations to sparse, as gradients are dense.
@@ -148,9 +145,50 @@ def compute_similarity_matrix_blockwise(angular=False, absolute=False, block_len
                 C_lin[j*block_length:(j+1)*block_length, i*block_length:(i+1)*block_length] = C_block_lin.T
     return C_act, C_lin
 
-aggregation_description = "sum" # "sum" or int x for final x positions
 act_similarity_matrix, lin_similarity_matrix = compute_similarity_matrix_blockwise(angular=True, absolute=False, block_length=batch_size, device=device)
 act_similarity_matrix_filename = f"similarity_matrix_activations_nsamples{ccfg.num_samples}_nctx{ccfg.n_pos}_{aggregation_description}.pt"
 lin_similarity_matrix_filename = f"similarity_matrix_lin_effects_nsamples{ccfg.num_samples}_nctx{ccfg.n_pos}_{aggregation_description}.pt"
 t.save(act_similarity_matrix, os.path.join(results_dir, act_similarity_matrix_filename))
 t.save(act_similarity_matrix, os.path.join(results_dir, act_similarity_matrix_filename))
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Compute similarity matrices of feature activations and linear effects")
+    parser.add_argument("--batch_size", type=int, default=4, help="Batch size for data loader")
+    parser.add_argument("--results_dir", type=str, default="/home/can/feature_clustering/clustering_pythia-70m-deduped_tloss0.1_nsamples32768_npos16_filtered-induction_attn-mlp-resid", help="Directory to load data and save results")
+    parser.add_argument("--tokenized_dataset_dir", type=str, default="/home/can/data/pile_test_tokenized_600k/", help="Directory of tokenized dataset")
+    parser.add_argument("--aggregation", type=str, default="sum", help="Method for aggregating positional information ('sum' or int x for final x positions)")
+    parser.add_argument("--dict_path", type=str, default="/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped", help="Directory of dictionaries")
+    parser.add_argument("--device", type=str, default="cuda:0", help="Device for computation")
+    parser.add_argument("--d_model", type=int, default=512, help="Model dimension")
+    parser.add_argument("--dict_id", type=int, default=10, help="Dictionary id")
+    args = parser.parse_args()
+
+
+    # Load config, data, model
+    ccfg = ClusterConfig(**json.load(open(os.path.join(args.results_dir, "config.json"), "r")))
+    final_token_idxs = torch.load(os.path.join(args.results_dir, f"final_token_idxs-tloss{ccfg.loss_threshold}-nsamples{ccfg.n_samples}-nctx{ccfg.n_pos}.pt"))
+    dataset = datasets.load_from_disk(args.tokenized_dataset_dir)
+    model = LanguageModel("EleutherAI/"+ccfg.model_name, device_map=args.device)
+
+    attns = [layer.attention for layer in model.gpt_neox.layers]
+    mlps = [layer.mlp for layer in model.gpt_neox.layers]
+    resids = [layer for layer in model.gpt_neox.layers]
+
+    dictionaries = {}
+    for i in range(len(model.gpt_neox.layers)):
+        ae = AutoEncoder(args.d_model, ccfg.dict_size).to(args.device)
+        ae.load_state_dict(t.load(os.path.join(args.dict_path, f'embed/{dict_id}_{ccfg.dict_size}/ae.pt')))
+        dictionaries[embed] = ae
+
+        ae = AutoEncoder(args.d_model, ccfg.dict_size).to(args.device)
+        ae.load_state_dict(t.load(os.path.join(args.dict_path, f'attn_out_layer{i}/{dict_id}_{ccfg.dict_size}/ae.pt')))
+        dictionaries[attns[i]] = ae
+
+        ae = AutoEncoder(args.d_model, ccfg.dict_size).to(args.device)
+        ae.load_state_dict(t.load(os.path.join(args.dict_path, f'mlp_out_layer{i}/{dict_id}_{ccfg.dict_size}/ae.pt')))
+        dictionaries[mlps[i]] = ae
+
+        ae = AutoEncoder(args.d_model, ccfg.dict_size).to(args.device)
+        ae.load_state_dict(t.load(os.path.join(args.dict_path, f'resid_out_layer{i}/{dict_id}_{ccfg.dict_size}/ae.pt')))
+        dictionaries[resids[i]] = ae

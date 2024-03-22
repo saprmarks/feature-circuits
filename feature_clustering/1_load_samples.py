@@ -17,7 +17,7 @@ from loading_utils import submodule_name_to_type
 
 def make_experiment_dir(ccfg, parent_dir):
     submod_type_names="-".join([submodule_name_to_type(s) for s in ccfg.submodules_generic])
-    run_summary = f"clustering_{ccfg.model_name}_tloss{ccfg.loss_threshold}_nsamples{ccfg.num_samples}_npos{ccfg.n_pos}_filtered-induction_{submod_type_names}"
+    run_summary = f"clustering_{ccfg.model_name}_tloss{ccfg.loss_threshold}_nsamples{ccfg.n_samples}_nctx{ccfg.n_ctx}_filtered-induction_{submod_type_names}"
     results_dir = os.path.join(parent_dir, run_summary) # Create a directory for this experiment run
     os.mkdir(results_dir)
     return results_dir
@@ -44,17 +44,17 @@ def fill_sample_dict(tokenizer, ccfg, losses_dir, dataset, starting_indexes, n_d
 
     # Find final tokens with 
     # 1. loss lower than ccfg.loss_threshold
-    # 2. a context longer or equal to ccfg.n_pos
+    # 2. a context longer or equal to ccfg.n_ctx
     # 3. not containing skip trigrams
-    valid_final_token_idxs = t.zeros((ccfg.num_samples, 2), dtype=t.int64) # document index, token in doc index
+    valid_final_token_idxs = t.zeros((ccfg.n_samples, 2), dtype=t.int64) # document index, token in doc index
     valid_cnt = 0
     sample_dict = defaultdict(list) # Populate dictionary with samples of (context, y)
-    progress_bar = tqdm(total=ccfg.num_samples, desc="Loading samples")
+    progress_bar = tqdm(total=ccfg.n_samples, desc="Loading samples")
 
     for doc_idx in range(n_docs):
-        if valid_cnt >= ccfg.num_samples:
+        if valid_cnt >= ccfg.n_samples:
             break
-        min_starting_index = starting_indexes[doc_idx] + ccfg.n_pos # Maintain minimum context length
+        min_starting_index = starting_indexes[doc_idx] + ccfg.n_ctx # Maintain minimum context length
         doc_token_loss_idxs = token_loss_idxs[(token_loss_idxs >= min_starting_index) & (token_loss_idxs < starting_indexes[doc_idx+1])]
         doc_token_loss_idxs -= starting_indexes[doc_idx]
 
@@ -72,8 +72,8 @@ def fill_sample_dict(tokenizer, ccfg, losses_dir, dataset, starting_indexes, n_d
                 progress_bar.update(1)
                 break # we only collect one sample per document
                 
-    if valid_cnt < ccfg.num_samples:
-        raise ValueError(f"Not enough tokens to analyze. Loaded {valid_cnt} valid samples of {ccfg.num_samples} required samples.")
+    if valid_cnt < ccfg.n_samples:
+        raise ValueError(f"Not enough tokens to analyze. Loaded {valid_cnt} valid samples of {ccfg.n_samples} required samples.")
     return sample_dict, valid_final_token_idxs
 
 
@@ -87,10 +87,11 @@ if __name__ == "__main__":
     ccfg = ClusterConfig(
         model_name="pythia-70m-deduped",
         loss_threshold=0.1,
-        num_samples=2**14, # 32k
-        n_pos=128,
+        n_samples=2**15, # 32k
+        n_ctx=16,
         submodules_generic = ["model.gpt_neox.layers.{}.attention.dense", 'model.gpt_neox.layers.{}.mlp.dense_4h_to_h', "model.gpt_neox.layers.{}"],
-        dictionary_size=512*64
+        dict_size=512*64,
+        dict_id=10
         )
     
 
@@ -109,15 +110,15 @@ if __name__ == "__main__":
     dataset = datasets.load_from_disk(tokenized_dataset_dir)
     starting_indexes = np.array([0] + list(np.cumsum(dataset["preds_len"])))
 
-    # Load and save tokens with low loss and context length longer than ccfg.n_pos
+    # Load and save tokens with low loss and context length longer than ccfg.n_ctx
     sample_dict, final_token_idxs= fill_sample_dict(tokenizer, ccfg, losses_dir, dataset, starting_indexes, n_docs=600000)
 
     ## Save samples in string format for displaying 
-    sample_dict_path = os.path.join(results_dir, f"samples-tloss{ccfg.loss_threshold}-nsamples{ccfg.num_samples}-nctx{ccfg.n_pos}.json")
+    sample_dict_path = os.path.join(results_dir, f"samples-tloss{ccfg.loss_threshold}-nsamples{ccfg.n_samples}-nctx{ccfg.n_ctx}.json")
     with open(sample_dict_path, "w") as f:
         json.dump(sample_dict, f)
     
     ## Save final_token_idxs to torch tensor for data loading in feature cache
-    # final token idx have shape (num_samples, 2) where the first column is the document index and the second column is the index of the token in the document
-    final_token_idxs_path = os.path.join(results_dir, f"final_token_idxs-tloss{ccfg.loss_threshold}-nsamples{ccfg.num_samples}-nctx{ccfg.n_pos}.pt")
+    # final token idx have shape (n_samples, 2) where the first column is the document index and the second column is the index of the token in the document
+    final_token_idxs_path = os.path.join(results_dir, f"final_token_idxs-tloss{ccfg.loss_threshold}-nsamples{ccfg.n_samples}-nctx{ccfg.n_ctx}.pt")
     t.save(final_token_idxs, final_token_idxs_path)

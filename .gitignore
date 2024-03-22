@@ -162,3 +162,5 @@ cython_debug/
 
 phenomena/vocab/*.json
 phenomena/circuits/*
+nohup.out
+circuits/*
