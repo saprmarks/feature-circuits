@@ -8,3 +8,5 @@ circuitsvis
 imageio # for making mean activation distribution gif
 datasets
 pandas
+torchtyping
+graphviz
