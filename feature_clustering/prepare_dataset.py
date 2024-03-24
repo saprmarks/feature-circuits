@@ -9,15 +9,15 @@ import datasets
 from transformers import AutoTokenizer
 
 import sys
-sys.path.append("/home/can/")
 sys.path.append("/home/can/dictionary-circuits/")
 from cluster_utils import ClusterConfig, get_tokenized_context_y
 from loading_utils import submodule_name_to_type
+import argparse
 
 
 def make_experiment_dir(ccfg, parent_dir):
     submod_type_names="-".join([submodule_name_to_type(s) for s in ccfg.submodules_generic])
-    run_summary = f"clustering_{ccfg.model_name}_tloss{ccfg.loss_threshold}_nsamples{ccfg.n_samples}_nctx{ccfg.n_ctx}_filtered-induction_{submod_type_names}"
+    run_summary = f"dataset_nsamples{ccfg.n_samples}_nctx{ccfg.n_ctx}_tloss{ccfg.loss_threshold}_filtered-induction_{submod_type_names}_{ccfg.model_name}"
     results_dir = os.path.join(parent_dir, run_summary) # Create a directory for this experiment run
     os.mkdir(results_dir)
     return results_dir
@@ -37,10 +37,11 @@ def contains_skip_trigram(context_ids, answer_id):
 def fill_sample_dict(tokenizer, ccfg, losses_dir, dataset, starting_indexes, n_docs=600000):
     # Load indices of tokens with low loss
     losses = t.load(losses_dir) # Loss for predicting the next token
+    nats_threshold = ccfg.loss_threshold * np.log(2) # Convert loss threshold to nats
     if ccfg.loss_threshold == "inf":
         token_loss_idxs = t.arange(losses.flatten().size(0))
     else:
-        token_loss_idxs = (losses < ccfg.loss_threshold).nonzero().flatten() # Indices of final tokens in context with low loss on the next token prediction
+        token_loss_idxs = (losses < nats_threshold).nonzero().flatten() # Indices of final tokens in context with low loss on the next token prediction
 
     # Find final tokens with 
     # 1. loss lower than ccfg.loss_threshold
@@ -79,14 +80,25 @@ def fill_sample_dict(tokenizer, ccfg, losses_dir, dataset, starting_indexes, n_d
 
 if __name__ == "__main__":
 
+    # parser = argparse.ArgumentParser(description="Compute similarity matrices of feature activations and linear effects")
+    # parser.add_argument("--batch_size", type=int, default=4, help="Batch size for data loader")
+    # parser.add_argument("--results_dir", type=str, default="/home/can/feature_clustering/clustering_pythia-70m-deduped_tloss0.1_nsamples32768_npos16_filtered-induction_attn-mlp-resid", help="Directory to load data and save results")
+    # parser.add_argument("--tokenized_dataset_dir", type=str, default="/home/can/data/pile_test_tokenized_600k/", help="Directory of tokenized dataset")
+    # parser.add_argument("--aggregation", type=str, default=None, help="Method for aggregating positional information ('sum' or int x for final x positions)")
+    # parser.add_argument("--dict_path", type=str, default="/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped", help="Directory of dictionaries")
+    # parser.add_argument("--device", type=str, default="cuda:0", help="Device for computation")
+    # parser.add_argument("--d_model", type=int, default=512, help="Model dimension")
+    # parser.add_argument("--dict_id", type=int, default=10, help="Dictionary id")
+    # args = parser.parse_args()
+
     # Set general clustering parameters
-    parent_dir = "/home/can/feature_clustering/"
+    parent_dir = '/home/can/dictionary-circuits/feature_clustering/datasets/'
     model_cache_dir = "/home/can/feature_clustering/model_cache/"
     losses_dir = "/home/can/feature_clustering/model_cache/pythia-70m-deduped/180000_docs_93277607_tokens_losses.pt"
     tokenized_dataset_dir = "/home/can/data/pile_test_tokenized_600k/"
     ccfg = ClusterConfig(
         model_name="pythia-70m-deduped",
-        loss_threshold=0.1,
+        loss_threshold=10, # bits
         n_samples=2**15, # 32k
         n_ctx=16,
         submodules_generic = ["model.gpt_neox.layers.{}.attention.dense", 'model.gpt_neox.layers.{}.mlp.dense_4h_to_h', "model.gpt_neox.layers.{}"],

@@ -165,3 +165,8 @@ phenomena/circuits/*
 circuits/*
 nohup.out
 *.sqlite
+cluster_preparation/meta.json
+feature_clustering/datasets
+feature_clustering/similarity_matrices
+feature_clustering/clusters
+feature_clustering/deprecated
