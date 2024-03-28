@@ -8,7 +8,7 @@ from dictionary_learning.dictionary import AutoEncoder
 from dataclasses import dataclass
 
 @dataclass
-class DictionaryCfg(): # TODO Move to dictionary_learning repo?
+class DictionaryCfg():
     def __init__(
         self,
         dictionary_dir,
@@ -33,23 +33,26 @@ def load_examples(dataset, num_examples, model, seed=12, pad_to_length=None, len
                                         padding=False).input_ids
         patch_answer = model.tokenizer(data["patch_answer"], return_tensors="pt",
                                         padding=False).input_ids
+        # only keep examples where answers are single tokens
         if clean_prefix.shape[1] != patch_prefix.shape[1]:
             continue
+        # only keep examples where clean and patch inputs are the same length
         if clean_answer.shape[1] != 1 or patch_answer.shape[1] != 1:
             continue
+        # if we specify a `length`, filter examples if they don't match
         if length and clean_prefix.shape[1] != length:
             continue
+        # if we specify `pad_to_length`, left-pad all inputs to a max length
         prefix_length_wo_pad = clean_prefix.shape[1]
         if pad_to_length:
-            model.tokenizer.padding_side = 'right' # TODO: move this after model initialization
+            model.tokenizer.padding_side = 'right'
             pad_length = pad_to_length - prefix_length_wo_pad
             if pad_length < 0:  # example too long
                 continue
             # left padding: reverse, right-pad, reverse
             clean_prefix = t.flip(F.pad(t.flip(clean_prefix, (1,)), (0, pad_length), value=model.tokenizer.pad_token_id), (1,))
             patch_prefix = t.flip(F.pad(t.flip(patch_prefix, (1,)), (0, pad_length), value=model.tokenizer.pad_token_id), (1,))
-            # clean_prefix = F.pad(clean_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
-            # patch_prefix = F.pad(patch_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
+        
         example_dict = {"clean_prefix": clean_prefix,
                         "patch_prefix": patch_prefix,
                         "clean_answer": clean_answer.item(),
@@ -59,6 +62,7 @@ def load_examples(dataset, num_examples, model, seed=12, pad_to_length=None, len
         examples.append(example_dict)
         if len(examples) >= num_examples:
             break
+
     return examples
 
 
@@ -93,8 +97,7 @@ def load_examples_nopair(dataset, num_examples, model, length=None):
         pad_length = max_len - prefix_length_wo_pad
         # left padding: reverse, right-pad, reverse
         clean_prefix = t.flip(F.pad(t.flip(clean_prefix, (1,)), (0, pad_length), value=model.tokenizer.pad_token_id), (1,))
-        # right padding
-        # clean_prefix = F.pad(clean_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
+
         example_dict = {"clean_prefix": clean_prefix,
                         "clean_answer": clean_answer.item(),
                         "prefix_length_wo_pad": prefix_length_wo_pad,}
@@ -168,7 +171,7 @@ def submodule_type_to_name(submodule_type):
 
 
 def submodule_name_to_type_layer(submod_name):
-    layer_match = re.search(r"layers\.(\d+)\.", submod_name) # TODO Generalize for other models. This search string is Pythia-specific.
+    layer_match = re.search(r"layers\.(\d+)\.", submod_name) 
     resid_match = re.search(r"layers\.(\d+)$", submod_name)
     if layer_match:
         submod_layer = int(layer_match.group(1))
@@ -189,7 +192,8 @@ def submodule_name_to_type_layer(submod_name):
     return submod_layer, submod_type
 
 
-def load_dictionary(model, submodule_layer, submodule_object, submodule_type, dict_cfg):
+def load_dictionary(model, submodule_layer, submodule_object, submodule_type,
+                    dict_cfg: DictionaryCfg):
         dict_id = "5" # if submodule_type != "attn" else "1"
         dict_path = os.path.join(dict_cfg.dir,
                                  f"{submodule_type}_out_layer{submodule_layer}",
