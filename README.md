@@ -23,7 +23,7 @@ We create modified versions of the stimuli from [Finlayson et al. (2021)](https:
 We use different splits for discovering circuits and evaluating faithfulness/completeness. The `*_train` files are those we use to discover circuits (typically with 100-example subsamples); the `*_test` files are those we use for evaluation.
 
 ### Bias in Bios
-We download the Bias in Bios dataset from [Huggingface](https://huggingface.co/datasets/LabHC/bias_in_bios). We write functions to subsample the data for our classifier experiments; see [the Bias in Bios experiment notebook](experiments/bib_circuit.ipynb).
+We download the Bias in Bios dataset from [Huggingface](https://huggingface.co/datasets/LabHC/bias_in_bios). We write functions to subsample the data for our classifier experiments; see [the Bias in Bios experiment notebook](experiments/bib_shift.ipynb).
 
 ### Cluster Data
 We provide an online interface for observing and downloading clusters [here](https://feature-circuits.xyz).
@@ -50,7 +50,9 @@ If you would like a circuit composed of model components instead of sparse featu
 By default, this will save a circuit in `circuits/`, and a circuit plot in `circuits/figures/`.
 
 ### Bias in Bios
-All code for replicating our data processing, classifier training, and SHIFT method (including all baselines and skylines) can be found in [experiments/bib_circuit.ipynb](experiments/bib_circuit.ipynb).
+All code for replicating our data processing, classifier training, and SHIFT method (including all baselines and skylines) can be found in [experiments/bib_shift.ipynb](experiments/bib_shift.ipynb).
+
+To generate a circuit for the BiB classifier, use [experiments/bib_circuit.ipynb](experiments/bib_circuit.ipynb)
 
 ### Clusters
 After downloading a cluster, run this script:
