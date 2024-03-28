@@ -67,17 +67,20 @@ def run_with_ablations(
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--threshold', type=float, default=0.1)
-    parser.add_argument('--ablation', type=str, default='resample')
-    parser.add_argument('--circuit', type=str, default='rc_dict10_node0.01_edge0.001_n30_aggsum.pt')
-    parser.add_argument('--data', type=str, default='/share/projects/dictionary_circuits/data/phenomena/rc_test.json')
+    parser.add_argument('--ablation', type=str, default='mean')
+    parser.add_argument('--circuit', type=str)
+    parser.add_argument('--data', type=str, default='rc_test.json')
     parser.add_argument('--num_examples', '-n', type=int, default=10)
     parser.add_argument('--length', '-l', type=int, default=6)
     parser.add_argument('--handle_resids', type=str, default='default')
     parser.add_argument('--start_layer', type=int, default=-1)
+    parser.add_argument('--dict_path', type=str, default='dictionaries/pythia-70m-deduped/')
     parser.add_argument('--dict_id', default=10)
+    parser.add_argument('--dict_size', type=int, default=32768)
+    parser.add_argument('--device', default='cuda:0')
     args = parser.parse_args()
 
-    model = LanguageModel('EleutherAI/pythia-70m-deduped', device_map='cuda:0', dispatch=True)
+    model = LanguageModel('EleutherAI/pythia-70m-deduped', device_map=args.device, dispatch=True)
 
     submodules = []
     if args.start_layer < 0: submodules.append(model.gpt_neox.embed_in)
@@ -96,28 +99,28 @@ if __name__ == '__main__':
         submod_names[model.gpt_neox.layers[i].mlp] = f'mlp_{i}'
         submod_names[model.gpt_neox.layers[i]] = f'resid_{i}'
     
-    if args.dict_id == 10:
-        dict_size = 32768
+    if args.dict_id != 'id':
+        dict_size = args.dict_size
         dictionaries = {}
-        ae = AutoEncoder(512, 64 * 512).to('cuda:0')
-        ae.load_state_dict(t.load('/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/embed/10_32768/ae.pt'))
+        ae = AutoEncoder(512, dict_size).to(args.device)
+        ae.load_state_dict(t.load(f'{args.dict_path}/embed/{args.dict_id}_{dict_size}/ae.pt'))
         dictionaries[model.gpt_neox.embed_in] = ae
         for i in range(len(model.gpt_neox.layers)):
-            ae = AutoEncoder(512, 64 * 512).to('cuda:0')
-            ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/attn_out_layer{i}/10_32768/ae.pt'))
+            ae = AutoEncoder(512, dict_size).to(args.device)
+            ae.load_state_dict(t.load(f'{args.dict_path}/attn_out_layer{i}/{args.dict_id}_{dict_size}/ae.pt'))
             dictionaries[model.gpt_neox.layers[i].attention] = ae
 
-            ae = AutoEncoder(512, 64 * 512).to('cuda:0')
-            ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/mlp_out_layer{i}/10_32768/ae.pt'))
+            ae = AutoEncoder(512, dict_size).to(args.device)
+            ae.load_state_dict(t.load(f'{args.dict_path}/mlp_out_layer{i}/{args.dict_id}_{dict_size}/ae.pt'))
             dictionaries[model.gpt_neox.layers[i].mlp] = ae
 
-            ae = AutoEncoder(512, 64 * 512).to('cuda:0')
-            ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/resid_out_layer{i}/10_32768/ae.pt'))
+            ae = AutoEncoder(512, dict_size).to(args.device)
+            ae.load_state_dict(t.load(f'{args.dict_path}/resid_out_layer{i}/{args.dict_id}_{dict_size}/ae.pt'))
             dictionaries[model.gpt_neox.layers[i]] = ae
 
     elif args.dict_id == 'id':
         dict_size = 512
-        dictionaries = {submod : IdentityDict(512).to('cuda:0') for submod in submodules}
+        dictionaries = {submod : IdentityDict(dict_size).to(args.device) for submod in submodules}
     
     nodes = t.load(f'circuits/{args.circuit}')['nodes']
     nodes = {
@@ -128,11 +131,11 @@ if __name__ == '__main__':
     print(f"# features = {n_features}")
     print(f"# triangles = {n_errs}")
 
-    examples = load_examples(args.data, args.num_examples, model, length=args.length)
-    clean_inputs = t.cat([e['clean_prefix'] for e in examples], dim=0).to('cuda:0')
-    clean_answer_idxs = t.tensor([e['clean_answer'] for e in examples], dtype=t.long, device='cuda:0')
-    patch_inputs = t.cat([e['patch_prefix'] for e in examples], dim=0).to('cuda:0')
-    patch_answer_idxs = t.tensor([e['patch_answer'] for e in examples], dtype=t.long, device='cuda:0')
+    examples = load_examples(f'data/{args.data}', args.num_examples, model, length=args.length)
+    clean_inputs = t.cat([e['clean_prefix'] for e in examples], dim=0).to(args.device)
+    clean_answer_idxs = t.tensor([e['clean_answer'] for e in examples], dtype=t.long, device=args.device)
+    patch_inputs = t.cat([e['patch_prefix'] for e in examples], dim=0).to(args.device)
+    patch_answer_idxs = t.tensor([e['patch_answer'] for e in examples], dtype=t.long, device=args.device)
     def metric_fn(model):
         return (
             - t.gather(model.embed_out.output[:,-1,:], dim=-1, index=patch_answer_idxs.view(-1, 1)).squeeze(-1) + \
@@ -184,7 +187,7 @@ if __name__ == '__main__':
         model,
         submodules,
         dictionaries,
-        nodes = {submod : SparseAct(act=t.zeros(dict_size, dtype=t.bool), resc=t.zeros(1, dtype=t.bool)).to('cuda:0') for submod in submodules},
+        nodes = {submod : SparseAct(act=t.zeros(dict_size, dtype=t.bool), resc=t.zeros(1, dtype=t.bool)).to(args.device) for submod in submodules},
         metric_fn=metric_fn,
         ablation_fn=ablation_fn,
         handle_resids=args.handle_resids
