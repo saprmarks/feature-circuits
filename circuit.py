@@ -1,305 +1,624 @@
 import argparse
+import gc
+import json
+import math
 import os
-import pickle
-import random
-import torch as t
-from graph_utils import WeightedDAG, deduce_edge_weights
-from attribution import patching_effect, get_grad
-from tensordict import TensorDict
-
-from nnsight import LanguageModel
-from tqdm import tqdm, trange
-from copy import deepcopy
 from collections import defaultdict
-from loading_utils import (
-    load_examples, load_submodule_and_dictionary, submodule_name_to_type_layer, DictionaryCfg
-)
-from acdc import patching_on_y, patching_on_downstream_feature
-from ablation_utils import run_with_ablated_features
 
-class CircuitNode:
-    def __init__(self, name, submodule, dictionary, feat_idx):
-        self.name = name
-        self.submodule = submodule
-        self.dictionary = dictionary
-        self.feat_idx = feat_idx
-    
-    def __hash__(self):
-        return hash(self.name)
+import torch as t
+from einops import rearrange
+from tqdm import tqdm
 
-    def __repr__(self):
-        return self.name
-    
-    def __eq__(self, other):
-        return self.name == other.name
+from activation_utils import SparseAct
+from attribution import EffectOut, patching_effect, jvp
+from circuit_plotting import plot_circuit
+from dictionary_learning import AutoEncoder
+from loading_utils import load_examples, load_examples_nopair
+from nnsight import LanguageModel
 
-def get_circuit(
-        clean, 
-        patch,
-        model,
-        submodules,
-        submodule_names,
-        dictionaries,
-        metric_fn,
-        node_threshold=0.1,
-        edge_threshold=0.01,
-        method='all-folded',
-):
-    
-    # first, figure out which features get to go in the circuit and the gradient of y wrt these feeatures
-    effects, deltas, grads, total_effect = patching_effect(clean, patch, model, submodules, dictionaries, metric_fn, method=method)
-    feat_idxs = {}
-    grads_to_y = {}
-    for submodule, effect in effects.items():
-        feat_idxs[submodule] = t.nonzero(effect > node_threshold)
-        grads_to_y[submodule] = TensorDict({idx : grads[submodule][tuple(idx)] for idx in feat_idxs[submodule]})
-        
-    # construct DAG
-    dag = WeightedDAG()
-    grads = {} # stores grads between any two pairs of nodes
-
-    y = CircuitNode("y", None, None, None)
-    dag.add_node(y, total_effect)
-
-    nodes_by_component = {}
-    for submodule, idxs in reversed(feat_idxs.items()): # assuming that submodules are properly ordered)
-        # get nodes for this component
-        nodes = []
-        for idx in idxs:
-            n = CircuitNode(f'{submodule_names[submodule]}/{idx}', submodule, dictionaries[submodule], idx)
-            nodes.append(n)
-        nodes_by_component[submodule] = nodes
-
-        # add nodes to the DAG
-        old_nodes = dag.nodes.copy()
-        for n in nodes:
-            dag.add_node(n, weight=deltas[submodule][tuple(n.feat_idx)])
-            grads[(y, n)] = grads_to_y[submodule][n.feat_idx]
-            for n_old in old_nodes:
-                dag.add_edge(n, n_old)
-    
-    # alternative caching gradients for all upstream nodes at once
-    for downstream_idx, downstream_submod in reversed(list(enumerate(submodules))):
-        upstream_submods = submodules[:downstream_idx]
-        upstream_dictionaries = [dictionaries[upstream_submod] for upstream_submod in upstream_submods]
-        upstream_grads = get_grad(
-            clean,
-            patch,
-            model,
-            dictionaries,
-            upstream_submods,
-            downstream_submod,
-            feat_idxs[downstream_submod],
-        )
-        for downstream_node in nodes_by_component[downstream_submod]:
-            for upstream_submod in upstream_submods:
-                for upstream_node in nodes_by_component[upstream_submod]:
-                    grads[(downstream_node, upstream_node)] = upstream_grads[downstream_node.feat_idx][upstream_submod][tuple(upstream_node.feat_idx)]
-
-
-    # compute the edge weights
-    dag = deduce_edge_weights(dag, grads)
-
-    # reassign weights to represent attribution scores
-    for n1, n2 in dag.edges:
-        if n2 == y:
-            dag.add_edge(n1, n2, weight=dag.node_weight(n1) * dag.edge_weight((n1, n2)))
-        else:
-            dag.add_edge(n1, n2, weight=dag.node_weight(n1) * dag.edge_weight((n1, n2)) * grads_to_y[n2.submodule][n2.feat_idx])
-    for n in dag.nodes:
-        if n == y: continue
-        dag.add_node(n, weight=dag.node_weight(n) * grads_to_y[n.submodule][n.feat_idx])
-
-    # filter edges
-    for n1, n2 in dag.edges:
-        if dag.edge_weight((n1, n2)) < edge_threshold:
-            dag.remove_edge((n1, n2))
-
-    return dag
-
-def slice_dag(dag, pos, dim):
+def flatten_index(idxs, shape):
     """
-    Given a DAG whose nodes are CircuitNodes, returns a new DAG consisting only of those nodes whose feat_idx[dim] == pos
+    index : a tensor of shape [n, len(shape)]
+    shape : a shape
+    return a tensor of shape [n] where each element is the flattened index
     """
-    new_dag = WeightedDAG()
-    for n in dag.nodes:
-        if n.feat_idx is None or n.feat_idx[dim] == pos:
-            new_dag.add_node(n, weight=dag.node_weight(n))
-    for n1, n2 in dag.edges:
-        if n1 in new_dag.nodes and n2 in new_dag.nodes:
-            new_dag.add_edge(n1, n2, weight=dag.edge_weight((n1, n2)))
-    return new_dag
+    idxs = idxs.t()
+    # get strides from shape
+    strides = [1]
+    for i in range(len(shape)-1, 0, -1):
+        strides.append(strides[-1]*shape[i])
+    strides = list(reversed(strides))
+    strides = t.tensor(strides).to(idxs.device)
+    # flatten index
+    return (idxs * strides).sum(dim=1).unsqueeze(0)
 
-def _remove_coord(x : t.Tensor, pos : int):
-    """
-    Given a tensor x, returns a new tensor with the pos-th coordinate removed
-    """
-    return t.cat([x[:pos], x[pos+1:]], dim=0)
+def prod(l):
+    out = 1
+    for x in l: out *= x
+    return out
 
-def _sum_with_crosses(dag, dim):
-    new_dag = dag.copy()
-    topo_order = dag.topological_sort()
-    for n in topo_order:
-        if n.name == 'y':
-            continue
-        feat_idx = _remove_coord(n.feat_idx, dim)
-        name = f"{'/'.join(n.name.split('/')[:-1])}/{feat_idx}"
-        n_summed = CircuitNode(name, n.submodule, n.dictionary, feat_idx)
-        if new_dag.has_node(n_summed):
-            new_dag.add_node(n_summed, weight=new_dag.node_weight(n_summed) + new_dag.node_weight(n))
-        else:
-            new_dag.add_node(n_summed, weight=new_dag.node_weight(n))
-        for m in new_dag.get_children(n):
-            if new_dag.has_edge((n_summed, m)):
-                new_dag.add_edge(n_summed, m, weight=new_dag.edge_weight((n_summed, m)) + new_dag.edge_weight((n, m)))
-            else:
-                new_dag.add_edge(n_summed, m, weight=new_dag.edge_weight((n, m)))
-        for m in new_dag.get_parents(n):
-            if new_dag.has_edge((m, n_summed)):
-                new_dag.add_edge(m, n_summed, weight=new_dag.edge_weight((m, n_summed)) + new_dag.edge_weight((m, n)))
-            else:
-                new_dag.add_edge(m, n_summed, weight=new_dag.edge_weight((m, n)))
-        new_dag.remove_node(n)
-    
-    return new_dag
-
-def _sum_without_crosses(dag, dim):
-    new_dag = WeightedDAG()
-    for n in dag.nodes:
-        if n.name == 'y':
-            new_dag.add_node(n, weight=dag.node_weight(n).sum())
-        else:
-            feat_idx = _remove_coord(n.feat_idx, dim)
-            name = f"{'/'.join(n.name.split('/')[:-1])}/{feat_idx}"
-            n_summed = CircuitNode(name, n.submodule, n.dictionary, feat_idx)
-            if new_dag.has_node(n_summed):
-                new_dag.add_node(n_summed, weight=new_dag.node_weight(n_summed) + dag.node_weight(n))
-            else:
-                new_dag.add_node(n_summed, weight=dag.node_weight(n))
-    for e in dag.edges:
-        n1, n2 = e
-        if n2.name == 'y':
-            n1_summed_name = f"{'/'.join(n1.name.split('/')[:-1])}/{_remove_coord(n1.feat_idx, dim)}"
-            n1_summed = CircuitNode(n1_summed_name, n1.submodule, n1.dictionary, _remove_coord(n1.feat_idx, dim))
-            n2_summed = n2
-        elif n1.feat_idx[dim] != n2.feat_idx[dim]:
-            raise ValueError(f"crosses was set to False, but some edge crosses positions in dimension {dim}")
-        else:
-            n1_summed_name = f"{'/'.join(n1.name.split('/')[:-1])}/{_remove_coord(n1.feat_idx, dim)}"
-            n2_summed_name = f"{'/'.join(n2.name.split('/')[:-1])}/{_remove_coord(n2.feat_idx, dim)}"
-            n1_summed = CircuitNode(n1_summed_name, n1.submodule, n1.dictionary, _remove_coord(n1.feat_idx, dim))
-            n2_summed = CircuitNode(n2_summed_name, n2.submodule, n2.dictionary, _remove_coord(n2.feat_idx, dim))
-        if new_dag.has_edge((n1_summed, n2_summed)):
-            new_dag.add_edge(n1_summed, n2_summed, weight=new_dag.edge_weight((n1_summed, n2_summed)) + dag.edge_weight(e))
-        else:
-            new_dag.add_edge(n1_summed, n2_summed, weight=dag.edge_weight(e))
-    return new_dag
-
-def sum_dag(dag, dim, crosses=True):
-    """
-    Given a DAG whose nodes are CircuitNodes, produce a new DAG whose:
-    - nodes are the sum of the nodes in the original DAG, where the sum is taken over the dim-th index of the feat_idx
-    - edges (n1, n2) are the sum of the edges whose endpoints were summed into n1 and n2
-    If crosses is True, then the new DAG will have edges between nodes that are not in the same position in the dim-th index of the feat_idx
-    """
-    if crosses:
-        return _sum_with_crosses(dag, dim)
-    else:
-        return _sum_without_crosses(dag, dim)
-    
-def _mean_with_crosses(dag, dim):
-    new_dag = dag.copy()
-    topo_order = dag.topological_sort()
-    counts = defaultdict(int)
-    for n in topo_order:
-        if n.feat_idx is None:
-            continue
-        feat_idx = _remove_coord(n.feat_idx, dim)
-        name = f"{'/'.join(n.name.split('/')[:-1])}/{feat_idx}"
-        n_summed = CircuitNode(name, n.submodule, n.dictionary, feat_idx)
-
-        if new_dag.has_node(n_summed):
-            new_dag.add_node(n_summed, weight=new_dag.node_weight(n_summed) + new_dag.node_weight(n))
-        else:
-            new_dag.add_node(n_summed, weight=new_dag.node_weight(n))
-        counts[n_summed] += 1
-
-        for m in new_dag.get_children(n):
-            if new_dag.has_edge((n_summed, m)):
-                new_dag.add_edge(n_summed, m, weight=new_dag.edge_weight((n_summed, m)) + new_dag.edge_weight((n, m)))
-            else:
-                new_dag.add_edge(n_summed, m, weight=new_dag.edge_weight((n, m)))
-            counts[(n_summed, m)] += 1
-        for m in new_dag.get_parents(n):
-            if new_dag.has_edge((m, n_summed)):
-                new_dag.add_edge(m, n_summed, weight=new_dag.edge_weight((m, n_summed)) + new_dag.edge_weight((m, n)))
-            else:
-                new_dag.add_edge(m, n_summed, weight=new_dag.edge_weight((m, n)))
-            counts[(m, n_summed)] += 1
-        new_dag.remove_node(n)
-    
-    for n in new_dag.nodes:
-        new_dag.add_node(n, weight=new_dag.node_weight(n) / counts[n])
-    for e in new_dag.edges:
-        new_dag.add_edge(e[0], e[1], weight=new_dag.edge_weight(e) / counts[e])
-
-    return new_dag
-
-def mean_dag(dag, dim, crosses=True):
-    """
-    Given a DAG whose nodes are CircuitNodes, produce a new DAG whose:
-    - nodes are the mean of the nodes in the original DAG, where the mean is taken over the dim-th index of the feat_idx
-    - edges (n1, n2) are the mean of the edges whose endpoints were summed into n1 and n2
-    If crosses is True, then the new DAG will have edges between nodes that are not in the same position in the dim-th index of the feat_idx
-    """
-    if crosses:
-        return _mean_with_crosses(dag, dim)
-    else:
-        dim_size = max([n.feat_idx[dim] for n in dag.nodes if n.feat_idx is not None]) + 1
-        new_dag = _sum_without_crosses(dag, dim)
-        for n in new_dag.nodes:
-            new_dag.add_node(n, weight=new_dag.node_weight(n) / dim_size)
-        for e in new_dag.edges:
-            new_dag.add_edge(e[0], e[1], weight=new_dag.edge_weight(e) / dim_size)
-        return new_dag
-
-if __name__ == "__main__":
-    from dictionary_learning import AutoEncoder
-
-    model = LanguageModel('EleutherAI/pythia-70m-deduped', device_map='cuda:0')
-    submodules = []
-    submodule_names = {}
-    dictionaries = {}
-    for layer in range(len(model.gpt_neox.layers)):
-        submodule = model.gpt_neox.layers[layer].mlp
-        submodule_names[submodule] = f'mlp{layer}'
-        submodules.append(submodule)
-        ae = AutoEncoder(512, 64 * 512).cuda()
-        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/mlp_out_layer{layer}/5_32768/ae.pt'))
-        dictionaries[submodule] = ae
-
-        submodule = model.gpt_neox.layers[layer]
-        submodule_names[submodule] = f'resid{layer}'
-        submodules.append(submodule)
-        ae = AutoEncoder(512, 64 * 512).cuda()
-        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/resid_out_layer{layer}/5_32768/ae.pt'))
-        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/resid_out_layer{layer}/5_32768/ae.pt'))
-        dictionaries[submodule] = ae
-
-    clean_idx = model.tokenizer(" is").input_ids[-1]
-    patch_idx = model.tokenizer(" are").input_ids[-1]
-
-    def metric_fn(model):
-        return model.embed_out.output[:,-1,patch_idx] - model.embed_out.output[:,-1,clean_idx]
-
-    dag = get_circuit(
-        ["The man", "The tall boy"],
-        ["The men", "The tall boys"],
-        model,
-        submodules,
-        submodule_names,
-        dictionaries,
-        metric_fn,
+def sparse_flatten(x):
+    x = x.coalesce()
+    return t.sparse_coo_tensor(
+        flatten_index(x.indices(), x.shape),
+        x.values(),
+        (prod(x.shape),)
     )
 
-    reduced_dag = mean_dag(sum_dag(dag, 1), 0, crosses=False)
+def reshape_index(index, shape):
+    """
+    index : a tensor of shape [n]
+    shape : a shape
+    return a tensor of shape [n, len(shape)] where each element is the reshaped index
+    """
+    multi_index = []
+    for dim in reversed(shape):
+        multi_index.append(index % dim)
+        index //= dim
+    multi_index.reverse()
+    return t.stack(multi_index, dim=-1)
+
+def sparse_reshape(x, shape):
+    """
+    x : a sparse COO tensor
+    shape : a shape
+    return x reshaped to shape
+    """
+    # first flatten x
+    x = sparse_flatten(x).coalesce()
+    new_indices = reshape_index(x.indices()[0], shape)
+    return t.sparse_coo_tensor(new_indices.t(), x.values(), shape)
+
+def sparse_mean(x, dim):
+    if isinstance(dim, int):
+        return x.sum(dim=dim) / x.shape[dim]
+    else:
+        return x.sum(dim=dim) / prod(x.shape[d] for d in dim)
+
+def get_circuit(
+        clean,
+        patch,
+        model,
+        embed,
+        attns,
+        mlps,
+        resids,
+        dictionaries,
+        metric_fn,
+        metric_kwargs=dict(),
+        aggregation='sum', # or 'none' for not aggregating across sequence position
+        nodes_only=False,
+        node_threshold=0.1,
+        edge_threshold=0.01,
+):
+    all_submods = [embed] + [submod for layer_submods in zip(mlps, attns, resids) for submod in layer_submods]
+    
+    # first get the patching effect of everything on y
+    effects, deltas, grads, total_effect = patching_effect(
+        clean,
+        patch,
+        model,
+        all_submods,
+        dictionaries,
+        metric_fn,
+        metric_kwargs=metric_kwargs,
+        method='ig' # get better approximations for early layers by using ig
+    )
+
+    def unflatten(tensor): # will break if dictionaries vary in size between layers
+        b, s, f = effects[resids[0]].act.shape
+        unflattened = rearrange(tensor, '(b s x) -> b s x', b=b, s=s)
+        return SparseAct(act=unflattened[...,:f], res=unflattened[...,f:])
+    
+    features_by_submod = {
+        submod : (effects[submod].to_tensor().flatten().abs() > node_threshold).nonzero().flatten().tolist() for submod in all_submods
+    }
+
+    n_layers = len(resids)
+
+    nodes = {'y' : total_effect}
+    nodes['embed'] = effects[embed]
+    for i in range(n_layers):
+        nodes[f'attn_{i}'] = effects[attns[i]]
+        nodes[f'mlp_{i}'] = effects[mlps[i]]
+        nodes[f'resid_{i}'] = effects[resids[i]]
+
+    if nodes_only:
+        if aggregation == 'sum':
+            for k in nodes:
+                if k != 'y':
+                    nodes[k] = nodes[k].sum(dim=1)
+        nodes = {k : v.mean(dim=0) for k, v in nodes.items()}
+        return nodes, None
+
+    edges = defaultdict(lambda:{})
+    edges[f'resid_{len(resids)-1}'] = { 'y' : effects[resids[-1]].to_tensor().flatten().to_sparse() }
+
+    def N(upstream, downstream):
+        return jvp(
+            clean,
+            model,
+            dictionaries,
+            downstream,
+            features_by_submod[downstream],
+            upstream,
+            grads[downstream],
+            deltas[upstream],
+            return_without_right=True,
+        )
+
+
+    # now we work backward through the model to get the edges
+    for layer in reversed(range(len(resids))):
+        resid = resids[layer]
+        mlp = mlps[layer]
+        attn = attns[layer]
+
+        MR_effect, MR_grad = N(mlp, resid)
+        AR_effect, AR_grad = N(attn, resid)
+
+        edges[f'mlp_{layer}'][f'resid_{layer}'] = MR_effect
+        edges[f'attn_{layer}'][f'resid_{layer}'] = AR_effect
+
+        if layer > 0:
+            prev_resid = resids[layer-1]
+        else:
+            prev_resid = embed
+
+        RM_effect, _ = N(prev_resid, mlp)
+        RA_effect, _ = N(prev_resid, attn)
+
+        MR_grad = MR_grad.coalesce()
+        AR_grad = AR_grad.coalesce()
+
+        RMR_effect = jvp(
+            clean,
+            model,
+            dictionaries,
+            mlp,
+            features_by_submod[resid],
+            prev_resid,
+            {feat_idx : unflatten(MR_grad[feat_idx].to_dense()) for feat_idx in features_by_submod[resid]},
+            deltas[prev_resid],
+        )
+        RAR_effect = jvp(
+            clean,
+            model,
+            dictionaries,
+            attn,
+            features_by_submod[resid],
+            prev_resid,
+            {feat_idx : unflatten(AR_grad[feat_idx].to_dense()) for feat_idx in features_by_submod[resid]},
+            deltas[prev_resid],
+        )
+        RR_effect, _ = N(prev_resid, resid)
+
+        if layer > 0: 
+            edges[f'resid_{layer-1}'][f'mlp_{layer}'] = RM_effect
+            edges[f'resid_{layer-1}'][f'attn_{layer}'] = RA_effect
+            edges[f'resid_{layer-1}'][f'resid_{layer}'] = RR_effect - RMR_effect - RAR_effect
+        else:
+            edges['embed'][f'mlp_{layer}'] = RM_effect
+            edges['embed'][f'attn_{layer}'] = RA_effect
+            edges['embed'][f'resid_0'] = RR_effect - RMR_effect - RAR_effect
+
+    # rearrange weight matrices
+    for child in edges:
+        # get shape for child
+        bc, sc, fc = nodes[child].act.shape
+        for parent in edges[child]:
+            weight_matrix = edges[child][parent]
+            if parent == 'y':
+                weight_matrix = sparse_reshape(weight_matrix, (bc, sc, fc+1))
+            else:
+                bp, sp, fp = nodes[parent].act.shape
+                assert bp == bc
+                weight_matrix = sparse_reshape(weight_matrix, (bp, sp, fp+1, bc, sc, fc+1))
+            edges[child][parent] = weight_matrix
+    
+    if aggregation == 'sum':
+        # aggregate across sequence position
+        for child in edges:
+            for parent in edges[child]:
+                weight_matrix = edges[child][parent]
+                if parent == 'y':
+                    weight_matrix = weight_matrix.sum(dim=1)
+                else:
+                    weight_matrix = weight_matrix.sum(dim=(1, 4))
+                edges[child][parent] = weight_matrix
+        for node in nodes:
+            if node != 'y':
+                nodes[node] = nodes[node].sum(dim=1)
+
+        # aggregate across batch dimension
+        for child in edges:
+            bc, fc = nodes[child].act.shape
+            for parent in edges[child]:
+                weight_matrix = edges[child][parent]
+                if parent == 'y':
+                    weight_matrix = weight_matrix.sum(dim=0) / bc
+                else:
+                    bp, fp = nodes[parent].act.shape
+                    assert bp == bc
+                    weight_matrix = weight_matrix.sum(dim=(0,2)) / bc
+                edges[child][parent] = weight_matrix
+        for node in nodes:
+            if node != 'y':
+                nodes[node] = nodes[node].mean(dim=0)
+    
+    elif aggregation == 'none':
+
+        # aggregate across batch dimensions
+        for child in edges:
+            # get shape for child
+            bc, sc, fc = nodes[child].act.shape
+            for parent in edges[child]:
+                weight_matrix = edges[child][parent]
+                if parent == 'y':
+                    weight_matrix = sparse_reshape(weight_matrix, (bc, sc, fc+1))
+                    weight_matrix = weight_matrix.sum(dim=0) / bc
+                else:
+                    bp, sp, fp = nodes[parent].act.shape
+                    assert bp == bc
+                    weight_matrix = sparse_reshape(weight_matrix, (bp, sp, fp+1, bc, sc, fc+1))
+                    weight_matrix = weight_matrix.sum(dim=(0, 3)) / bc
+                edges[child][parent] = weight_matrix
+        for node in nodes:
+            nodes[node] = nodes[node].mean(dim=0)
+
+    else:
+        raise ValueError(f"Unknown aggregation: {aggregation}")
+
+    return nodes, edges
+
+
+def get_circuit_cluster(dataset,
+                        model_name="EleutherAI/pythia-70m-deduped",
+                        d_model=512,
+                        dict_id=10,
+                        dict_size=32768,
+                        max_length=64,
+                        max_examples=100,
+                        batch_size=2,
+                        node_threshold=0.1,
+                        edge_threshold=0.01,
+                        device="cuda:0",
+                        dict_path="/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/",
+                        dataset_name="cluster_circuit",
+                        circuit_dir="circuits/",
+                        plot_dir="circuits/figures/",
+                        model=None,
+                        dictionaries=None,):
+    
+    model = LanguageModel(model_name, device_map=device, dispatch=True)
+
+    embed = model.gpt_neox.embed_in
+    attns = [layer.attention for layer in model.gpt_neox.layers]
+    mlps = [layer.mlp for layer in model.gpt_neox.layers]
+    resids = [layer for layer in model.gpt_neox.layers]
+    # /om/user/ericjm/dictionary-circuits/pythia-70m-deduped/
+    dictionaries = {}
+    for i in range(len(model.gpt_neox.layers)):
+        ae = AutoEncoder(d_model, dict_size).to(device)
+        ae.load_state_dict(t.load(os.path.join(dict_path, f'embed/{dict_id}_{dict_size}/ae.pt')))
+        dictionaries[embed] = ae
+
+        ae = AutoEncoder(d_model, dict_size).to(device)
+        ae.load_state_dict(t.load(os.path.join(dict_path, f'attn_out_layer{i}/{dict_id}_{dict_size}/ae.pt')))
+        dictionaries[attns[i]] = ae
+
+        ae = AutoEncoder(d_model, dict_size).to(device)
+        ae.load_state_dict(t.load(os.path.join(dict_path, f'mlp_out_layer{i}/{dict_id}_{dict_size}/ae.pt')))
+        dictionaries[mlps[i]] = ae
+
+        ae = AutoEncoder(d_model, dict_size).to(device)
+        ae.load_state_dict(t.load(os.path.join(dict_path, f'resid_out_layer{i}/{dict_id}_{dict_size}/ae.pt')))
+        dictionaries[resids[i]] = ae
+
+    examples = load_examples_nopair(dataset, max_examples, model, length=max_length)
+
+    num_examples = min(len(examples), max_examples)
+    n_batches = math.ceil(num_examples / batch_size)
+    batches = [
+        examples[batch*batch_size:(batch+1)*batch_size] for batch in range(n_batches)
+    ]
+    if num_examples < max_examples: # warn the user
+        print(f"Total number of examples is less than {max_examples}. Using {num_examples} examples instead.")
+
+    running_nodes = None
+    running_edges = None
+
+    for batch in tqdm(batches, desc="Batches"):
+        clean_inputs = t.cat([e['clean_prefix'] for e in batch], dim=0).to(device)
+        clean_answer_idxs = t.tensor([e['clean_answer'] for e in batch], dtype=t.long, device=device)
+
+        patch_inputs = None
+        def metric_fn(model):
+            return (
+                -1 * t.gather(
+                    t.nn.functional.log_softmax(model.embed_out.output[:,-1,:], dim=-1), dim=-1, index=clean_answer_idxs.view(-1, 1)
+                ).squeeze(-1)
+            )
+        
+        nodes, edges = get_circuit(
+            clean_inputs,
+            patch_inputs,
+            model,
+            embed,
+            attns,
+            mlps,
+            resids,
+            dictionaries,
+            metric_fn,
+            aggregation="sum",
+            node_threshold=node_threshold,
+            edge_threshold=edge_threshold,
+        )
+
+        if running_nodes is None:
+            running_nodes = {k : len(batch) * nodes[k].to('cpu') for k in nodes.keys() if k != 'y'}
+            running_edges = { k : { kk : len(batch) * edges[k][kk].to('cpu') for kk in edges[k].keys() } for k in edges.keys()}
+        else:
+            for k in nodes.keys():
+                if k != 'y':
+                    running_nodes[k] += len(batch) * nodes[k].to('cpu')
+            for k in edges.keys():
+                for v in edges[k].keys():
+                    running_edges[k][v] += len(batch) * edges[k][v].to('cpu')
+        
+        # memory cleanup
+        del nodes, edges
+        gc.collect()
+
+    nodes = {k : v.to(device) / num_examples for k, v in running_nodes.items()}
+    edges = {k : {kk : 1/num_examples * v.to(device) for kk, v in running_edges[k].items()} for k in running_edges.keys()}
+
+    save_dict = {
+        "examples" : examples,
+        "nodes": nodes,
+        "edges": edges
+    }
+    save_basename = f"{dataset_name}_dict{dict_id}_node{node_threshold}_edge{edge_threshold}_n{num_examples}_aggsum"
+    with open(f'{circuit_dir}/{save_basename}.pt', 'wb') as outfile:
+        t.save(save_dict, outfile)
+
+    # with open(f'circuits/{save_basename}_dict{dict_id}_node{node_threshold}_edge{edge_threshold}_n{num_examples}_aggsum.pt', 'rb') as infile:
+    #     save_dict = t.load(infile)
+    nodes = save_dict['nodes']
+    edges = save_dict['edges']
+
+    # feature annotations
+    try:
+        with open(f'{dict_id}_{dict_size}_annotations.json', 'r') as f:
+            annotations = json.load(f)
+    except:
+        annotations = None
+
+    plot_circuit(
+        nodes, 
+        edges, 
+        layers=len(model.gpt_neox.layers), 
+        node_threshold=node_threshold, 
+        edge_threshold=edge_threshold, 
+        pen_thickness=1, 
+        annotations=annotations, 
+        save_dir=os.path.join(plot_dir, save_basename))
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--tests', default=False, action='store_true')
+    parser.add_argument('--dataset', '-d', type=str, default='simple')
+    parser.add_argument('--num_examples', '-n', type=int, default=10)
+    parser.add_argument('--example_length', '-l', type=int, default=None)
+    parser.add_argument('--model', type=str, default='EleutherAI/pythia-70m-deduped')
+    parser.add_argument('--d_model', type=int, default=512)
+    parser.add_argument('--dict_id', type=str, default=10)
+    parser.add_argument('--dict_size', type=int, default=32768)
+    parser.add_argument('--batch_size', type=int, default=32)
+    parser.add_argument('--aggregation', type=str, default='sum')
+    parser.add_argument('--node_threshold', type=float, default=0.2)
+    parser.add_argument('--edge_threshold', type=float, default=0.02)
+    parser.add_argument('--pen_thickness', type=float, default=1)
+    parser.add_argument('--nopair', default=False, action="store_true")
+    parser.add_argument('--plot_circuit', default=False, action='store_true')
+    parser.add_argument('--nodes_only', default=False, action='store_true')
+    parser.add_argument('--plot_only', action="store_true")
+    parser.add_argument('--seed', type=int, default=12)
+    parser.add_argument('--device', type=str, default='cuda:0')
+    args = parser.parse_args()
+
+
+    device = args.device
+
+    if args.tests:
+        def _assert_equal(x, y):
+            # assert that two sparse tensors are equal
+            assert x.shape == y.shape
+            assert t.all((x - y).coalesce().values() == 0)
+
+        # test flatten_index
+        shape = [4, 3, 1, 8, 2]
+        x = t.randn(*shape).to(device)
+        assert t.all(
+            x.flatten().to_sparse().indices() == \
+            flatten_index(x.to_sparse().indices(), shape)
+        )
+
+        # test sparse_flatten
+        shape = [5]
+        x = t.randn(*shape).to(device)
+        _assert_equal(x.flatten().to_sparse(), sparse_flatten(x.to_sparse()))
+
+        shape = [5, 2, 10, 3, 4]
+        x = t.randn(*shape).to(device)
+        _assert_equal(x.flatten().to_sparse(), sparse_flatten(x.to_sparse()))
+        
+        # test sparse_reshape
+        shape = [2, 2, 3, 5, 4]
+        x = t.randn(*shape).to(device)
+        x_flat = x.flatten().to_sparse()
+        x_reshaped = sparse_reshape(x_flat, shape)
+        _assert_equal(x.to_sparse(), x_reshaped)
+
+        shape = [4, 6]
+        new_shape = [2, 2, 6]
+        x = t.randn(*shape).to(device)
+        x_rearranged = rearrange(x, '(a b) c -> a b c', a=2)
+        assert t.all(x_rearranged.to_dense() == sparse_reshape(x.to_sparse(), new_shape).to_dense())
+
+        shape = [4, 4, 4]
+        new_shape = [2, 2, 4, 2, 2]
+        x = t.randn(*shape).to(device)
+        x_rearranged = rearrange(x, '(a b) c (d e) -> a b c d e', a=2, b=2, d=2, e=2)
+        assert t.all(x_rearranged.to_dense() == sparse_reshape(x.to_sparse(), new_shape).to_dense())
+
+
+    model = LanguageModel(args.model, device_map=device, dispatch=True)
+
+    embed = model.gpt_neox.embed_in
+    attns = [layer.attention for layer in model.gpt_neox.layers]
+    mlps = [layer.mlp for layer in model.gpt_neox.layers]
+    resids = [layer for layer in model.gpt_neox.layers]
+
+    dictionaries = {}
+    if args.dict_id == 'id':
+        from dictionary_learning.dictionary import IdentityDict
+        dictionaries[embed] = IdentityDict(args.d_model)
+        for i in range(len(model.gpt_neox.layers)):
+            dictionaries[attns[i]] = IdentityDict(args.d_model)
+            dictionaries[mlps[i]] = IdentityDict(args.d_model)
+            dictionaries[resids[i]] = IdentityDict(args.d_model)
+    else:
+        ae = AutoEncoder(args.d_model, args.dict_size).to(device)
+        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/embed/{args.dict_id}_{args.dict_size}/ae.pt'))
+        dictionaries[embed] = ae
+        for i in range(len(model.gpt_neox.layers)):
+            ae = AutoEncoder(args.d_model, args.dict_size).to(device)
+            ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/attn_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
+            dictionaries[attns[i]] = ae
+
+            ae = AutoEncoder(args.d_model, args.dict_size).to(device)
+            ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/mlp_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
+            dictionaries[mlps[i]] = ae
+
+            ae = AutoEncoder(args.d_model, args.dict_size).to(device)
+            ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/resid_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
+            dictionaries[resids[i]] = ae
+    
+    if args.nopair:
+        data_path = f"{args.dataset}"
+        save_basename = os.path.splitext(os.path.basename(args.dataset))[0]
+        examples = load_examples_nopair(data_path, args.num_examples, model, length=args.example_length)
+    else:
+        data_path = f"/share/projects/dictionary_circuits/data/phenomena/{args.dataset}.json"
+        save_basename = args.dataset
+        if args.aggregation == "sum":
+            examples = load_examples(data_path, args.num_examples, model, pad_to_length=args.example_length)
+        else:
+            examples = load_examples(data_path, args.num_examples, model, length=args.example_length)
+    print(data_path)
+    
+    batch_size = args.batch_size
+    num_examples = min([args.num_examples, len(examples)])
+    n_batches = math.ceil(num_examples / batch_size)
+    batches = [
+        examples[batch*batch_size:(batch+1)*batch_size] for batch in range(n_batches)
+    ]
+    if num_examples < args.num_examples: # warn the user
+        print(f"Total number of examples is less than {args.num_examples}. Using {num_examples} examples instead.")
+
+    if not args.plot_only:
+
+        running_nodes = None
+        running_edges = None
+
+        for batch in tqdm(batches, desc="Batches"):
+                
+            clean_inputs = t.cat([e['clean_prefix'] for e in batch], dim=0).to(device)
+            clean_answer_idxs = t.tensor([e['clean_answer'] for e in batch], dtype=t.long, device=device)
+
+            if args.nopair:
+                patch_inputs = None
+                def metric_fn(model):
+                    return (
+                        -1 * t.gather(
+                            t.nn.functional.log_softmax(model.embed_out.output[:,-1,:], dim=-1), dim=-1, index=clean_answer_idxs.view(-1, 1)
+                        ).squeeze(-1)
+                    )
+            else:
+                patch_inputs = t.cat([e['patch_prefix'] for e in batch], dim=0).to(device)
+                patch_answer_idxs = t.tensor([e['patch_answer'] for e in batch], dtype=t.long, device=device)
+                def metric_fn(model):
+                    return (
+                        t.gather(model.embed_out.output[:,-1,:], dim=-1, index=patch_answer_idxs.view(-1, 1)).squeeze(-1) - \
+                        t.gather(model.embed_out.output[:,-1,:], dim=-1, index=clean_answer_idxs.view(-1, 1)).squeeze(-1)
+                    )
+            
+            nodes, edges = get_circuit(
+                clean_inputs,
+                patch_inputs,
+                model,
+                embed,
+                attns,
+                mlps,
+                resids,
+                dictionaries,
+                metric_fn,
+                nodes_only=args.nodes_only,
+                aggregation=args.aggregation,
+                node_threshold=args.node_threshold,
+                edge_threshold=args.edge_threshold,
+            )
+
+            if running_nodes is None:
+                running_nodes = {k : len(batch) * nodes[k].to('cpu') for k in nodes.keys() if k != 'y'}
+                if not args.nodes_only: running_edges = { k : { kk : len(batch) * edges[k][kk].to('cpu') for kk in edges[k].keys() } for k in edges.keys()}
+            else:
+                for k in nodes.keys():
+                    if k != 'y':
+                        running_nodes[k] += len(batch) * nodes[k].to('cpu')
+                if not args.nodes_only:
+                    for k in edges.keys():
+                        for v in edges[k].keys():
+                            running_edges[k][v] += len(batch) * edges[k][v].to('cpu')
+            
+            # memory cleanup
+            del nodes, edges
+            gc.collect()
+
+        nodes = {k : v.to(device) / num_examples for k, v in running_nodes.items()}
+        if not args.nodes_only: 
+            edges = {k : {kk : 1/num_examples * v.to(device) for kk, v in running_edges[k].items()} for k in running_edges.keys()}
+        else: edges = None
+
+        save_dict = {
+            "examples" : examples,
+            "nodes": nodes,
+            "edges": edges
+        }
+        with open(f'circuits/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}.pt', 'wb') as outfile:
+            t.save(save_dict, outfile)
+
+    else:
+        with open(f'circuits/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}.pt', 'rb') as infile:
+            save_dict = t.load(infile)
+        nodes = save_dict['nodes']
+        edges = save_dict['edges']
+
+    # feature annotations
+    try:
+        with open(f'{args.dict_id}_{args.dict_size}_annotations.json', 'r') as f:
+            annotations = json.load(f)
+    except:
+        annotations = None
+
+    plot_circuit(
+        nodes, 
+        edges, 
+        layers=len(model.gpt_neox.layers), 
+        node_threshold=args.node_threshold, 
+        edge_threshold=args.edge_threshold, 
+        pen_thickness=args.pen_thickness, 
+        annotations=annotations, 
+        save_dir=f'circuits/figures/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}')

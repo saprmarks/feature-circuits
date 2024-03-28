@@ -1,0 +1,228 @@
+{"Component": "resid", "Layer": "5", "Feature": "3036", "Name": "resid_5/3036", "Annotation": "promotes singular verb forms", "Notes": "Active on \"that\" and \"and\""}
+{"Component": "resid", "Layer": "5", "Feature": "4264", "Name": "resid_5/4264", "Annotation": "end of singular NP, promotes singular verbs", "Notes": "Understanding the underlying mechanisms that determine species' operating ranges along this continuum"}
+{"Component": "resid", "Layer": "5", "Feature": "7468", "Name": "resid_5/7468", "Annotation": "promotes 3rd person plural verb forms", "Notes": "including sont (french) and sao (portuguese)"}
+{"Component": "resid", "Layer": "5", "Feature": "8919", "Name": "resid_5/8919", "Annotation": "promotes plural verb forms", "Notes": ""}
+{"Component": "resid", "Layer": "5", "Feature": "19066", "Name": "resid_5/19066", "Annotation": "promotes plural verb forms", "Notes": ""}
+{"Component": "resid", "Layer": "5", "Feature": "28507", "Name": "resid_5/28507", "Annotation": "predicts unmarked verb forms", "Notes": ""}
+{"Component": "resid", "Layer": "5", "Feature": "30107", "Name": "resid_5/30107", "Annotation": "plural NP subjects, promotes plural verbs", "Notes": ""}
+{"Component": "attn", "Layer": "5", "Feature": "7447", "Name": "attn_5/7447", "Annotation": "promotes plural verb forms", "Notes": ""}
+{"Component": "attn", "Layer": "5", "Feature": "9376", "Name": "attn_5/9376", "Annotation": "promotes singular verbs", "Notes": ""}
+{"Component": "attn", "Layer": "5", "Feature": "19313", "Name": "attn_5/19313", "Annotation": "promotes plural verb forms", "Notes": ""}
+{"Component": "attn", "Layer": "5", "Feature": "25516", "Name": "attn_5/25516", "Annotation": "predicts unmarked verb forms", "Notes": ""}
+{"Component": "attn", "Layer": "5", "Feature": "29643", "Name": "attn_5/29643", "Annotation": "promotes singular verbs", "Notes": "only final token of multi-token verbs!"}
+{"Component": "resid", "Layer": "4", "Feature": "8913", "Name": "resid_4/8913", "Annotation": "plural subjects", "Notes": ""}
+{"Component": "resid", "Layer": "4", "Feature": "11586", "Name": "resid_4/11586", "Annotation": "Inanimate plural nouns", "Notes": ""}
+{"Component": "resid", "Layer": "4", "Feature": "14719", "Name": "resid_4/14719", "Annotation": "End of plural NPs, promotes plural verbs", "Notes": ""}
+{"Component": "resid", "Layer": "4", "Feature": "16089", "Name": "resid_4/16089", "Annotation": "3rd person singular (pro)nouns, promotes singular verbs", "Notes": ""}
+{"Component": "resid", "Layer": "4", "Feature": "26914", "Name": "resid_4/26914", "Annotation": "Plural nouns", "Notes": ""}
+{"Component": "mlp", "Layer": "4", "Feature": "15560", "Name": "mlp_4/15560", "Annotation": "animate plural nouns", "Notes": ""}
+{"Component": "attn", "Layer": "4", "Feature": "3982", "Name": "attn_4/3982", "Annotation": "End of plural NPs, promotes plural verbs", "Notes": ""}
+{"Component": "resid", "Layer": "3", "Feature": "8437", "Name": "resid_3/8437", "Annotation": "plural nouns", "Notes": ""}
+{"Component": "resid", "Layer": "3", "Feature": "11981", "Name": "resid_3/11981", "Annotation": "plural animate nouns", "Notes": ""}
+{"Component": "resid", "Layer": "3", "Feature": "18529", "Name": "resid_3/18529", "Annotation": "relative pronouns", "Notes": ""}
+{"Component": "mlp", "Layer": "3", "Feature": "17671", "Name": "mlp_3/17671", "Annotation": "prepositions and relative pronouns", "Notes": ""}
+{"Component": "resid", "Layer": "2", "Feature": "10995", "Name": "resid_2/10995", "Annotation": "plural nouns", "Notes": ""}
+{"Component": "resid", "Layer": "2", "Feature": "14779", "Name": "resid_2/14779", "Annotation": "plural nouns", "Notes": ""}
+{"Component": "resid", "Layer": "2", "Feature": "18529", "Name": "resid_2/18529", "Annotation": "relative pronouns", "Notes": ""}
+{"Component": "resid", "Layer": "2", "Feature": "30677", "Name": "resid_2/30677", "Annotation": "tokens after plural nouns", "Notes": ""}
+{"Component": "attn", "Layer": "2", "Feature": "32044", "Name": "attn_2/32044", "Annotation": "plural nouns and attached VPs", "Notes": "activates on all tokens before object"}
+{"Component": "resid", "Layer": "1", "Feature": "7749", "Name": "resid_1/7749", "Annotation": "plural nouns", "Notes": ""}
+{"Component": "resid", "Layer": "1", "Feature": "10524", "Name": "resid_1/10524", "Annotation": "plural nouns", "Notes": "\"people\", \"victims\", \"owners\", \"men\""}
+{"Component": "resid", "Layer": "1", "Feature": "12037", "Name": "resid_1/12037", "Annotation": "plural nouns", "Notes": ""}
+{"Component": "resid", "Layer": "1", "Feature": "15769", "Name": "resid_1/15769", "Annotation": "plural nouns with \"the\"", "Notes": ""}
+{"Component": "resid", "Layer": "1", "Feature": "18001", "Name": "resid_1/18001", "Annotation": "plural professions", "Notes": ""}
+{"Component": "mlp", "Layer": "1", "Feature": "22854", "Name": "mlp_1/22854", "Annotation": "animate plural nouns", "Notes": "\"people\", \"kids\", \"owners\", \"victims\""}
+{"Component": "resid", "Layer": "0", "Feature": "2494", "Name": "resid_0/2494", "Annotation": "plural professions", "Notes": "\"employees\", \"workers\", \"executives\""}
+{"Component": "resid", "Layer": "0", "Feature": "10590", "Name": "resid_0/10590", "Annotation": "singular professions", "Notes": ""}
+{"Component": "resid", "Layer": "0", "Feature": "16037", "Name": "resid_0/16037", "Annotation": "plural animate nouns", "Notes": ""}
+{"Component": "resid", "Layer": "0", "Feature": "21085", "Name": "resid_0/21085", "Annotation": "plural nouns", "Notes": "specific subset"}
+{"Component": "resid", "Layer": "0", "Feature": "23953", "Name": "resid_0/23953", "Annotation": "plural noun objects", "Notes": ""}
+{"Component": "resid", "Layer": "0", "Feature": "24693", "Name": "resid_0/24693", "Annotation": "animate plural nouns", "Notes": "mostly \"boys\""}
+{"Component": "mlp", "Layer": "0", "Feature": "13247", "Name": "mlp_0/13247", "Annotation": "\"teachers\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "16150", "Name": "mlp_0/16150", "Annotation": "\"doctors\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "16663", "Name": "mlp_0/16663", "Annotation": "\"peers\", \"kids\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "17834", "Name": "mlp_0/17834", "Annotation": "animate plural nouns", "Notes": "\"seekers\", \"Indians\", \"Republicans\", \"attorneys\""}
+{"Component": "mlp", "Layer": "0", "Feature": "23899", "Name": "mlp_0/23899", "Annotation": "\"boys\", \"girls\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "30990", "Name": "mlp_0/30990", "Annotation": "\"mothers\"", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "293", "Name": "embed/293", "Annotation": "plural nouns", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "11249", "Name": "embed/11249", "Annotation": "\"Ladies\"", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "27790", "Name": "embed/27790", "Annotation": "\"friend\"", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "29610", "Name": "embed/29610", "Annotation": "\"mother\"", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "31565", "Name": "embed/31565", "Annotation": "\"wives\", \"mothers\"", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "6220", "Name": "embed/6220", "Annotation": "\"girl\"", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "22499", "Name": "embed/22499", "Annotation": "\"youths\"", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "23425", "Name": "embed/23425", "Annotation": "\"victims\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "5536", "Name": "mlp_0/5536", "Annotation": "\"boys\"", "Notes": ""}
+{"Component": "resid", "Layer": "0", "Feature": "1807", "Name": "resid_0/1807", "Annotation": "objects", "Notes": ""}
+{"Component": "resid", "Layer": "0", "Feature": "15075", "Name": "resid_0/15075", "Annotation": "\"women\"", "Notes": ""}
+{"Component": "resid", "Layer": "3", "Feature": "17192", "Name": "resid_3/17192", "Annotation": "prepositions", "Notes": ""}
+{"Component": "attn", "Layer": "4", "Feature": "31148", "Name": "attn_4/31148", "Annotation": "promotes singular verb forms", "Notes": ""}
+{"Component": "resid", "Layer": "5", "Feature": "295", "Name": "resid_5/295", "Annotation": "promotes plural verb forms", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "10941", "Name": "embed/10941", "Annotation": "\"doctors\"", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "13524", "Name": "embed/13524", "Annotation": "\"victim\"", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "26494", "Name": "embed/26494", "Annotation": "\"woman\"", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "15970", "Name": "embed/15970", "Annotation": "\"boy\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "18064", "Name": "mlp_0/18064", "Annotation": "singular animate nouns", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "28637", "Name": "mlp_0/28637", "Annotation": "plural animate nouns", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "24139", "Name": "mlp_0/24139", "Annotation": "\"athletes\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "19216", "Name": "mlp_0/19216", "Annotation": "\"women\"", "Notes": ""}
+{"Component": "resid", "Layer": "3", "Feature": "20009", "Name": "resid_3/20009", "Annotation": "singular nouns", "Notes": ""}
+{"Component": "mlp", "Layer": "4", "Feature": "4523", "Name": "mlp_4/4523", "Annotation": "promotes singular verb forms", "Notes": ""}
+{"Component": "resid", "Layer": "4", "Feature": "5798", "Name": "resid_4/5798", "Annotation": "singular proper nouns and pronouns", "Notes": ""}
+{"Component": "resid", "Layer": "4", "Feature": "15313", "Name": "resid_4/15313", "Annotation": "singular animate nouns", "Notes": ""}
+{"Component": "resid", "Layer": "5", "Feature": "1840", "Name": "resid_5/1840", "Annotation": "promotes singular and past verb forms", "Notes": ""}
+{"Component": "resid", "Layer": "5", "Feature": "8855", "Name": "resid_5/8855", "Annotation": "promotes singular verb forms", "Notes": ""}
+{"Component": "resid", "Layer": "5", "Feature": "9340", "Name": "resid_5/9340", "Annotation": "promotes plural verb forms", "Notes": ""}
+{"Component": "resid", "Layer": "5", "Feature": "18629", "Name": "resid_5/18629", "Annotation": "promotes singular verb forms", "Notes": ""}
+{"Component": "resid", "Layer": "5", "Feature": "25173", "Name": "resid_5/25173", "Annotation": "promotes plural verb forms", "Notes": ""}
+{"Component": "Component", "Layer": "", "Feature": "", "Name": "Name", "Annotation": "Annotation", "Notes": "Notes"}
+{"Component": "embed", "Layer": "", "Feature": "11649", "Name": "embed/11649", "Annotation": "\"parent\"", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "17003", "Name": "embed/17003", "Annotation": "\"executive\"", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "27441", "Name": "embed/27441", "Annotation": "\"parents\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "1901", "Name": "mlp_0/1901", "Annotation": "\"parents\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "10355", "Name": "mlp_0/10355", "Annotation": "\"parent\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "18502", "Name": "mlp_0/18502", "Annotation": "\"drivers\"", "Notes": ""}
+{"Component": "resid", "Layer": "0", "Feature": "10630", "Name": "resid_0/10630", "Annotation": "plural animate nouns", "Notes": ""}
+{"Component": "resid", "Layer": "0", "Feature": "23760", "Name": "resid_0/23760", "Annotation": "singular animate nouns", "Notes": ""}
+{"Component": "resid", "Layer": "1", "Feature": "4678", "Name": "resid_1/4678", "Annotation": "singular nouns", "Notes": ""}
+{"Component": "resid", "Layer": "1", "Feature": "17151", "Name": "resid_1/17151", "Annotation": "plural professions", "Notes": ""}
+{"Component": "resid", "Layer": "1", "Feature": "32616", "Name": "resid_1/32616", "Annotation": "plural animate nouns", "Notes": ""}
+{"Component": "resid", "Layer": "5", "Feature": "11839", "Name": "resid_5/11839", "Annotation": "promotes plural verb forms", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "2886", "Name": "embed/2886", "Annotation": "newlines", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "9394", "Name": "embed/9394", "Annotation": "newlines", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "9491", "Name": "embed/9491", "Annotation": "\"3\"", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "13979", "Name": "embed/13979", "Annotation": "\"CR\". promotes numbers", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "24081", "Name": "embed/24081", "Annotation": "\"sp\"", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "16130", "Name": "embed/16130", "Annotation": "\"7\"", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "23101", "Name": "embed/23101", "Annotation": "\"2\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "12107", "Name": "mlp_0/12107", "Annotation": "\"3\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "12228", "Name": "mlp_0/12228", "Annotation": "\"3\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "4995", "Name": "mlp_0/4995", "Annotation": "\"CR\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "28747", "Name": "mlp_0/28747", "Annotation": "\"7\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "28953", "Name": "mlp_0/28953", "Annotation": "\"2\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "12282", "Name": "mlp_0/12282", "Annotation": "\"4\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "16595", "Name": "mlp_0/16595", "Annotation": "\"3\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "23395", "Name": "mlp_0/23395", "Annotation": "\"6\"", "Notes": ""}
+{"Component": "resid", "Layer": "0", "Feature": "8729", "Name": "resid_0/8729", "Annotation": "\"3\"", "Notes": ""}
+{"Component": "resid", "Layer": "0", "Feature": "11657", "Name": "resid_0/11657", "Annotation": "\"CR\"", "Notes": ""}
+{"Component": "resid", "Layer": "0", "Feature": "30086", "Name": "resid_0/30086", "Annotation": "\" \\[[@\"", "Notes": ""}
+{"Component": "resid", "Layer": "0", "Feature": "15527", "Name": "resid_0/15527", "Annotation": "\"sp\"", "Notes": ""}
+{"Component": "resid", "Layer": "0", "Feature": "12983", "Name": "resid_0/12983", "Annotation": "\"7\", \"007\"", "Notes": ""}
+{"Component": "resid", "Layer": "0", "Feature": "4893", "Name": "resid_0/4893", "Annotation": "\"2\"", "Notes": ""}
+{"Component": "resid", "Layer": "1", "Feature": "18376", "Name": "resid_1/18376", "Annotation": "\"3\", \"Three\", \"03\"", "Notes": ""}
+{"Component": "resid", "Layer": "1", "Feature": "20098", "Name": "resid_1/20098", "Annotation": "\"CR\". promotes numbers", "Notes": ""}
+{"Component": "resid", "Layer": "1", "Feature": "19708", "Name": "resid_1/19708", "Annotation": "\"sp\"", "Notes": ""}
+{"Component": "resid", "Layer": "1", "Feature": "7542", "Name": "resid_1/7542", "Annotation": "\"3\"/\"iii\" and multiples of 3", "Notes": ""}
+{"Component": "resid", "Layer": "2", "Feature": "26688", "Name": "resid_2/26688", "Annotation": "\"CR\"", "Notes": ""}
+{"Component": "resid", "Layer": "2", "Feature": "31615", "Name": "resid_2/31615", "Annotation": "\"B\"", "Notes": ""}
+{"Component": "resid", "Layer": "2", "Feature": "21572", "Name": "resid_2/21572", "Annotation": "\"B\"/\"CR\" before numbers", "Notes": ""}
+{"Component": "resid", "Layer": "2", "Feature": "6749", "Name": "resid_2/6749", "Annotation": "promotes newlines", "Notes": ""}
+{"Component": "resid", "Layer": "2", "Feature": "25123", "Name": "resid_2/25123", "Annotation": "\"2\" or \"3\" (or text versions)", "Notes": ""}
+{"Component": "attn", "Layer": "3", "Feature": "14579", "Name": "attn_3/14579", "Annotation": "succession: promotes y+1 given xy ... x", "Notes": ""}
+{"Component": "attn", "Layer": "3", "Feature": "26353", "Name": "attn_3/26353", "Annotation": "induction: second x in x3 ... x", "Notes": ""}
+{"Component": "resid", "Layer": "3", "Feature": "11408", "Name": "resid_3/11408", "Annotation": "tokens after \"@\" and before numbers", "Notes": ""}
+{"Component": "resid", "Layer": "3", "Feature": "5357", "Name": "resid_3/5357", "Annotation": "tokens after \"@\" and before numbers", "Notes": ""}
+{"Component": "resid", "Layer": "3", "Feature": "25644", "Name": "resid_3/25644", "Annotation": "promotes groups of newlines", "Notes": ""}
+{"Component": "resid", "Layer": "3", "Feature": "27675", "Name": "resid_3/27675", "Annotation": "induction: second y in #yz ... #y, where z is a number", "Notes": ""}
+{"Component": "resid", "Layer": "3", "Feature": "26633", "Name": "resid_3/26633", "Annotation": "induction: second x in x3... x", "Notes": ""}
+{"Component": "resid", "Layer": "4", "Feature": "26222", "Name": "resid_4/26222", "Annotation": "\"CR\"", "Notes": ""}
+{"Component": "resid", "Layer": "4", "Feature": "23831", "Name": "resid_4/23831", "Annotation": "\"B\", \"ref\"", "Notes": ""}
+{"Component": "resid", "Layer": "4", "Feature": "19577", "Name": "resid_4/19577", "Annotation": "promotes groups of newlines", "Notes": ""}
+{"Component": "resid", "Layer": "4", "Feature": "4340", "Name": "resid_4/4340", "Annotation": "induction: second x in x3 ... x", "Notes": ""}
+{"Component": "resid", "Layer": "4", "Feature": "8908", "Name": "resid_4/8908", "Annotation": "promotes newlines", "Notes": ""}
+{"Component": "resid", "Layer": "4", "Feature": "12046", "Name": "resid_4/12046", "Annotation": "promotes \"4\"", "Notes": ""}
+{"Component": "resid", "Layer": "5", "Feature": "899", "Name": "resid_5/899", "Annotation": "promotes groups of newlines", "Notes": ""}
+{"Component": "resid", "Layer": "5", "Feature": "26851", "Name": "resid_5/26851", "Annotation": "induction: second y in xy... xy", "Notes": ""}
+{"Component": "resid", "Layer": "5", "Feature": "27843", "Name": "resid_5/27843", "Annotation": "induction: second y in xyz... xy", "Notes": ""}
+{"Component": "resid", "Layer": "5", "Feature": "21625", "Name": "resid_5/21625", "Annotation": "induction: second x in x2 ... x", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "8233", "Name": "embed/8233", "Annotation": "\"required\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "26732", "Name": "mlp_0/26732", "Annotation": "\"required\"", "Notes": ""}
+{"Component": "resid", "Layer": "0", "Feature": "30147", "Name": "resid_0/30147", "Annotation": "past participles before prepositions", "Notes": ""}
+{"Component": "resid", "Layer": "1", "Feature": "32358", "Name": "resid_1/32358", "Annotation": "past participles and adjectives before prepositions", "Notes": ""}
+{"Component": "resid", "Layer": "2", "Feature": "22653", "Name": "resid_2/22653", "Annotation": "past participles, adjectives, and nouns before prepositions", "Notes": ""}
+{"Component": "resid", "Layer": "2", "Feature": "20421", "Name": "resid_2/20421", "Annotation": "verbs before prepositions", "Notes": ""}
+{"Component": "resid", "Layer": "3", "Feature": "10364", "Name": "resid_3/10364", "Annotation": "past participles, adjectives, and nouns before prepositions", "Notes": ""}
+{"Component": "resid", "Layer": "3", "Feature": "31728", "Name": "resid_3/31728", "Annotation": "predicates before prepositions", "Notes": ""}
+{"Component": "resid", "Layer": "3", "Feature": "11794", "Name": "resid_3/11794", "Annotation": "verbs before prepositions", "Notes": ""}
+{"Component": "resid", "Layer": "4", "Feature": "25089", "Name": "resid_4/25089", "Annotation": "past participles and nouns promoting prepositons", "Notes": ""}
+{"Component": "resid", "Layer": "4", "Feature": "6798", "Name": "resid_4/6798", "Annotation": "verbs, nouns, and participles promoting prepositions", "Notes": ""}
+{"Component": "resid", "Layer": "4", "Feature": "1620", "Name": "resid_4/1620", "Annotation": "participle, nouns, and adjective predicates", "Notes": ""}
+{"Component": "resid", "Layer": "4", "Feature": "10570", "Name": "resid_4/10570", "Annotation": "objects before infinitives", "Notes": ""}
+{"Component": "resid", "Layer": "5", "Feature": "7552", "Name": "resid_5/7552", "Annotation": "participles, adjectives, and verbs promoting \"to\"", "Notes": ""}
+{"Component": "resid", "Layer": "5", "Feature": "308", "Name": "resid_5/308", "Annotation": "noun predicates promoting \"to\"", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "10859", "Name": "embed/10859", "Annotation": "\"asked\"", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "13807", "Name": "embed/13807", "Annotation": "\"Britain\", \"Brexit\"", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "16937", "Name": "embed/16937", "Annotation": "\"require\"", "Notes": ""}
+{"Component": "embed", "Layer": "", "Feature": "31875", "Name": "embed/31875", "Annotation": "\"allowed\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "10665", "Name": "mlp_0/10665", "Annotation": "past and past participle verbs", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "29209", "Name": "mlp_0/29209", "Annotation": "proper nouns relating to the UK", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "15008", "Name": "mlp_0/15008", "Annotation": "\"require\"", "Notes": ""}
+{"Component": "mlp", "Layer": "0", "Feature": "20713", "Name": "mlp_0/20713", "Annotation": "\"allowed\", \"permitted\", \"rules\"", "Notes": ""}
+{"Component": "resid", "Layer": "0", "Feature": "12292", "Name": "resid_0/12292", "Annotation": "verbs and participles that take infinitive objects", "Notes": ""}
+{"Name": "embed/946", "Annotation": "'his'"}
+{"Name": "embed/5719", "Annotation": "'research'"}
+{"Name": "embed/7392", "Annotation": "'He'"}
+{"Name": "embed/10784", "Annotation": "'Nursing'"}
+{"Name": "embed/17846", "Annotation": "'He'"}
+{"Name": "embed/22068", "Annotation": "'His'"}
+{"Name": "embed/23079", "Annotation": "'tastes'"}
+{"Name": "embed/25904", "Annotation": "'nursing'"}
+{"Name": "embed/28533", "Annotation": "'She'"}
+{"Name": "embed/29476", "Annotation": "'he'"}
+{"Name": "embed/31461", "Annotation": "'His'"}
+{"Name": "embed/31467", "Annotation": "'she'"}
+{"Name": "embed/32081", "Annotation": "'her'"}
+{"Name": "embed/32469", "Annotation": "'She'"}
+{"Name": "attn_0/23752", "Annotation": "capitalized words, especially pronouns"}
+{"Name": "mlp_0/2995", "Annotation": "'he'"}
+{"Name": "mlp_0/3842", "Annotation": "'She'"}
+{"Name": "mlp_0/10258", "Annotation": "female names"}
+{"Name": "mlp_0/13387", "Annotation": "'she'"}
+{"Name": "mlp_0/13968", "Annotation": "'He'"}
+{"Name": "mlp_0/18382", "Annotation": "'her'"}
+{"Name": "mlp_0/19369", "Annotation": "'His'"}
+{"Name": "mlp_0/28127", "Annotation": "'She'"}
+{"Name": "mlp_0/30518", "Annotation": "'He'"}
+{"Name": "resid_0/1022", "Annotation": "'she'"}
+{"Name": "resid_0/9651", "Annotation": "female names"}
+{"Name": "resid_0/10060", "Annotation": "'She'"}
+{"Name": "resid_0/18967", "Annotation": "'He'"}
+{"Name": "resid_0/22084", "Annotation": "'he'"}
+{"Name": "resid_0/23898", "Annotation": "'His'"}
+{"Name": "resid_0/24799", "Annotation": "promotes surnames"}
+{"Name": "resid_0/26504", "Annotation": "'her'"}
+{"Name": "resid_0/29626", "Annotation": "'his'"}
+{"Name": "resid_0/31201", "Annotation": "'nursing'"}
+{"Name": "attn_1/8147", "Annotation": "unclear, something with names"}
+{"Name": "mlp_1/24159", "Annotation": "'She', 'she'"}
+{"Name": "mlp_1/25018", "Annotation": "female names"}
+{"Name": "resid_1/4592", "Annotation": "'her'"}
+{"Name": "resid_1/8920", "Annotation": "'he'"}
+{"Name": "resid_1/9877", "Annotation": "female names"}
+{"Name": "resid_1/12128", "Annotation": "'his'"}
+{"Name": "resid_1/15017", "Annotation": "'she'"}
+{"Name": "resid_1/17369", "Annotation": "contact info"}
+{"Name": "resid_1/26969", "Annotation": "related to nursing"}
+{"Name": "resid_1/30248", "Annotation": "female names"}
+{"Name": "attn_2/13570", "Annotation": "promotes male-related words"}
+{"Name": "attn_2/27472", "Annotation": "female names, promotes female-related words"}
+{"Name": "resid_2/1995", "Annotation": "promotes female-associated words"}
+{"Name": "resid_2/9128", "Annotation": "feminine pronouns"}
+{"Name": "resid_2/11656", "Annotation": "promotes male-associated words"}
+{"Name": "resid_2/12440", "Annotation": "promotes female-associated words"}
+{"Name": "resid_2/14638", "Annotation": "related to contact information?"}
+{"Name": "resid_2/29206", "Annotation": "gendered pronouns"}
+{"Name": "resid_2/29295", "Annotation": "female names"}
+{"Name": "resid_2/31098", "Annotation": "nursing-related words"}
+{"Name": "attn_3/2959", "Annotation": "promotes female-associated words"}
+{"Name": "attn_3/19128", "Annotation": "promotes male-associated words"}
+{"Name": "attn_3/22029", "Annotation": "promotes female-associated words"}
+{"Name": "resid_3/19558", "Annotation": "promotes female-associated words"}
+{"Name": "resid_3/23545", "Annotation": "'she'"}
+{"Name": "resid_3/24806", "Annotation": "'her'"}
+{"Name": "resid_3/27334", "Annotation": "promotes male-associated words"}
+{"Name": "resid_3/31453", "Annotation": "female names"}
+{"Name": "attn_4/31101", "Annotation": "promotes female-associated words"}
+{"Name": "resid_4/9766", "Annotation": "promotes female-associated words"}
+{"Name": "resid_4/12420", "Annotation": "promotes female pronouns"}
+{"Name": "resid_4/30220", "Annotation": "promotes male pronouns"}
