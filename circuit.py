@@ -288,7 +288,7 @@ def get_circuit_cluster(dataset,
                         node_threshold=0.1,
                         edge_threshold=0.01,
                         device="cuda:0",
-                        dict_path="dictionaries/autoencoders/pythia-70m-deduped/",
+                        dict_path="dictionaries/pythia-70m-deduped/",
                         dataset_name="cluster_circuit",
                         circuit_dir="circuits/",
                         plot_dir="circuits/figures/",
@@ -418,7 +418,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_examples', '-n', type=int, default=10)
     parser.add_argument('--example_length', '-l', type=int, default=None)
     parser.add_argument('--model', type=str, default='EleutherAI/pythia-70m-deduped')
-    parser.add_argument("--dict_path", type=str, default="dictionaries/autoencoders/pythia-70m-deduped/")
+    parser.add_argument("--dict_path", type=str, default="dictionaries/pythia-70m-deduped/")
     parser.add_argument('--d_model', type=int, default=512)
     parser.add_argument('--dict_id', type=str, default=10)
     parser.add_argument('--dict_size', type=int, default=32768)
