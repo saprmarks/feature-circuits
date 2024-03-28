@@ -1,12 +1,9 @@
-# Notes on required modules by @canrager
-# Not tested with fresh installation, probably incomplete
-
 nnsight
 matplotlib
-zstandard
 circuitsvis
-imageio # for making mean activation distribution gif
+imageio
 datasets
 pandas
 torchtyping
 graphviz
+plotly
