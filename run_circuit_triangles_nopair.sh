@@ -15,7 +15,6 @@ python circuit_triangles.py \
 	--aggregation $AGG \
     --example_length 64 \
     --dict_id 10 \
-	--nopair \
-    --plot_only
+	--nopair
 
 # --submodules model.gpt_neox.layers.{}.attention.dense, model.gpt_neox.layers.{}.mlp.dense_4h_to_h,model.gpt_neox.layers.{}
