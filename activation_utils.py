@@ -4,6 +4,14 @@ from torchtyping import TensorType
 from dictionary_learning import AutoEncoder
 
 class SparseAct():
+    """
+    A SparseAct is a helper class which represents a vector in the sparse feature basis provided by an SAE, jointly with the SAE error term.
+    A SparseAct may have three fields:
+    act : the feature activations in the sparse basis
+    res : the SAE error term
+    resc : a contracted SAE error term, useful for when we want one number per feature and error (instead of having d_model numbers per error)
+    """
+
     def __init__(
             self, 
             act: TensorType["batch_size", "n_ctx", "d_dictionary"] = None, 
@@ -244,18 +252,3 @@ class SparseAct():
     
     def abs(self):
         return self._map(lambda x, _: x.abs())
-                    
-
-
-if __name__ == "__main__":
-    # Initialize SparseAct
-    batch_size = 2
-    n_ctx = 16
-    d_model = 512
-    d_dictionary = d_model * 64
-
-    dense_A = t.rand((batch_size, n_ctx, d_model))
-    dense_B = t.rand((batch_size, n_ctx, d_model))
-    dictionary_layer = 0
-    ae = AutoEncoder(d_model, d_dictionary)
-    ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/mlp_out_layer{dictionary_layer}/5_32768/ae.pt'))

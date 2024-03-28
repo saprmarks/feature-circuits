@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# NODE=$1
-# EDGE=$2
-# AGG=$3
-
 python circuit_clusters.py \
     --cluster_param_string lin_effects_final-5-pos_nsamples8192_nctx64 \
     --clusters_path /home/can/feature_clustering/app_clusters/ \

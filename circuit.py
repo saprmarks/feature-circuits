@@ -10,12 +10,14 @@ from einops import rearrange
 from tqdm import tqdm
 
 from activation_utils import SparseAct
-from attribution import EffectOut, patching_effect, jvp
+from attribution import patching_effect, jvp
 from circuit_plotting import plot_circuit
 from dictionary_learning import AutoEncoder
 from loading_utils import load_examples, load_examples_nopair
 from nnsight import LanguageModel
 
+
+###### utilities for dealing with sparse COO tensors ######
 def flatten_index(idxs, shape):
     """
     index : a tensor of shape [n, len(shape)]
@@ -74,6 +76,9 @@ def sparse_mean(x, dim):
         return x.sum(dim=dim) / x.shape[dim]
     else:
         return x.sum(dim=dim) / prod(x.shape[d] for d in dim)
+
+######## end sparse tensor utilities ########
+
 
 def get_circuit(
         clean,
@@ -382,15 +387,16 @@ def get_circuit_cluster(dataset,
     with open(f'{circuit_dir}/{save_basename}.pt', 'wb') as outfile:
         t.save(save_dict, outfile)
 
-    # with open(f'circuits/{save_basename}_dict{dict_id}_node{node_threshold}_edge{edge_threshold}_n{num_examples}_aggsum.pt', 'rb') as infile:
-    #     save_dict = t.load(infile)
     nodes = save_dict['nodes']
     edges = save_dict['edges']
 
     # feature annotations
     try:
-        with open(f'{dict_id}_{dict_size}_annotations.json', 'r') as f:
-            annotations = json.load(f)
+        annotations = {}
+        with open(f'annotations/{dict_id}_{dict_size}.jsonl', 'r') as f:
+            for line in f:
+                line = json.loads(line)
+                annotations[line['Name']] = line['Annotation']
     except:
         annotations = None
 

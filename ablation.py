@@ -6,19 +6,17 @@ from argparse import ArgumentParser
 from activation_utils import SparseAct
 from loading_utils import load_examples
 
-# TODO make work if there are also sequence positions
-# for now, assumes that the indices of nodes are integers, rather than, e.g. tuples
 def run_with_ablations(
-        clean,
-        patch, # none if zero ablations
-        model, 
+        clean, # clean inputs
+        patch, # patch inputs for use in computing ablation values
+        model, # a nnsight LanguageModel
         submodules, # list of submodules 
         dictionaries, # dictionaries[submodule] is an autoencoder for submodule's output
         nodes, # nodes[submodule] is a boolean SparseAct with True for the nodes to keep (or ablate if complement is True)
         metric_fn, # metric_fn(model, **metric_kwargs) -> t.Tensor
         metric_kwargs=dict(),
         complement=False, # if True, then use the complement of nodes
-        ablation_fn=lambda x: x, # what to do to the patch hidden states to produce values for ablation, default resample
+        ablation_fn=lambda x: x.mean(dim=0).expand_as(x), # what to do to the patch hidden states to produce values for ablation, default mean ablation
         handle_resids='default', # or 'remove' to zero ablate all; 'keep' to keep all
     ):
 

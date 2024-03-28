@@ -6,7 +6,6 @@ import torch as t
 import torch.nn.functional as F
 from dictionary_learning.dictionary import AutoEncoder
 from dataclasses import dataclass
-from collections import defaultdict
 
 @dataclass
 class DictionaryCfg(): # TODO Move to dictionary_learning repo?
