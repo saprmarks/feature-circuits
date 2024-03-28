@@ -14,7 +14,7 @@ else:
 
 EffectOut = namedtuple('EffectOut', ['effects', 'deltas', 'grads', 'total_effect'])
 
-def _pe_attrib_all_folded_sparseact(
+def _pe_attrib(
         clean,
         patch,
         model,
@@ -87,7 +87,7 @@ def _pe_attrib_all_folded_sparseact(
     
     return EffectOut(effects, deltas, grads, total_effect)
 
-def _pe_ig_sparseact(
+def _pe_ig(
         clean,
         patch,
         model,
@@ -177,7 +177,7 @@ def _pe_ig_sparseact(
     return EffectOut(effects, deltas, grads, total_effect)
 
 
-def _pe_exact_sparseact(
+def _pe_exact(
     clean,
     patch,
     model,
@@ -276,16 +276,16 @@ def patching_effect(
         submodules,
         dictionaries,
         metric_fn,
-        method='all-folded',
+        method='attrib',
         steps=10,
         metric_kwargs=dict()
 ):
-    if method == 'all-folded':
-        return _pe_attrib_all_folded_sparseact(clean, patch, model, submodules, dictionaries, metric_fn, metric_kwargs=metric_kwargs)
+    if method == 'attrib':
+        return _pe_attrib(clean, patch, model, submodules, dictionaries, metric_fn, metric_kwargs=metric_kwargs)
     elif method == 'ig':
-        return _pe_ig_sparseact(clean, patch, model, submodules, dictionaries, metric_fn, steps=steps, metric_kwargs=metric_kwargs)
+        return _pe_ig(clean, patch, model, submodules, dictionaries, metric_fn, steps=steps, metric_kwargs=metric_kwargs)
     elif method == 'exact':
-        return _pe_exact_sparseact(clean, patch, model, submodules, dictionaries, metric_fn)
+        return _pe_exact(clean, patch, model, submodules, dictionaries, metric_fn)
     else:
         raise ValueError(f"Unknown method {method}")
 
@@ -389,116 +389,3 @@ def jvp(
         t.sparse_coo_tensor(vjv_indices, vjv_values, (d_downstream_contracted, d_upstream_contracted)),
         t.sparse_coo_tensor(jv_indices, jv_values, (d_downstream_contracted, d_upstream))
     )
-
-
-if __name__ == "__main__":
-    from nnsight import LanguageModel
-    from dictionary_learning import AutoEncoder
-
-    model = LanguageModel('EleutherAI/pythia-70m-deduped', device_map='cpu')
-    submodules = []
-    submodule_names = {}
-    dictionaries = {}
-    for layer in range(len(model.gpt_neox.layers)):
-        submodule = model.gpt_neox.layers[layer].mlp
-        submodule_names[submodule] = f'mlp{layer}'
-        submodules.append(submodule)
-        ae = AutoEncoder(512, 64 * 512)#.cuda()
-        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/mlp_out_layer{layer}/5_32768/ae.pt'))
-        dictionaries[submodule] = ae
-
-        submodule = model.gpt_neox.layers[layer]
-        submodule_names[submodule] = f'resid{layer}'
-        submodules.append(submodule)
-        ae = AutoEncoder(512, 64 * 512)#.cuda()
-        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/resid_out_layer{layer}/5_32768/ae.pt'))
-        dictionaries[submodule] = ae
-
-    clean_context = ["The man"] #, "The tall boy"]
-    patch_context = ["The men"] #, "The tall boys"]
-    clean_idx = model.tokenizer(" is").input_ids[-1]
-    patch_idx = model.tokenizer(" are").input_ids[-1]
-
-    def metric_fn(model):
-        return model.embed_out.output[:,-1,patch_idx] - model.embed_out.output[:,-1,clean_idx]
-    
-    def compare_effect_outs(eo1, eo2_sparseact):
-        for k in ['effects', 'deltas', 'grads']:
-            effect_out1 = getattr(eo1, k)
-            if effect_out1 is None:
-                continue
-            for submod in effect_out1:
-                tensor1 = effect_out1[submod]
-                effect_out2_sparseact = getattr(eo2_sparseact, k)[submod]
-                if isinstance(effect_out2_sparseact, SparseAct):
-                    tensor2_sparseact = effect_out2_sparseact.act
-                else:
-                    tensor2_sparseact = effect_out2_sparseact
-                if not t.allclose(tensor1, tensor2_sparseact):
-                    print(f"{k} differs at submod {submod}")
-                    print(tensor1.sum())
-                    print(tensor2_sparseact.sum())
-                    return False
-        return True
-
-    # Check that the sparseact version of the function returns the same result as the original
-
-    # ## All-folded feature activation test
-    # effect_out_all_folded = _pe_attrib_all_folded(
-    #     clean_context,
-    #     patch_context,
-    #     model,
-    #     submodules,
-    #     dictionaries,
-    #     metric_fn,
-    # )
-    # effect_out_all_folded_sparseact = _pe_attrib_all_folded_sparseact(
-    #     clean_context,
-    #     patch_context,
-    #     model,
-    #     submodules,
-    #     dictionaries,
-    #     metric_fn,
-    # )
-    # if compare_effect_outs(effect_out_all_folded, effect_out_all_folded_sparseact):
-    #   print("All-folded test passed")
-
-    # ## IG feature activation test
-    # effect_out_ig = _pe_ig(
-    #     clean_context,
-    #     patch_context,
-    #     model,
-    #     submodules,
-    #     dictionaries,
-    #     metric_fn,
-    # )
-    # effect_out_ig_sparseact = _pe_ig_sparseact(
-    #     clean_context,
-    #     patch_context,
-    #     model,
-    #     submodules,
-    #     dictionaries,
-    #     metric_fn,
-    # )
-    # if compare_effect_outs(effect_out_ig, effect_out_ig_sparseact):
-    #     print("IG test passed")
-
-    ## Exact feature activation test
-    effect_out_exact = _pe_exact(
-        clean_context,
-        patch_context,
-        model,
-        submodules,
-        dictionaries,
-        metric_fn,
-    )
-    effect_out_exact_sparseact = _pe_exact_sparseact(
-        clean_context,
-        patch_context,
-        model,
-        submodules,
-        dictionaries,
-        metric_fn,
-    )
-    if compare_effect_outs(effect_out_exact, effect_out_exact_sparseact):
-        print("Exact test passed")
