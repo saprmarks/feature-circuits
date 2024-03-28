@@ -288,7 +288,7 @@ def get_circuit_cluster(dataset,
                         node_threshold=0.1,
                         edge_threshold=0.01,
                         device="cuda:0",
-                        dict_path="/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/",
+                        dict_path="dictionaries/autoencoders/pythia-70m-deduped/",
                         dataset_name="cluster_circuit",
                         circuit_dir="circuits/",
                         plot_dir="circuits/figures/",
@@ -418,6 +418,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_examples', '-n', type=int, default=10)
     parser.add_argument('--example_length', '-l', type=int, default=None)
     parser.add_argument('--model', type=str, default='EleutherAI/pythia-70m-deduped')
+    parser.add_argument("--dict_path", type=str, default="dictionaries/autoencoders/pythia-70m-deduped/")
     parser.add_argument('--d_model', type=int, default=512)
     parser.add_argument('--dict_id', type=str, default=10)
     parser.add_argument('--dict_size', type=int, default=32768)
@@ -430,6 +431,8 @@ if __name__ == '__main__':
     parser.add_argument('--plot_circuit', default=False, action='store_true')
     parser.add_argument('--nodes_only', default=False, action='store_true')
     parser.add_argument('--plot_only', action="store_true")
+    parser.add_argument("--circuit_dir", type=str, default="circuits/")
+    parser.add_argument("--plot_dir", type=str, default="circuits/figures/")
     parser.add_argument('--seed', type=int, default=12)
     parser.add_argument('--device', type=str, default='cuda:0')
     args = parser.parse_args()
@@ -497,33 +500,32 @@ if __name__ == '__main__':
             dictionaries[resids[i]] = IdentityDict(args.d_model)
     else:
         ae = AutoEncoder(args.d_model, args.dict_size).to(device)
-        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/embed/{args.dict_id}_{args.dict_size}/ae.pt'))
+        ae.load_state_dict(t.load(f'{args.dict_path}/embed/{args.dict_id}_{args.dict_size}/ae.pt'))
         dictionaries[embed] = ae
         for i in range(len(model.gpt_neox.layers)):
             ae = AutoEncoder(args.d_model, args.dict_size).to(device)
-            ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/attn_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
+            ae.load_state_dict(t.load(f'{args.dict_path}/attn_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
             dictionaries[attns[i]] = ae
 
             ae = AutoEncoder(args.d_model, args.dict_size).to(device)
-            ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/mlp_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
+            ae.load_state_dict(t.load(f'{args.dict_path}/mlp_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
             dictionaries[mlps[i]] = ae
 
             ae = AutoEncoder(args.d_model, args.dict_size).to(device)
-            ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/resid_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
+            ae.load_state_dict(t.load(f'{args.dict_path}/resid_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
             dictionaries[resids[i]] = ae
     
     if args.nopair:
-        data_path = f"{args.dataset}"
+        data_path = args.dataset
         save_basename = os.path.splitext(os.path.basename(args.dataset))[0]
         examples = load_examples_nopair(data_path, args.num_examples, model, length=args.example_length)
     else:
-        data_path = f"/share/projects/dictionary_circuits/data/phenomena/{args.dataset}.json"
+        data_path = f"data/{args.dataset}.json"
         save_basename = args.dataset
         if args.aggregation == "sum":
             examples = load_examples(data_path, args.num_examples, model, pad_to_length=args.example_length)
         else:
             examples = load_examples(data_path, args.num_examples, model, length=args.example_length)
-    print(data_path)
     
     batch_size = args.batch_size
     num_examples = min([args.num_examples, len(examples)])
@@ -535,7 +537,6 @@ if __name__ == '__main__':
         print(f"Total number of examples is less than {args.num_examples}. Using {num_examples} examples instead.")
 
     if not args.plot_only:
-
         running_nodes = None
         running_edges = None
 
@@ -571,6 +572,7 @@ if __name__ == '__main__':
                 resids,
                 dictionaries,
                 metric_fn,
+                dict_path=args.dict_path,
                 nodes_only=args.nodes_only,
                 aggregation=args.aggregation,
                 node_threshold=args.node_threshold,
@@ -603,11 +605,11 @@ if __name__ == '__main__':
             "nodes": nodes,
             "edges": edges
         }
-        with open(f'circuits/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}.pt', 'wb') as outfile:
+        with open(f'{args.circuit_dir}/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}.pt', 'wb') as outfile:
             t.save(save_dict, outfile)
 
     else:
-        with open(f'circuits/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}.pt', 'rb') as infile:
+        with open(f'{args.circuit_dir}/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}.pt', 'rb') as infile:
             save_dict = t.load(infile)
         nodes = save_dict['nodes']
         edges = save_dict['edges']
@@ -627,4 +629,4 @@ if __name__ == '__main__':
         edge_threshold=args.edge_threshold, 
         pen_thickness=args.pen_thickness, 
         annotations=annotations, 
-        save_dir=f'circuits/figures/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}')
+        save_dir=f'{args.plot_dir}/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}')
