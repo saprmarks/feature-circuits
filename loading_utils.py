@@ -73,7 +73,8 @@ def load_examples(dataset, num_examples, model, seed=12, pad_to_length=None, len
 def load_examples_nopair(dataset, num_examples, model, length=None):
     examples = []
     if isinstance(dataset, str):        # is a path to a .json file
-        dataset = json.load(open(dataset))
+        with open(dataset) as f:
+            dataset = json.load(f)
     elif isinstance(dataset, dict):     # is an already-loaded dictionary
         pass
     else:

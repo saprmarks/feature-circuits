@@ -125,6 +125,10 @@ def get_circuit_clusters(dataset,
         annotations=annotations, 
         save_dir=os.path.join(plot_dir, save_basename))
 
+    # memory cleanup
+    del nodes, edges
+    gc.collect()
+
 
 
 if __name__ == "__main__":
@@ -174,7 +178,8 @@ if __name__ == "__main__":
     ## Dataset preparation
     # From the clusters list, create a dictionary mapping the cluster index to sample indices
     clusters_map_path = args.clusters_path + args.cluster_param_string + ".json"
-    cluster_maps = json.load(open(clusters_map_path))
+    with open(clusters_map_path, 'r') as f:
+        cluster_maps = json.load(f)
     if "ERIC" in args.cluster_param_string:
         cluster_map = cluster_maps[str(args.n_total_clusters)][0]
     else:
@@ -184,7 +189,8 @@ if __name__ == "__main__":
         cluster_to_sample_indices[cluster].append(i)
 
     # Load samples
-    samples = json.load(open(args.samples_path))
+    with open(args.samples_path, 'r') as f:
+        samples = json.load(f)
     samples = {i: samples[k] for i, k in enumerate(samples.keys())}
         
     # Iterate over clusters and get circuits

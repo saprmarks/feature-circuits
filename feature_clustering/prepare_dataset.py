@@ -41,7 +41,7 @@ def fill_sample_dict(tokenizer, ccfg, losses_dir, dataset, starting_indexes, n_d
     if ccfg.loss_threshold == "inf":
         token_loss_idxs = t.arange(losses.flatten().size(0))
     else:
-        token_loss_idxs = (losses < nats_threshold).nonzero().flatten() # Indices of final tokens in context with low loss on the next token prediction
+        token_loss_idxs = (losses < ccfg.loss_threshold).nonzero().flatten() # Indices of final tokens in context with low loss on the next token prediction
 
     # Find final tokens with 
     # 1. loss lower than ccfg.loss_threshold
@@ -67,7 +67,9 @@ def fill_sample_dict(tokenizer, ccfg, losses_dir, dataset, starting_indexes, n_d
                 sample_dict[valid_cnt] = dict(
                     context=[tokenizer.decode(tok_id) for tok_id in context_ids], 
                     answer=tokenizer.decode(answer_id), 
-                    document_idx=doc_idx
+                    document_idx=doc_idx,
+                    answer_token_in_doc_idx=int(final_token_idx+1),
+                    answer_token_global_idx=int(final_token_idx + starting_indexes[doc_idx]+1),
                     )
                 valid_cnt += 1
                 progress_bar.update(1)
@@ -92,15 +94,15 @@ if __name__ == "__main__":
     # args = parser.parse_args()
 
     # Set general clustering parameters
-    parent_dir = '/home/can/dictionary-circuits/feature_clustering/datasets/'
+    parent_dir = '/home/can/dictionary-circuits/feature_clustering/clusters/'
     model_cache_dir = "/home/can/feature_clustering/model_cache/"
     losses_dir = "/home/can/feature_clustering/model_cache/pythia-70m-deduped/180000_docs_93277607_tokens_losses.pt"
     tokenized_dataset_dir = "/home/can/data/pile_test_tokenized_600k/"
     ccfg = ClusterConfig(
         model_name="pythia-70m-deduped",
-        loss_threshold=10, # bits
-        n_samples=2**15, # 32k
-        n_ctx=16,
+        loss_threshold=0.1, # bits
+        n_samples=8192, # 32k
+        n_ctx=64,
         submodules_generic = ["model.gpt_neox.layers.{}.attention.dense", 'model.gpt_neox.layers.{}.mlp.dense_4h_to_h', "model.gpt_neox.layers.{}"],
         dict_size=512*64,
         dict_id=10

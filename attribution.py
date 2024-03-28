@@ -29,6 +29,7 @@ def _pe_attrib_all_folded_sparseact(
     with model.trace("_"):
         for submodule in submodules:
             is_tuple[submodule] = type(submodule.output.shape) == tuple
+            print(submodule.output.shape, 'hi')
 
     hidden_states_clean = {}
     grads = {}

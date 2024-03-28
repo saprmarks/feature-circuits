@@ -170,3 +170,5 @@ feature_clustering/datasets
 feature_clustering/similarity_matrices
 feature_clustering/clusters
 feature_clustering/deprecated
+neuronpedia/*
+.gitignore

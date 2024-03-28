@@ -71,6 +71,8 @@ def print_context(idx, context_length=-1):
     token = sample["split_by_token"][token_idx]
     print(prompt + "\033[41m" + token + "\033[0m")
 
+losses_fin = t.load('/home/can/feature_clustering/model_cache/pythia-70m-deduped/180000_docs_93277607_tokens_losses.pt')
+
 losses = np.load("/home/can/data/pythia-70m-deduped-timeseries.npy")
 mean_loss_curve = np.mean(losses, axis=0)
 
@@ -173,3 +175,12 @@ for clusteri in tqdm(range(n_clusters)):
     db.commit()
 
 db.close()
+
+
+#%%
+import torch as t
+import numpy as np
+
+losses_fin = losses_fin = t.load('/home/can/feature_clustering/model_cache/pythia-70m-deduped/180000_docs_93277607_tokens_losses.pt')
+losses = np.load("/home/can/data/pythia-70m-deduped-timeseries.npy")
+# %%
