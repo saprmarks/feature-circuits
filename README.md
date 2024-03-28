@@ -2,6 +2,9 @@
 
 This repository contains code, data, and links to autoencoders for replicating the experiments of [Sparse Feature Circuits: Discovering and Editing Interpretable Causal Graphs in Language Models](TODO). 
 
+## Demos and Links
+- We provide an interface for observing and downloading clusters [here](https://feature-circuits.xyz).
+- We are working with Neuronpedia to display sparse features in an interactive format. Stay tuned for updates!
 
 ## Installation
 
@@ -28,10 +31,11 @@ We download the Bias in Bios dataset from [Huggingface](https://huggingface.co/d
 ### Cluster Data
 We provide an online interface for observing and downloading clusters [here](https://feature-circuits.xyz).
 
-
-## Autoencoders
+### Autoencoders
 To run our experiments, you will need to either train or download sparse autoencoders for each layer of Pythia 70M. See the [dictionary learning repository](https://github.com/saprmarks/dictionary_learning) for download links and training instructions.
 
+### Annotations
+We provide feature annotations in `annotations/10_32768.jsonl`. These are primarily used in `circuit_plotting.py`.
 
 ## Experiments
 Here, we provide instructions for replicating the results from our paper.
