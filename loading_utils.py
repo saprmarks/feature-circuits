@@ -6,6 +6,7 @@ import torch as t
 import torch.nn.functional as F
 from dictionary_learning.dictionary import AutoEncoder
 from dataclasses import dataclass
+from collections import defaultdict
 
 @dataclass
 class DictionaryCfg(): # TODO Move to dictionary_learning repo?
@@ -18,7 +19,7 @@ class DictionaryCfg(): # TODO Move to dictionary_learning repo?
         self.size = dictionary_size
 
 
-def load_examples(dataset, num_examples, model, seed=12, pad_to_length=16):
+def load_examples(dataset, num_examples, model, seed=12, pad_to_length=None, length=None):
     examples = []
     dataset_items = open(dataset).readlines()
     random.seed(seed)
@@ -37,12 +38,19 @@ def load_examples(dataset, num_examples, model, seed=12, pad_to_length=16):
             continue
         if clean_answer.shape[1] != 1 or patch_answer.shape[1] != 1:
             continue
+        if length and clean_prefix.shape[1] != length:
+            continue
         prefix_length_wo_pad = clean_prefix.shape[1]
         if pad_to_length:
             model.tokenizer.padding_side = 'right' # TODO: move this after model initialization
             pad_length = pad_to_length - prefix_length_wo_pad
-            clean_prefix = F.pad(clean_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
-            patch_prefix = F.pad(patch_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
+            if pad_length < 0:  # example too long
+                continue
+            # left padding: reverse, right-pad, reverse
+            clean_prefix = t.flip(F.pad(t.flip(clean_prefix, (1,)), (0, pad_length), value=model.tokenizer.pad_token_id), (1,))
+            patch_prefix = t.flip(F.pad(t.flip(patch_prefix, (1,)), (0, pad_length), value=model.tokenizer.pad_token_id), (1,))
+            # clean_prefix = F.pad(clean_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
+            # patch_prefix = F.pad(patch_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
         example_dict = {"clean_prefix": clean_prefix,
                         "patch_prefix": patch_prefix,
                         "clean_answer": clean_answer.item(),
@@ -55,19 +63,27 @@ def load_examples(dataset, num_examples, model, seed=12, pad_to_length=16):
     return examples
 
 
-def load_examples_nopair(dataset, num_examples, model):
+def load_examples_nopair(dataset, num_examples, model, length=None):
     examples = []
-    dataset_json = json.load(open(dataset))
+    if isinstance(dataset, str):        # is a path to a .json file
+        dataset = json.load(open(dataset))
+    elif isinstance(dataset, dict):     # is an already-loaded dictionary
+        pass
+    else:
+        raise ValueError(f"`dataset` is unrecognized type: {type(dataset)}. Must be path (str) or dict")
+    
     max_len = 0     # for padding
-    for context_id in dataset_json:
-        context = dataset_json[context_id]["context"]
+    for context_id in dataset:
+        context = dataset[context_id]["context"]
+        if length is not None and len(context) > length:
+            context = context[-length:]
         clean_prefix = model.tokenizer("".join(context), return_tensors="pt",
                         padding=False).input_ids
         max_len = max(max_len, clean_prefix.shape[-1])
 
-    for context_id in dataset_json:
-        answer = dataset_json[context_id]["answer"]
-        context = dataset_json[context_id]["context"]
+    for context_id in dataset:
+        answer = dataset[context_id]["answer"]
+        context = dataset[context_id]["context"]
         clean_prefix = model.tokenizer("".join(context), return_tensors="pt",
                                     padding=False).input_ids
         clean_answer = model.tokenizer(answer, return_tensors="pt",
@@ -75,9 +91,11 @@ def load_examples_nopair(dataset, num_examples, model):
         if clean_answer.shape[1] != 1:
             continue
         prefix_length_wo_pad = clean_prefix.shape[1]
-        model.tokenizer.padding_side = 'right' # TODO: move this after model initialization
         pad_length = max_len - prefix_length_wo_pad
-        clean_prefix = F.pad(clean_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
+        # left padding: reverse, right-pad, reverse
+        clean_prefix = t.flip(F.pad(t.flip(clean_prefix, (1,)), (0, pad_length), value=model.tokenizer.pad_token_id), (1,))
+        # right padding
+        # clean_prefix = F.pad(clean_prefix, (0, pad_length), value=model.tokenizer.pad_token_id)
         example_dict = {"clean_prefix": clean_prefix,
                         "clean_answer": clean_answer.item(),
                         "prefix_length_wo_pad": prefix_length_wo_pad,}
@@ -86,7 +104,6 @@ def load_examples_nopair(dataset, num_examples, model):
             break
 
     return examples
-
 
 def get_annotation(dataset, model, data):
     # First, understand which dataset we're working with
@@ -116,7 +133,6 @@ def get_annotation(dataset, model, data):
             word = " " + word
         word_tok = model.tokenizer(word, return_tensors="pt", padding=False).input_ids
         num_tokens = word_tok.shape[1]
-        print(word, num_tokens)
         span = (curr_token, curr_token + num_tokens-1)
         curr_token += num_tokens
         annotations[template_word] = span
@@ -125,6 +141,8 @@ def get_annotation(dataset, model, data):
 
 
 def load_submodule(model, submodule_str):
+    return eval(submodule_str)
+
     if "." not in submodule_str:
         return getattr(model, submodule_str)
     
@@ -133,7 +151,7 @@ def load_submodule(model, submodule_str):
     for module in submodules:
         if module == "model":
             continue
-        if not curr_module:
+        if curr_module is None:
             curr_module = getattr(model, module)
             continue
         curr_module = getattr(curr_module, module)
@@ -142,11 +160,11 @@ def load_submodule(model, submodule_str):
 
 def submodule_type_to_name(submodule_type):
     if submodule_type == "mlp":
-        return "model.gpt_neox.layers.{}.mlp.dense_4h_to_h"
+        return "model.gpt_neox.layers[{}].mlp"
     elif submodule_type == "attn":
-        return "model.gpt_neox.layers.{}.attention.dense"
+        return "model.gpt_neox.layers[{}].attention"
     elif submodule_type.startswith("resid"):
-        return "model.gpt_neox.layers.{}"
+        return "model.gpt_neox.layers[{}]"
     raise ValueError("Unrecognized submodule type. Please select from {mlp, attn, resid}")
 
 
@@ -181,7 +199,7 @@ def load_dictionary(model, submodule_layer, submodule_object, submodule_type, di
             submodule_width = submodule_object.out_features
         except AttributeError:
             # is residual. need to load model to get this
-            with model.invoke("test") as invoker:
+            with model.trace("test"), t.inference_mode():
                 hidden_states = submodule_object.output.save()
             hidden_states = hidden_states.value
             if isinstance(hidden_states, tuple):

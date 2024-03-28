@@ -1,14 +1,9 @@
 import torch as t
 from attribution import patching_effect, EffectOut
 
-def consolidated_patching_on(model, dataset, upstream_submodules, upstream_dictionaries,
-                             metric_fn, method='separate', steps=10, grad_y_wrt_downstream=1,
-                             sequence_aggregation='final_pos_only', nopair=False):
+def consolidated_patching_on(model, dataset, upstream_submodules, upstream_dictionaries, metric_fn, method='separate', steps=10, grad_y_wrt_downstream=1, sequence_aggregation='final_pos_only'):
     clean_inputs = t.cat([example['clean_prefix'] for example in dataset], dim=0)
-    if nopair:
-        patch_inputs = None
-    else:
-        patch_inputs = t.cat([example['patch_prefix'] for example in dataset], dim=0)
+    patch_inputs = t.cat([example['patch_prefix'] for example in dataset], dim=0)
     final_token_positions = t.tensor([example['prefix_length_wo_pad'] for example in dataset]) # token position before padding, 1-indexed
 
     (effects, total_effect), grads_y_wrt_us_features = patching_effect(
@@ -25,82 +20,46 @@ def consolidated_patching_on(model, dataset, upstream_submodules, upstream_dicti
 
     # Aggregate over sequence
     if sequence_aggregation == 'final_pos_only':
-        effects = {k : v[t.arange(len(final_token_positions)), final_token_positions-1] for k, v in effects.items()}
-        grads_y_wrt_us_features = {k : v[t.arange(len(final_token_positions)), final_token_positions-1] for k, v in grads_y_wrt_us_features.items()}
+        effects={k : v[t.arange(len(final_token_positions)), final_token_positions-1] for k, v in effects.items()}
+        grads_y_wrt_us_features = grads_y_wrt_us_features[t.arange(len(final_token_positions)), final_token_positions-1]
     elif sequence_aggregation == 'max':
-        for k, v in effects.items(): # k: submodule, v: (batch_size, sequence_length, feature_dim)
-            max_values, max_indices = v.max(dim=1, keepdim=True) # max_indices shape (batch_size, 1, feature_dim)
-            effects[k] = max_values
-            grads_y_wrt_us_features[k] = t.gather(grads_y_wrt_us_features[k], dim=1, index=max_indices).squeeze(1)                      
+        effects={k : v.max(dim=1).values for k, v in effects.items()} # Could retrieve the sequence position indices here
+        grads_y_wrt_us_features = grads_y_wrt_us_features.max(dim=1).values
     elif sequence_aggregation == 'sum':
-        effects = {k : v.sum(dim=1) for k, v in effects.items()}
-        grads_y_wrt_us_features = {k : v.sum(dim=1) for k, v in grads_y_wrt_us_features.items()}
+        effects={k : v.sum(dim=1) for k, v in effects.items()}
+        grads_y_wrt_us_features = grads_y_wrt_us_features.sum(dim=1)
     else:
         raise ValueError(f"Unknown sequence_aggregation: {sequence_aggregation}")
 
     # Mean over batch
-    if nopair:
-        effect_out = EffectOut(
-            effects={k: v.mean(dim=0) for k, v in effects.items()},
-            total_effect=None
-        )
-    else:
-        effect_out = EffectOut(
-            effects={k : v.mean(dim=0) for k, v in effects.items()}, 
-            total_effect=total_effect.mean(dim=0),
-        )
-    grads_y_wrt_us_features = {k : v.mean(dim=0) for k, v in grads_y_wrt_us_features.items()}
+    effect_out = EffectOut(
+        effects={k : v.mean(dim=0) for k, v in effects.items()}, 
+        total_effect=total_effect.mean(dim=0),
+    )
+    grads_y_wrt_us_features = grads_y_wrt_us_features.mean(dim=0)
     return effect_out, grads_y_wrt_us_features
 
-def patching_on_y(model, dataset, submodules, dictionaries, method='separate', steps=10, grad_y_wrt_downstream=1, sequence_aggregation='final_pos_only',
-                  nopair=False):
+def patching_on_y(model, dataset, submodules, dictionaries, method='separate', steps=10, grad_y_wrt_downstream=1, sequence_aggregation='final_pos_only'):
     clean_answer_idxs, patch_answer_idxs, prefix_lengths_wo_pad = [], [], []
     for example in dataset:
         clean_answer_idxs.append(example['clean_answer'])
-        if not nopair:
-            patch_answer_idxs.append(example['patch_answer'])
+        patch_answer_idxs.append(example['patch_answer'])
         prefix_lengths_wo_pad.append(example['prefix_length_wo_pad'])
     clean_answer_idxs = t.Tensor(clean_answer_idxs).long()
-    if not nopair:
-        patch_answer_idxs = t.Tensor(patch_answer_idxs).long()
+    patch_answer_idxs = t.Tensor(patch_answer_idxs).long()
     prefix_lengths_wo_pad = t.Tensor(prefix_lengths_wo_pad).int()
 
     def metric_fn(model):
         indices_first_dim = t.arange(clean_answer_idxs.shape[0])
         logits = model.embed_out.output[indices_first_dim, prefix_lengths_wo_pad-1, :]
-        if nopair:  
-            metric = -1 * t.gather(      # negative logprob of correct answer
-                t.nn.functional.log_softmax(logits, dim=-1), dim=-1, index=clean_answer_idxs.unsqueeze(-1)
-            )
-        else:
-            metric = t.gather(        # logit diff
-                logits, dim=-1, index=patch_answer_idxs.unsqueeze(-1)
-            ) - t.gather(
-                logits, dim=-1, index=clean_answer_idxs.unsqueeze(-1)
-            )
-        return metric.squeeze(-1)
-
-    return consolidated_patching_on(model, dataset, submodules, dictionaries, metric_fn, method, steps, grad_y_wrt_downstream, sequence_aggregation=sequence_aggregation,
-                                    nopair=nopair)
-
-def patching_on_y_nopair(model, dataset, submodules, dictionaries, method='separate', steps=10, grad_y_wrt_downstream=1, sequence_aggregation='final_pos_only'):
-    clean_answer_idxs, prefix_lengths_wo_pad = [], []
-    for example in dataset:
-        clean_answer_idxs.append(example["clean_answer"])
-        prefix_lengths_wo_pad.append(example["prefix_length_wo_pad"])
-    clean_answer_idxs = t.Tensor(clean_answer_idxs).long()
-    prefix_lengths_wo_pad = t.Tensor(prefix_lengths_wo_pad).int()
-
-    def metric_fn(model):
-        indices_first_dim = t.arange(clean_answer_idxs.shape[0])
-        logits = model.embed_out.output[indices_first_dim, prefix_lengths_wo_pad-1, :]
-        answer_logit = t.gather(
+        logit_diff = t.gather(
+            logits, dim=-1, index=patch_answer_idxs.unsqueeze(-1)
+        ) - t.gather(
             logits, dim=-1, index=clean_answer_idxs.unsqueeze(-1)
         )
-        return answer_logit.squeeze(-1)
+        return logit_diff.squeeze(-1)
 
-    return consolidated_patching_on(model, dataset, submodules, dictionaries, metric_fn, method, steps, grad_y_wrt_downstream, sequence_aggregation=sequence_aggregation,
-                                    nopair=True)
+    return consolidated_patching_on(model, dataset, submodules, dictionaries, metric_fn, method, steps, grad_y_wrt_downstream, sequence_aggregation=sequence_aggregation)
 
 def patching_on_downstream_feature(
     model, 
@@ -114,7 +73,6 @@ def patching_on_downstream_feature(
     method='separate', 
     steps=10,
     sequence_aggregation='final_pos_only',
-    nopair=False
     ):
     def metric_fn(model):
         x = downstream_submodule.output
@@ -128,5 +86,4 @@ def patching_on_downstream_feature(
             f = f.sum(dim=-1)
         return f.sum(dim=-1)
 
-    return consolidated_patching_on(model, dataset, upstream_submodules, upstream_dictionaries, metric_fn, method, steps, grad_y_wrt_downstream, sequence_aggregation=sequence_aggregation,
-                                    nopair=nopair)
+    return consolidated_patching_on(model, dataset, upstream_submodules, upstream_dictionaries, metric_fn, method, steps, grad_y_wrt_downstream, sequence_aggregation=sequence_aggregation)
