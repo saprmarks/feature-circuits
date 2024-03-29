@@ -32,7 +32,7 @@ We download the Bias in Bios dataset from [Huggingface](https://huggingface.co/d
 We provide an online interface for observing and downloading clusters [here](https://feature-circuits.xyz).
 
 ### Autoencoders
-To run our experiments, you will need to either train or download sparse autoencoders for each layer of Pythia 70M. See the [dictionary learning repository](https://github.com/saprmarks/dictionary_learning) for download links and training instructions.
+To run our experiments, you will need to either train or download sparse autoencoders for each layer of Pythia 70M. You can download dictionaries using the script provided at our [dictionary learning repository](https://github.com/saprmarks/dictionary_learning). Running that script from the `feature-circuits` home directory should download the dictionaries to `dictionaries/pythia-70m-deduped/`, which is where this repo expects to find them.
 
 ### Annotations
 We provide feature annotations in `annotations/10_32768.jsonl`. These are primarily used in `circuit_plotting.py`.
