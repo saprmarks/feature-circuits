@@ -132,7 +132,7 @@ if __name__ == '__main__':
         dict_size = 512
         dictionaries = {submod : IdentityDict(dict_size).to(args.device) for submod in submodules}
     
-    nodes = t.load(f'circuits/{args.circuit}')['nodes']
+    nodes = t.load(args.circuit)['nodes']
     nodes = {
         submod : nodes[submod_names[submod]].abs() > args.threshold for submod in submodules
     }
