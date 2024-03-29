@@ -5,8 +5,9 @@ python ablation.py \
 --dict_path dictionaries \
 --circuit rc_dict10_node0.1_edge0.01_n100_aggnone.pt \
 --data rc_test.json \
--n 30 \
--l 6 \
+--num_examples 30 \
+--length 6 \
+# arguments below are optional -- you probably don't need to change them
 --dict_id 10 \
 --dict_size 32768 \
 --threshold 0.1 \
