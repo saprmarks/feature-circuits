@@ -1,480 +1,480 @@
-{"clean_prefix": "The uncles behind the dogs", "patch_prefix": "The uncle behind the dogs", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The carpenters beside the truck", "patch_prefix": "The carpenter beside the truck", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The kids near the bikes", "patch_prefix": "The kid near the bikes", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The men near the chair", "patch_prefix": "The man near the chair", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The woman behind the windows", "patch_prefix": "The women behind the windows", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The doctor beside the desk", "patch_prefix": "The doctors beside the desk", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The singer near the bike", "patch_prefix": "The singers near the bike", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The teachers beside the table", "patch_prefix": "The teacher beside the table", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The singer behind the tables", "patch_prefix": "The singers behind the tables", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The men behind the desk", "patch_prefix": "The man behind the desk", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The poets behind the cats", "patch_prefix": "The poet behind the cats", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The doctors beside the dogs", "patch_prefix": "The doctor beside the dogs", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The guy beside the bike", "patch_prefix": "The guys beside the bike", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The guys behind the bike", "patch_prefix": "The guy behind the bike", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The woman beside the dog", "patch_prefix": "The women beside the dog", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The teacher near the dog", "patch_prefix": "The teachers near the dog", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The singer behind the table", "patch_prefix": "The singers behind the table", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The guy near the cats", "patch_prefix": "The guys near the cats", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The poet beside the cat", "patch_prefix": "The poets beside the cat", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The father near the chair", "patch_prefix": "The fathers near the chair", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The kid near the desk", "patch_prefix": "The kids near the desk", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The athlete behind the chairs", "patch_prefix": "The athletes behind the chairs", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The boy beside the cat", "patch_prefix": "The boys beside the cat", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The fathers near the tables", "patch_prefix": "The father near the tables", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The man near the car", "patch_prefix": "The men near the car", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The boys near the dogs", "patch_prefix": "The boy near the dogs", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The aunt near the dog", "patch_prefix": "The aunts near the dog", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The doctor behind the truck", "patch_prefix": "The doctors behind the truck", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The aunts near the desk", "patch_prefix": "The aunt near the desk", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The victims behind the bike", "patch_prefix": "The victim behind the bike", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The boys behind the bike", "patch_prefix": "The boy behind the bike", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The girls beside the dogs", "patch_prefix": "The girl beside the dogs", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The boys behind the window", "patch_prefix": "The boy behind the window", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The kids beside the cars", "patch_prefix": "The kid beside the cars", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The girl near the cat", "patch_prefix": "The girls near the cat", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The guy beside the tree", "patch_prefix": "The guys beside the tree", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The poets beside the cats", "patch_prefix": "The poet beside the cats", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The kids near the desks", "patch_prefix": "The kid near the desks", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The doctor beside the trucks", "patch_prefix": "The doctors beside the trucks", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The lawyers behind the chair", "patch_prefix": "The lawyer behind the chair", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The friends near the cars", "patch_prefix": "The friend near the cars", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The mothers beside the car", "patch_prefix": "The mother beside the car", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The man behind the desk", "patch_prefix": "The men behind the desk", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The boy near the cars", "patch_prefix": "The boys near the cars", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The farmer beside the tree", "patch_prefix": "The farmers beside the tree", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The carpenter near the cat", "patch_prefix": "The carpenters near the cat", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The guys near the dog", "patch_prefix": "The guy near the dog", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The athletes behind the cars", "patch_prefix": "The athlete behind the cars", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The teacher near the chairs", "patch_prefix": "The teachers near the chairs", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The women near the window", "patch_prefix": "The woman near the window", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The woman near the cats", "patch_prefix": "The women near the cats", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The athletes beside the dogs", "patch_prefix": "The athlete beside the dogs", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The doctor near the cars", "patch_prefix": "The doctors near the cars", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The teacher beside the cat", "patch_prefix": "The teachers beside the cat", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The singer behind the windows", "patch_prefix": "The singers behind the windows", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The lawyers behind the cars", "patch_prefix": "The lawyer behind the cars", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The man beside the dogs", "patch_prefix": "The men beside the dogs", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The farmers beside the cats", "patch_prefix": "The farmer beside the cats", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The carpenters behind the tree", "patch_prefix": "The carpenter behind the tree", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The athlete behind the cars", "patch_prefix": "The athletes behind the cars", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The women near the cats", "patch_prefix": "The woman near the cats", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The friend beside the desks", "patch_prefix": "The friends beside the desks", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The singer behind the dogs", "patch_prefix": "The singers behind the dogs", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The uncle behind the bike", "patch_prefix": "The uncles behind the bike", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The athletes near the trucks", "patch_prefix": "The athlete near the trucks", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The poet behind the chairs", "patch_prefix": "The poets behind the chairs", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The aunts beside the cars", "patch_prefix": "The aunt beside the cars", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The poets behind the trees", "patch_prefix": "The poet behind the trees", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The victim beside the desk", "patch_prefix": "The victims beside the desk", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The fathers behind the cats", "patch_prefix": "The father behind the cats", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The friends beside the cats", "patch_prefix": "The friend beside the cats", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The mother near the trucks", "patch_prefix": "The mothers near the trucks", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The kids near the dog", "patch_prefix": "The kid near the dog", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The men behind the desks", "patch_prefix": "The man behind the desks", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The carpenter near the window", "patch_prefix": "The carpenters near the window", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The carpenters near the bike", "patch_prefix": "The carpenter near the bike", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The singer beside the chair", "patch_prefix": "The singers beside the chair", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The athlete near the trucks", "patch_prefix": "The athletes near the trucks", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The father beside the table", "patch_prefix": "The fathers beside the table", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The lawyer beside the cat", "patch_prefix": "The lawyers beside the cat", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The fathers near the windows", "patch_prefix": "The father near the windows", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The victims beside the tables", "patch_prefix": "The victim beside the tables", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The lawyer near the desk", "patch_prefix": "The lawyers near the desk", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The man near the cat", "patch_prefix": "The men near the cat", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The fathers behind the cats", "patch_prefix": "The father behind the cats", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The father near the chair", "patch_prefix": "The fathers near the chair", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The carpenter beside the window", "patch_prefix": "The carpenters beside the window", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The doctor beside the window", "patch_prefix": "The doctors beside the window", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The boy behind the chair", "patch_prefix": "The boys behind the chair", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The singers behind the bike", "patch_prefix": "The singer behind the bike", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The victim behind the trees", "patch_prefix": "The victims behind the trees", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The lawyers beside the truck", "patch_prefix": "The lawyer beside the truck", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The victims beside the car", "patch_prefix": "The victim beside the car", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The girl beside the bikes", "patch_prefix": "The girls beside the bikes", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The lawyers near the cat", "patch_prefix": "The lawyer near the cat", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The men near the windows", "patch_prefix": "The man near the windows", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The carpenters beside the trucks", "patch_prefix": "The carpenter beside the trucks", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The friend beside the desk", "patch_prefix": "The friends beside the desk", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The girls beside the table", "patch_prefix": "The girl beside the table", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The kids beside the chair", "patch_prefix": "The kid beside the chair", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The uncle near the window", "patch_prefix": "The uncles near the window", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The girl behind the window", "patch_prefix": "The girls behind the window", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The mothers beside the bikes", "patch_prefix": "The mother beside the bikes", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The friends near the cars", "patch_prefix": "The friend near the cars", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The girls behind the bikes", "patch_prefix": "The girl behind the bikes", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The man behind the truck", "patch_prefix": "The men behind the truck", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The poet beside the trees", "patch_prefix": "The poets beside the trees", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The girls beside the cats", "patch_prefix": "The girl beside the cats", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The friend near the desk", "patch_prefix": "The friends near the desk", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The doctors near the chairs", "patch_prefix": "The doctor near the chairs", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The guy near the tables", "patch_prefix": "The guys near the tables", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The lawyers beside the chairs", "patch_prefix": "The lawyer beside the chairs", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The kids behind the trees", "patch_prefix": "The kid behind the trees", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The teacher behind the trucks", "patch_prefix": "The teachers behind the trucks", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The men near the truck", "patch_prefix": "The man near the truck", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The girl near the chair", "patch_prefix": "The girls near the chair", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The woman near the tree", "patch_prefix": "The women near the tree", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The carpenters beside the trucks", "patch_prefix": "The carpenter beside the trucks", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The singer beside the car", "patch_prefix": "The singers beside the car", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The singers near the trucks", "patch_prefix": "The singer near the trucks", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The farmers behind the trucks", "patch_prefix": "The farmer behind the trucks", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The doctors beside the cat", "patch_prefix": "The doctor beside the cat", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The victims beside the trees", "patch_prefix": "The victim beside the trees", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The carpenter beside the windows", "patch_prefix": "The carpenters beside the windows", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The girls beside the window", "patch_prefix": "The girl beside the window", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The girl near the bikes", "patch_prefix": "The girls near the bikes", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The doctors near the dogs", "patch_prefix": "The doctor near the dogs", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The boys behind the cars", "patch_prefix": "The boy behind the cars", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The guy behind the cats", "patch_prefix": "The guys behind the cats", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The guy beside the car", "patch_prefix": "The guys beside the car", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The boy behind the tree", "patch_prefix": "The boys behind the tree", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The lawyer behind the car", "patch_prefix": "The lawyers behind the car", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The poets behind the car", "patch_prefix": "The poet behind the car", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The friends behind the chairs", "patch_prefix": "The friend behind the chairs", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The uncles behind the trucks", "patch_prefix": "The uncle behind the trucks", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The doctors near the desk", "patch_prefix": "The doctor near the desk", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The men beside the dog", "patch_prefix": "The man beside the dog", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The victim near the trees", "patch_prefix": "The victims near the trees", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The farmer near the desk", "patch_prefix": "The farmers near the desk", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The athlete near the car", "patch_prefix": "The athletes near the car", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The guy beside the bike", "patch_prefix": "The guys beside the bike", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The boys behind the trees", "patch_prefix": "The boy behind the trees", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The teachers beside the window", "patch_prefix": "The teacher beside the window", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The mothers behind the tables", "patch_prefix": "The mother behind the tables", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The friends beside the table", "patch_prefix": "The friend beside the table", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The doctors near the desk", "patch_prefix": "The doctor near the desk", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The lawyer beside the tables", "patch_prefix": "The lawyers beside the tables", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The aunt behind the bike", "patch_prefix": "The aunts behind the bike", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The teachers behind the table", "patch_prefix": "The teacher behind the table", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The doctor beside the cars", "patch_prefix": "The doctors beside the cars", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The teachers behind the tables", "patch_prefix": "The teacher behind the tables", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The farmers near the chairs", "patch_prefix": "The farmer near the chairs", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The guys near the trucks", "patch_prefix": "The guy near the trucks", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The teacher behind the table", "patch_prefix": "The teachers behind the table", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The fathers behind the car", "patch_prefix": "The father behind the car", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The fathers near the windows", "patch_prefix": "The father near the windows", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The singer beside the bikes", "patch_prefix": "The singers beside the bikes", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The woman behind the truck", "patch_prefix": "The women behind the truck", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The singers near the desk", "patch_prefix": "The singer near the desk", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The mothers behind the cars", "patch_prefix": "The mother behind the cars", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The athletes near the desk", "patch_prefix": "The athlete near the desk", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The poet behind the trees", "patch_prefix": "The poets behind the trees", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The uncles near the desk", "patch_prefix": "The uncle near the desk", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The lawyers beside the desks", "patch_prefix": "The lawyer beside the desks", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The doctors near the window", "patch_prefix": "The doctor near the window", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The athletes behind the cats", "patch_prefix": "The athlete behind the cats", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The athletes beside the cats", "patch_prefix": "The athlete beside the cats", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The teachers beside the cat", "patch_prefix": "The teacher beside the cat", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The teacher behind the car", "patch_prefix": "The teachers behind the car", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The carpenter near the trucks", "patch_prefix": "The carpenters near the trucks", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The uncles near the tree", "patch_prefix": "The uncle near the tree", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The aunts beside the table", "patch_prefix": "The aunt beside the table", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The father beside the trucks", "patch_prefix": "The fathers beside the trucks", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The kid behind the trucks", "patch_prefix": "The kids behind the trucks", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The lawyer near the tables", "patch_prefix": "The lawyers near the tables", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The woman beside the tree", "patch_prefix": "The women beside the tree", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The doctors behind the trucks", "patch_prefix": "The doctor behind the trucks", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The doctors beside the chairs", "patch_prefix": "The doctor beside the chairs", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The woman near the cars", "patch_prefix": "The women near the cars", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The boys behind the cars", "patch_prefix": "The boy behind the cars", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The uncle near the chair", "patch_prefix": "The uncles near the chair", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The guys behind the tables", "patch_prefix": "The guy behind the tables", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The boys near the tree", "patch_prefix": "The boy near the tree", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The mother beside the truck", "patch_prefix": "The mothers beside the truck", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The poets beside the dogs", "patch_prefix": "The poet beside the dogs", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The farmers beside the dog", "patch_prefix": "The farmer beside the dog", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The father beside the bike", "patch_prefix": "The fathers beside the bike", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The carpenter near the cats", "patch_prefix": "The carpenters near the cats", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The fathers near the desks", "patch_prefix": "The father near the desks", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The victims behind the tree", "patch_prefix": "The victim behind the tree", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The uncles near the bikes", "patch_prefix": "The uncle near the bikes", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The aunts behind the table", "patch_prefix": "The aunt behind the table", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The girls near the cars", "patch_prefix": "The girl near the cars", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The lawyers behind the bike", "patch_prefix": "The lawyer behind the bike", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The kids behind the cats", "patch_prefix": "The kid behind the cats", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The singer beside the windows", "patch_prefix": "The singers beside the windows", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The uncle near the tables", "patch_prefix": "The uncles near the tables", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The lawyers behind the cats", "patch_prefix": "The lawyer behind the cats", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The mother beside the tables", "patch_prefix": "The mothers beside the tables", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The poet beside the bikes", "patch_prefix": "The poets beside the bikes", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The farmer behind the cars", "patch_prefix": "The farmers behind the cars", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The friends beside the car", "patch_prefix": "The friend beside the car", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The father near the dogs", "patch_prefix": "The fathers near the dogs", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The athletes behind the window", "patch_prefix": "The athlete behind the window", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The girls behind the window", "patch_prefix": "The girl behind the window", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The woman near the tree", "patch_prefix": "The women near the tree", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The victim near the cars", "patch_prefix": "The victims near the cars", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The women behind the dogs", "patch_prefix": "The woman behind the dogs", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The kids behind the table", "patch_prefix": "The kid behind the table", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The man behind the chairs", "patch_prefix": "The men behind the chairs", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The farmer beside the trucks", "patch_prefix": "The farmers beside the trucks", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The lawyers beside the chairs", "patch_prefix": "The lawyer beside the chairs", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The uncles beside the chair", "patch_prefix": "The uncle beside the chair", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The boys near the cat", "patch_prefix": "The boy near the cat", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The friends beside the bikes", "patch_prefix": "The friend beside the bikes", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The singers beside the car", "patch_prefix": "The singer beside the car", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The singers near the tables", "patch_prefix": "The singer near the tables", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The victims near the chair", "patch_prefix": "The victim near the chair", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The women behind the chair", "patch_prefix": "The woman behind the chair", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The guys behind the trucks", "patch_prefix": "The guy behind the trucks", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The uncles beside the tables", "patch_prefix": "The uncle beside the tables", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The carpenters behind the chair", "patch_prefix": "The carpenter behind the chair", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The men near the tree", "patch_prefix": "The man near the tree", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The woman beside the cats", "patch_prefix": "The women beside the cats", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The mother beside the tables", "patch_prefix": "The mothers beside the tables", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The boy behind the cat", "patch_prefix": "The boys behind the cat", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The victims near the cats", "patch_prefix": "The victim near the cats", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The aunts beside the cat", "patch_prefix": "The aunt beside the cat", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The doctors near the windows", "patch_prefix": "The doctor near the windows", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The aunts near the car", "patch_prefix": "The aunt near the car", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The victim near the dog", "patch_prefix": "The victims near the dog", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The fathers near the table", "patch_prefix": "The father near the table", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The poet near the desks", "patch_prefix": "The poets near the desks", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The lawyer near the window", "patch_prefix": "The lawyers near the window", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The women beside the tables", "patch_prefix": "The woman beside the tables", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The carpenters beside the car", "patch_prefix": "The carpenter beside the car", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The boys beside the windows", "patch_prefix": "The boy beside the windows", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The girls behind the tree", "patch_prefix": "The girl behind the tree", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The father near the cat", "patch_prefix": "The fathers near the cat", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The fathers behind the desk", "patch_prefix": "The father behind the desk", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The teacher behind the cats", "patch_prefix": "The teachers behind the cats", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The guys beside the cars", "patch_prefix": "The guy beside the cars", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The mothers beside the cat", "patch_prefix": "The mother beside the cat", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The poets beside the bikes", "patch_prefix": "The poet beside the bikes", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The lawyer beside the chairs", "patch_prefix": "The lawyers beside the chairs", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The carpenters near the chairs", "patch_prefix": "The carpenter near the chairs", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The kid beside the cars", "patch_prefix": "The kids beside the cars", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The farmers behind the trees", "patch_prefix": "The farmer behind the trees", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The singers beside the dog", "patch_prefix": "The singer beside the dog", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The doctor near the desks", "patch_prefix": "The doctors near the desks", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The farmers behind the dog", "patch_prefix": "The farmer behind the dog", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The kid beside the tree", "patch_prefix": "The kids beside the tree", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The singer behind the trucks", "patch_prefix": "The singers behind the trucks", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The mother beside the chair", "patch_prefix": "The mothers beside the chair", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The athletes behind the trees", "patch_prefix": "The athlete behind the trees", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The poet behind the bikes", "patch_prefix": "The poets behind the bikes", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The carpenter behind the cats", "patch_prefix": "The carpenters behind the cats", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The victim beside the tree", "patch_prefix": "The victims beside the tree", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The aunt beside the chair", "patch_prefix": "The aunts beside the chair", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The father near the trucks", "patch_prefix": "The fathers near the trucks", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The teachers near the trees", "patch_prefix": "The teacher near the trees", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The carpenter near the window", "patch_prefix": "The carpenters near the window", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The fathers beside the car", "patch_prefix": "The father beside the car", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The victims behind the cat", "patch_prefix": "The victim behind the cat", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The singer near the window", "patch_prefix": "The singers near the window", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The victim beside the table", "patch_prefix": "The victims beside the table", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The doctor near the truck", "patch_prefix": "The doctors near the truck", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The friend beside the cars", "patch_prefix": "The friends beside the cars", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The woman behind the desks", "patch_prefix": "The women behind the desks", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The kids beside the trucks", "patch_prefix": "The kid beside the trucks", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The aunts near the truck", "patch_prefix": "The aunt near the truck", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The kids behind the bike", "patch_prefix": "The kid behind the bike", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The poets behind the truck", "patch_prefix": "The poet behind the truck", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The poet behind the cat", "patch_prefix": "The poets behind the cat", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The guys near the dog", "patch_prefix": "The guy near the dog", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The singers behind the bikes", "patch_prefix": "The singer behind the bikes", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The guys near the dog", "patch_prefix": "The guy near the dog", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The guy near the windows", "patch_prefix": "The guys near the windows", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The boy behind the cats", "patch_prefix": "The boys behind the cats", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The doctors near the chairs", "patch_prefix": "The doctor near the chairs", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The men beside the desk", "patch_prefix": "The man beside the desk", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The aunt near the cats", "patch_prefix": "The aunts near the cats", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The uncle behind the bikes", "patch_prefix": "The uncles behind the bikes", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The mother beside the car", "patch_prefix": "The mothers beside the car", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The carpenter beside the table", "patch_prefix": "The carpenters beside the table", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The teacher near the car", "patch_prefix": "The teachers near the car", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The mothers near the tree", "patch_prefix": "The mother near the tree", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The doctor behind the table", "patch_prefix": "The doctors behind the table", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The boys near the window", "patch_prefix": "The boy near the window", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The woman near the bike", "patch_prefix": "The women near the bike", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The friends near the trucks", "patch_prefix": "The friend near the trucks", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The kids behind the tree", "patch_prefix": "The kid behind the tree", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The victim beside the cat", "patch_prefix": "The victims beside the cat", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The fathers beside the car", "patch_prefix": "The father beside the car", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The teacher behind the dog", "patch_prefix": "The teachers behind the dog", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The aunts beside the tree", "patch_prefix": "The aunt beside the tree", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The man beside the car", "patch_prefix": "The men beside the car", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The poet behind the dog", "patch_prefix": "The poets behind the dog", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The lawyers beside the car", "patch_prefix": "The lawyer beside the car", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The carpenters near the windows", "patch_prefix": "The carpenter near the windows", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The singers near the cars", "patch_prefix": "The singer near the cars", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The singers beside the dog", "patch_prefix": "The singer beside the dog", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The doctors beside the table", "patch_prefix": "The doctor beside the table", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The carpenters beside the chairs", "patch_prefix": "The carpenter beside the chairs", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The singers beside the desk", "patch_prefix": "The singer beside the desk", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The farmers beside the desks", "patch_prefix": "The farmer beside the desks", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The farmer near the dogs", "patch_prefix": "The farmers near the dogs", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The boys behind the bike", "patch_prefix": "The boy behind the bike", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The teacher behind the truck", "patch_prefix": "The teachers behind the truck", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The uncle beside the desks", "patch_prefix": "The uncles beside the desks", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The singer near the window", "patch_prefix": "The singers near the window", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The poet near the windows", "patch_prefix": "The poets near the windows", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The boy beside the trucks", "patch_prefix": "The boys beside the trucks", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The athletes near the trees", "patch_prefix": "The athlete near the trees", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The boys beside the dog", "patch_prefix": "The boy beside the dog", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The girls beside the table", "patch_prefix": "The girl beside the table", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The lawyers behind the cars", "patch_prefix": "The lawyer behind the cars", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The kid beside the cat", "patch_prefix": "The kids beside the cat", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The poet near the chair", "patch_prefix": "The poets near the chair", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The guy near the dog", "patch_prefix": "The guys near the dog", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The kid behind the cats", "patch_prefix": "The kids behind the cats", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The singers beside the bike", "patch_prefix": "The singer beside the bike", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The doctors beside the window", "patch_prefix": "The doctor beside the window", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The doctors behind the car", "patch_prefix": "The doctor behind the car", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The singer behind the windows", "patch_prefix": "The singers behind the windows", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The victim near the desks", "patch_prefix": "The victims near the desks", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The doctor near the dogs", "patch_prefix": "The doctors near the dogs", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The aunts beside the dog", "patch_prefix": "The aunt beside the dog", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The singer near the tables", "patch_prefix": "The singers near the tables", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The mother beside the car", "patch_prefix": "The mothers beside the car", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The mother beside the desks", "patch_prefix": "The mothers beside the desks", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The singer behind the windows", "patch_prefix": "The singers behind the windows", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The guy beside the bikes", "patch_prefix": "The guys beside the bikes", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The mother near the window", "patch_prefix": "The mothers near the window", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The uncles beside the cars", "patch_prefix": "The uncle beside the cars", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The man near the truck", "patch_prefix": "The men near the truck", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The aunt beside the trucks", "patch_prefix": "The aunts beside the trucks", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The boys behind the trees", "patch_prefix": "The boy behind the trees", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The friend beside the car", "patch_prefix": "The friends beside the car", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The friend beside the truck", "patch_prefix": "The friends beside the truck", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The father near the dogs", "patch_prefix": "The fathers near the dogs", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The aunts behind the desks", "patch_prefix": "The aunt behind the desks", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The singer beside the trees", "patch_prefix": "The singers beside the trees", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The farmers beside the windows", "patch_prefix": "The farmer beside the windows", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The teachers near the chair", "patch_prefix": "The teacher near the chair", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The friends near the desk", "patch_prefix": "The friend near the desk", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The kids behind the trucks", "patch_prefix": "The kid behind the trucks", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The lawyers beside the bike", "patch_prefix": "The lawyer beside the bike", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The woman near the chairs", "patch_prefix": "The women near the chairs", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The athlete near the trucks", "patch_prefix": "The athletes near the trucks", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The fathers behind the bikes", "patch_prefix": "The father behind the bikes", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The victims behind the tree", "patch_prefix": "The victim behind the tree", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The guys beside the tree", "patch_prefix": "The guy beside the tree", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The aunts behind the bikes", "patch_prefix": "The aunt behind the bikes", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The doctor beside the cars", "patch_prefix": "The doctors beside the cars", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The kids near the table", "patch_prefix": "The kid near the table", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The kid beside the trees", "patch_prefix": "The kids beside the trees", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The kids near the chairs", "patch_prefix": "The kid near the chairs", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The fathers near the cat", "patch_prefix": "The father near the cat", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The victim beside the chairs", "patch_prefix": "The victims beside the chairs", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The victims behind the dogs", "patch_prefix": "The victim behind the dogs", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The teachers behind the dogs", "patch_prefix": "The teacher behind the dogs", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The kids behind the trucks", "patch_prefix": "The kid behind the trucks", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The mother behind the windows", "patch_prefix": "The mothers behind the windows", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The farmers behind the table", "patch_prefix": "The farmer behind the table", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The singers beside the dog", "patch_prefix": "The singer beside the dog", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The kids beside the desks", "patch_prefix": "The kid beside the desks", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The guys near the cat", "patch_prefix": "The guy near the cat", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The doctor beside the table", "patch_prefix": "The doctors beside the table", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The girl beside the bike", "patch_prefix": "The girls beside the bike", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The poets beside the cat", "patch_prefix": "The poet beside the cat", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The singer behind the tables", "patch_prefix": "The singers behind the tables", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The guys behind the cats", "patch_prefix": "The guy behind the cats", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The men near the chair", "patch_prefix": "The man near the chair", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The teachers behind the bike", "patch_prefix": "The teacher behind the bike", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The carpenters behind the cats", "patch_prefix": "The carpenter behind the cats", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The poet beside the windows", "patch_prefix": "The poets beside the windows", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The woman near the chairs", "patch_prefix": "The women near the chairs", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The carpenter behind the chairs", "patch_prefix": "The carpenters behind the chairs", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The doctor behind the tables", "patch_prefix": "The doctors behind the tables", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The athlete near the desks", "patch_prefix": "The athletes near the desks", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The kids near the tree", "patch_prefix": "The kid near the tree", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The man beside the table", "patch_prefix": "The men beside the table", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The guys behind the dogs", "patch_prefix": "The guy behind the dogs", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The carpenters near the desk", "patch_prefix": "The carpenter near the desk", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The father behind the desks", "patch_prefix": "The fathers behind the desks", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The teachers behind the tree", "patch_prefix": "The teacher behind the tree", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The fathers behind the tables", "patch_prefix": "The father behind the tables", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The victim beside the dogs", "patch_prefix": "The victims beside the dogs", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The teachers near the dogs", "patch_prefix": "The teacher near the dogs", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The girls beside the cat", "patch_prefix": "The girl beside the cat", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The doctors beside the cats", "patch_prefix": "The doctor beside the cats", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The singer behind the chairs", "patch_prefix": "The singers behind the chairs", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The singer near the dogs", "patch_prefix": "The singers near the dogs", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The doctor behind the bike", "patch_prefix": "The doctors behind the bike", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The doctor behind the trucks", "patch_prefix": "The doctors behind the trucks", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The aunts near the table", "patch_prefix": "The aunt near the table", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The aunts behind the car", "patch_prefix": "The aunt behind the car", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The singer beside the truck", "patch_prefix": "The singers beside the truck", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The carpenter near the table", "patch_prefix": "The carpenters near the table", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The carpenters near the cat", "patch_prefix": "The carpenter near the cat", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The boys near the chairs", "patch_prefix": "The boy near the chairs", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The friend near the table", "patch_prefix": "The friends near the table", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The doctors beside the windows", "patch_prefix": "The doctor beside the windows", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The lawyers near the trees", "patch_prefix": "The lawyer near the trees", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The doctors behind the dogs", "patch_prefix": "The doctor behind the dogs", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The aunts near the dogs", "patch_prefix": "The aunt near the dogs", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The uncle beside the dogs", "patch_prefix": "The uncles beside the dogs", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The uncles near the table", "patch_prefix": "The uncle near the table", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The singers behind the dog", "patch_prefix": "The singer behind the dog", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The guy beside the dog", "patch_prefix": "The guys beside the dog", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The carpenters beside the window", "patch_prefix": "The carpenter beside the window", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The men beside the desks", "patch_prefix": "The man beside the desks", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The man near the tables", "patch_prefix": "The men near the tables", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The doctor near the dog", "patch_prefix": "The doctors near the dog", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The teacher beside the chair", "patch_prefix": "The teachers beside the chair", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The man behind the truck", "patch_prefix": "The men behind the truck", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The doctor behind the windows", "patch_prefix": "The doctors behind the windows", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The carpenter behind the cat", "patch_prefix": "The carpenters behind the cat", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The men beside the cat", "patch_prefix": "The man beside the cat", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The victims beside the tree", "patch_prefix": "The victim beside the tree", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The victim near the car", "patch_prefix": "The victims near the car", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The uncles beside the table", "patch_prefix": "The uncle beside the table", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The mother behind the dogs", "patch_prefix": "The mothers behind the dogs", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The fathers beside the window", "patch_prefix": "The father beside the window", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The poets beside the cat", "patch_prefix": "The poet beside the cat", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The woman near the cars", "patch_prefix": "The women near the cars", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The man behind the bike", "patch_prefix": "The men behind the bike", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The father behind the tables", "patch_prefix": "The fathers behind the tables", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The farmers near the bike", "patch_prefix": "The farmer near the bike", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The kid behind the window", "patch_prefix": "The kids behind the window", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The guy beside the tables", "patch_prefix": "The guys beside the tables", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The teacher near the cars", "patch_prefix": "The teachers near the cars", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The lawyers behind the cats", "patch_prefix": "The lawyer behind the cats", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The father near the table", "patch_prefix": "The fathers near the table", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The singer behind the bike", "patch_prefix": "The singers behind the bike", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The kids behind the truck", "patch_prefix": "The kid behind the truck", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The girl near the truck", "patch_prefix": "The girls near the truck", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The boys near the desk", "patch_prefix": "The boy near the desk", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The guys near the bike", "patch_prefix": "The guy near the bike", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The farmers near the truck", "patch_prefix": "The farmer near the truck", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The mother behind the chairs", "patch_prefix": "The mothers behind the chairs", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The singer beside the desk", "patch_prefix": "The singers beside the desk", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The boys behind the dog", "patch_prefix": "The boy behind the dog", "clean_answer": "do", "patch_answer": "does", "case": "plural_singular"}
-{"clean_prefix": "The singer beside the cats", "patch_prefix": "The singers beside the cats", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The uncle near the tables", "patch_prefix": "The uncles near the tables", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The man beside the windows", "patch_prefix": "The men beside the windows", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The teacher beside the trees", "patch_prefix": "The teachers beside the trees", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The father near the bikes", "patch_prefix": "The fathers near the bikes", "clean_answer": "does", "patch_answer": "do", "case": "singular_plural"}
-{"clean_prefix": "The boys behind the trucks", "patch_prefix": "The boy behind the trucks", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The farmer beside the trees", "patch_prefix": "The farmers beside the trees", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The carpenter near the trees", "patch_prefix": "The carpenters near the trees", "clean_answer": "is", "patch_answer": "are", "case": "singular_plural"}
-{"clean_prefix": "The friends beside the truck", "patch_prefix": "The friend beside the truck", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The lawyer behind the truck", "patch_prefix": "The lawyers behind the truck", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The girl near the car", "patch_prefix": "The girls near the car", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The singer behind the desk", "patch_prefix": "The singers behind the desk", "clean_answer": "does", "patch_answer": "do", "case": "singular_singular"}
-{"clean_prefix": "The singer beside the dog", "patch_prefix": "The singers beside the dog", "clean_answer": "has", "patch_answer": "have", "case": "singular_singular"}
-{"clean_prefix": "The guys near the trees", "patch_prefix": "The guy near the trees", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The doctors near the chairs", "patch_prefix": "The doctor near the chairs", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The carpenter beside the window", "patch_prefix": "The carpenters beside the window", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The kids near the dog", "patch_prefix": "The kid near the dog", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The lawyers behind the chair", "patch_prefix": "The lawyer behind the chair", "clean_answer": "have", "patch_answer": "has", "case": "plural_singular"}
-{"clean_prefix": "The lawyers beside the table", "patch_prefix": "The lawyer beside the table", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The girls behind the desks", "patch_prefix": "The girl behind the desks", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The athletes beside the trees", "patch_prefix": "The athlete beside the trees", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The doctors beside the desks", "patch_prefix": "The doctor beside the desks", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The woman near the desks", "patch_prefix": "The women near the desks", "clean_answer": "has", "patch_answer": "have", "case": "singular_plural"}
-{"clean_prefix": "The aunts beside the trucks", "patch_prefix": "The aunt beside the trucks", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The boy near the windows", "patch_prefix": "The boys near the windows", "clean_answer": "goes", "patch_answer": "go", "case": "singular_plural"}
-{"clean_prefix": "The teachers behind the bikes", "patch_prefix": "The teacher behind the bikes", "clean_answer": "are", "patch_answer": "is", "case": "plural_plural"}
-{"clean_prefix": "The fathers near the chairs", "patch_prefix": "The father near the chairs", "clean_answer": "have", "patch_answer": "has", "case": "plural_plural"}
-{"clean_prefix": "The fathers beside the bike", "patch_prefix": "The father beside the bike", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The fathers beside the dogs", "patch_prefix": "The father beside the dogs", "clean_answer": "go", "patch_answer": "goes", "case": "plural_plural"}
-{"clean_prefix": "The guys beside the trees", "patch_prefix": "The guy beside the trees", "clean_answer": "do", "patch_answer": "does", "case": "plural_plural"}
-{"clean_prefix": "The mothers behind the cat", "patch_prefix": "The mother behind the cat", "clean_answer": "go", "patch_answer": "goes", "case": "plural_singular"}
-{"clean_prefix": "The friend near the dog", "patch_prefix": "The friends near the dog", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The poet beside the cat", "patch_prefix": "The poets beside the cat", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
-{"clean_prefix": "The singers beside the chair", "patch_prefix": "The singer beside the chair", "clean_answer": "are", "patch_answer": "is", "case": "plural_singular"}
-{"clean_prefix": "The poet beside the table", "patch_prefix": "The poets beside the table", "clean_answer": "goes", "patch_answer": "go", "case": "singular_singular"}
-{"clean_prefix": "The friend behind the bike", "patch_prefix": "The friends behind the bike", "clean_answer": "is", "patch_answer": "are", "case": "singular_singular"}
+{"clean_prefix": "The uncles behind the dogs", "patch_prefix": "The uncle behind the dogs", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The carpenters beside the truck", "patch_prefix": "The carpenter beside the truck", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The kids near the bikes", "patch_prefix": "The kid near the bikes", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The men near the chair", "patch_prefix": "The man near the chair", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The woman behind the windows", "patch_prefix": "The women behind the windows", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The doctor beside the desk", "patch_prefix": "The doctors beside the desk", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The singer near the bike", "patch_prefix": "The singers near the bike", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The teachers beside the table", "patch_prefix": "The teacher beside the table", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The singer behind the tables", "patch_prefix": "The singers behind the tables", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The men behind the desk", "patch_prefix": "The man behind the desk", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The poets behind the cats", "patch_prefix": "The poet behind the cats", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The doctors beside the dogs", "patch_prefix": "The doctor beside the dogs", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The guy beside the bike", "patch_prefix": "The guys beside the bike", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The guys behind the bike", "patch_prefix": "The guy behind the bike", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The woman beside the dog", "patch_prefix": "The women beside the dog", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The teacher near the dog", "patch_prefix": "The teachers near the dog", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The singer behind the table", "patch_prefix": "The singers behind the table", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The guy near the cats", "patch_prefix": "The guys near the cats", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The poet beside the cat", "patch_prefix": "The poets beside the cat", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The father near the chair", "patch_prefix": "The fathers near the chair", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The kid near the desk", "patch_prefix": "The kids near the desk", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The athlete behind the chairs", "patch_prefix": "The athletes behind the chairs", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The boy beside the cat", "patch_prefix": "The boys beside the cat", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The fathers near the tables", "patch_prefix": "The father near the tables", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The man near the car", "patch_prefix": "The men near the car", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The boys near the dogs", "patch_prefix": "The boy near the dogs", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The aunt near the dog", "patch_prefix": "The aunts near the dog", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The doctor behind the truck", "patch_prefix": "The doctors behind the truck", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The aunts near the desk", "patch_prefix": "The aunt near the desk", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The victims behind the bike", "patch_prefix": "The victim behind the bike", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The boys behind the bike", "patch_prefix": "The boy behind the bike", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The girls beside the dogs", "patch_prefix": "The girl beside the dogs", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The boys behind the window", "patch_prefix": "The boy behind the window", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The kids beside the cars", "patch_prefix": "The kid beside the cars", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The girl near the cat", "patch_prefix": "The girls near the cat", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The guy beside the tree", "patch_prefix": "The guys beside the tree", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The poets beside the cats", "patch_prefix": "The poet beside the cats", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The kids near the desks", "patch_prefix": "The kid near the desks", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The doctor beside the trucks", "patch_prefix": "The doctors beside the trucks", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The lawyers behind the chair", "patch_prefix": "The lawyer behind the chair", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The friends near the cars", "patch_prefix": "The friend near the cars", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The mothers beside the car", "patch_prefix": "The mother beside the car", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The man behind the desk", "patch_prefix": "The men behind the desk", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The boy near the cars", "patch_prefix": "The boys near the cars", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The farmer beside the tree", "patch_prefix": "The farmers beside the tree", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The carpenter near the cat", "patch_prefix": "The carpenters near the cat", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The guys near the dog", "patch_prefix": "The guy near the dog", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The athletes behind the cars", "patch_prefix": "The athlete behind the cars", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The teacher near the chairs", "patch_prefix": "The teachers near the chairs", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The women near the window", "patch_prefix": "The woman near the window", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The woman near the cats", "patch_prefix": "The women near the cats", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The athletes beside the dogs", "patch_prefix": "The athlete beside the dogs", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The doctor near the cars", "patch_prefix": "The doctors near the cars", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The teacher beside the cat", "patch_prefix": "The teachers beside the cat", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The singer behind the windows", "patch_prefix": "The singers behind the windows", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The lawyers behind the cars", "patch_prefix": "The lawyer behind the cars", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The man beside the dogs", "patch_prefix": "The men beside the dogs", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The farmers beside the cats", "patch_prefix": "The farmer beside the cats", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The carpenters behind the tree", "patch_prefix": "The carpenter behind the tree", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The athlete behind the cars", "patch_prefix": "The athletes behind the cars", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The women near the cats", "patch_prefix": "The woman near the cats", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The friend beside the desks", "patch_prefix": "The friends beside the desks", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The singer behind the dogs", "patch_prefix": "The singers behind the dogs", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The uncle behind the bike", "patch_prefix": "The uncles behind the bike", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The athletes near the trucks", "patch_prefix": "The athlete near the trucks", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The poet behind the chairs", "patch_prefix": "The poets behind the chairs", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The aunts beside the cars", "patch_prefix": "The aunt beside the cars", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The poets behind the trees", "patch_prefix": "The poet behind the trees", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The victim beside the desk", "patch_prefix": "The victims beside the desk", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The fathers behind the cats", "patch_prefix": "The father behind the cats", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The friends beside the cats", "patch_prefix": "The friend beside the cats", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The mother near the trucks", "patch_prefix": "The mothers near the trucks", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The kids near the dog", "patch_prefix": "The kid near the dog", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The men behind the desks", "patch_prefix": "The man behind the desks", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The carpenter near the window", "patch_prefix": "The carpenters near the window", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The carpenters near the bike", "patch_prefix": "The carpenter near the bike", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The singer beside the chair", "patch_prefix": "The singers beside the chair", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The athlete near the trucks", "patch_prefix": "The athletes near the trucks", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The father beside the table", "patch_prefix": "The fathers beside the table", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The lawyer beside the cat", "patch_prefix": "The lawyers beside the cat", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The fathers near the windows", "patch_prefix": "The father near the windows", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The victims beside the tables", "patch_prefix": "The victim beside the tables", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The lawyer near the desk", "patch_prefix": "The lawyers near the desk", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The man near the cat", "patch_prefix": "The men near the cat", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The fathers behind the cats", "patch_prefix": "The father behind the cats", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The father near the chair", "patch_prefix": "The fathers near the chair", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The carpenter beside the window", "patch_prefix": "The carpenters beside the window", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The doctor beside the window", "patch_prefix": "The doctors beside the window", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The boy behind the chair", "patch_prefix": "The boys behind the chair", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The singers behind the bike", "patch_prefix": "The singer behind the bike", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The victim behind the trees", "patch_prefix": "The victims behind the trees", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The lawyers beside the truck", "patch_prefix": "The lawyer beside the truck", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The victims beside the car", "patch_prefix": "The victim beside the car", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The girl beside the bikes", "patch_prefix": "The girls beside the bikes", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The lawyers near the cat", "patch_prefix": "The lawyer near the cat", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The men near the windows", "patch_prefix": "The man near the windows", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The carpenters beside the trucks", "patch_prefix": "The carpenter beside the trucks", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The friend beside the desk", "patch_prefix": "The friends beside the desk", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The girls beside the table", "patch_prefix": "The girl beside the table", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The kids beside the chair", "patch_prefix": "The kid beside the chair", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The uncle near the window", "patch_prefix": "The uncles near the window", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The girl behind the window", "patch_prefix": "The girls behind the window", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The mothers beside the bikes", "patch_prefix": "The mother beside the bikes", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The friends near the cars", "patch_prefix": "The friend near the cars", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The girls behind the bikes", "patch_prefix": "The girl behind the bikes", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The man behind the truck", "patch_prefix": "The men behind the truck", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The poet beside the trees", "patch_prefix": "The poets beside the trees", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The girls beside the cats", "patch_prefix": "The girl beside the cats", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The friend near the desk", "patch_prefix": "The friends near the desk", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The doctors near the chairs", "patch_prefix": "The doctor near the chairs", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The guy near the tables", "patch_prefix": "The guys near the tables", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The lawyers beside the chairs", "patch_prefix": "The lawyer beside the chairs", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The kids behind the trees", "patch_prefix": "The kid behind the trees", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The teacher behind the trucks", "patch_prefix": "The teachers behind the trucks", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The men near the truck", "patch_prefix": "The man near the truck", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The girl near the chair", "patch_prefix": "The girls near the chair", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The woman near the tree", "patch_prefix": "The women near the tree", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The carpenters beside the trucks", "patch_prefix": "The carpenter beside the trucks", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The singer beside the car", "patch_prefix": "The singers beside the car", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The singers near the trucks", "patch_prefix": "The singer near the trucks", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The farmers behind the trucks", "patch_prefix": "The farmer behind the trucks", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The doctors beside the cat", "patch_prefix": "The doctor beside the cat", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The victims beside the trees", "patch_prefix": "The victim beside the trees", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The carpenter beside the windows", "patch_prefix": "The carpenters beside the windows", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The girls beside the window", "patch_prefix": "The girl beside the window", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The girl near the bikes", "patch_prefix": "The girls near the bikes", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The doctors near the dogs", "patch_prefix": "The doctor near the dogs", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The boys behind the cars", "patch_prefix": "The boy behind the cars", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The guy behind the cats", "patch_prefix": "The guys behind the cats", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The guy beside the car", "patch_prefix": "The guys beside the car", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The boy behind the tree", "patch_prefix": "The boys behind the tree", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The lawyer behind the car", "patch_prefix": "The lawyers behind the car", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The poets behind the car", "patch_prefix": "The poet behind the car", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The friends behind the chairs", "patch_prefix": "The friend behind the chairs", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The uncles behind the trucks", "patch_prefix": "The uncle behind the trucks", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The doctors near the desk", "patch_prefix": "The doctor near the desk", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The men beside the dog", "patch_prefix": "The man beside the dog", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The victim near the trees", "patch_prefix": "The victims near the trees", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The farmer near the desk", "patch_prefix": "The farmers near the desk", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The athlete near the car", "patch_prefix": "The athletes near the car", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The guy beside the bike", "patch_prefix": "The guys beside the bike", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The boys behind the trees", "patch_prefix": "The boy behind the trees", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The teachers beside the window", "patch_prefix": "The teacher beside the window", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The mothers behind the tables", "patch_prefix": "The mother behind the tables", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The friends beside the table", "patch_prefix": "The friend beside the table", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The doctors near the desk", "patch_prefix": "The doctor near the desk", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The lawyer beside the tables", "patch_prefix": "The lawyers beside the tables", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The aunt behind the bike", "patch_prefix": "The aunts behind the bike", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The teachers behind the table", "patch_prefix": "The teacher behind the table", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The doctor beside the cars", "patch_prefix": "The doctors beside the cars", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The teachers behind the tables", "patch_prefix": "The teacher behind the tables", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The farmers near the chairs", "patch_prefix": "The farmer near the chairs", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The guys near the trucks", "patch_prefix": "The guy near the trucks", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The teacher behind the table", "patch_prefix": "The teachers behind the table", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The fathers behind the car", "patch_prefix": "The father behind the car", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The fathers near the windows", "patch_prefix": "The father near the windows", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The singer beside the bikes", "patch_prefix": "The singers beside the bikes", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The woman behind the truck", "patch_prefix": "The women behind the truck", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The singers near the desk", "patch_prefix": "The singer near the desk", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The mothers behind the cars", "patch_prefix": "The mother behind the cars", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The athletes near the desk", "patch_prefix": "The athlete near the desk", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The poet behind the trees", "patch_prefix": "The poets behind the trees", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The uncles near the desk", "patch_prefix": "The uncle near the desk", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The lawyers beside the desks", "patch_prefix": "The lawyer beside the desks", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The doctors near the window", "patch_prefix": "The doctor near the window", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The athletes behind the cats", "patch_prefix": "The athlete behind the cats", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The athletes beside the cats", "patch_prefix": "The athlete beside the cats", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The teachers beside the cat", "patch_prefix": "The teacher beside the cat", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The teacher behind the car", "patch_prefix": "The teachers behind the car", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The carpenter near the trucks", "patch_prefix": "The carpenters near the trucks", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The uncles near the tree", "patch_prefix": "The uncle near the tree", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The aunts beside the table", "patch_prefix": "The aunt beside the table", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The father beside the trucks", "patch_prefix": "The fathers beside the trucks", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The kid behind the trucks", "patch_prefix": "The kids behind the trucks", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The lawyer near the tables", "patch_prefix": "The lawyers near the tables", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The woman beside the tree", "patch_prefix": "The women beside the tree", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The doctors behind the trucks", "patch_prefix": "The doctor behind the trucks", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The doctors beside the chairs", "patch_prefix": "The doctor beside the chairs", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The woman near the cars", "patch_prefix": "The women near the cars", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The boys behind the cars", "patch_prefix": "The boy behind the cars", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The uncle near the chair", "patch_prefix": "The uncles near the chair", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The guys behind the tables", "patch_prefix": "The guy behind the tables", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The boys near the tree", "patch_prefix": "The boy near the tree", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The mother beside the truck", "patch_prefix": "The mothers beside the truck", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The poets beside the dogs", "patch_prefix": "The poet beside the dogs", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The farmers beside the dog", "patch_prefix": "The farmer beside the dog", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The father beside the bike", "patch_prefix": "The fathers beside the bike", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The carpenter near the cats", "patch_prefix": "The carpenters near the cats", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The fathers near the desks", "patch_prefix": "The father near the desks", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The victims behind the tree", "patch_prefix": "The victim behind the tree", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The uncles near the bikes", "patch_prefix": "The uncle near the bikes", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The aunts behind the table", "patch_prefix": "The aunt behind the table", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The girls near the cars", "patch_prefix": "The girl near the cars", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The lawyers behind the bike", "patch_prefix": "The lawyer behind the bike", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The kids behind the cats", "patch_prefix": "The kid behind the cats", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The singer beside the windows", "patch_prefix": "The singers beside the windows", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The uncle near the tables", "patch_prefix": "The uncles near the tables", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The lawyers behind the cats", "patch_prefix": "The lawyer behind the cats", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The mother beside the tables", "patch_prefix": "The mothers beside the tables", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The poet beside the bikes", "patch_prefix": "The poets beside the bikes", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The farmer behind the cars", "patch_prefix": "The farmers behind the cars", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The friends beside the car", "patch_prefix": "The friend beside the car", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The father near the dogs", "patch_prefix": "The fathers near the dogs", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The athletes behind the window", "patch_prefix": "The athlete behind the window", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The girls behind the window", "patch_prefix": "The girl behind the window", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The woman near the tree", "patch_prefix": "The women near the tree", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The victim near the cars", "patch_prefix": "The victims near the cars", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The women behind the dogs", "patch_prefix": "The woman behind the dogs", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The kids behind the table", "patch_prefix": "The kid behind the table", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The man behind the chairs", "patch_prefix": "The men behind the chairs", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The farmer beside the trucks", "patch_prefix": "The farmers beside the trucks", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The lawyers beside the chairs", "patch_prefix": "The lawyer beside the chairs", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The uncles beside the chair", "patch_prefix": "The uncle beside the chair", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The boys near the cat", "patch_prefix": "The boy near the cat", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The friends beside the bikes", "patch_prefix": "The friend beside the bikes", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The singers beside the car", "patch_prefix": "The singer beside the car", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The singers near the tables", "patch_prefix": "The singer near the tables", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The victims near the chair", "patch_prefix": "The victim near the chair", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The women behind the chair", "patch_prefix": "The woman behind the chair", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The guys behind the trucks", "patch_prefix": "The guy behind the trucks", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The uncles beside the tables", "patch_prefix": "The uncle beside the tables", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The carpenters behind the chair", "patch_prefix": "The carpenter behind the chair", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The men near the tree", "patch_prefix": "The man near the tree", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The woman beside the cats", "patch_prefix": "The women beside the cats", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The mother beside the tables", "patch_prefix": "The mothers beside the tables", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The boy behind the cat", "patch_prefix": "The boys behind the cat", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The victims near the cats", "patch_prefix": "The victim near the cats", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The aunts beside the cat", "patch_prefix": "The aunt beside the cat", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The doctors near the windows", "patch_prefix": "The doctor near the windows", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The aunts near the car", "patch_prefix": "The aunt near the car", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The victim near the dog", "patch_prefix": "The victims near the dog", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The fathers near the table", "patch_prefix": "The father near the table", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The poet near the desks", "patch_prefix": "The poets near the desks", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The lawyer near the window", "patch_prefix": "The lawyers near the window", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The women beside the tables", "patch_prefix": "The woman beside the tables", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The carpenters beside the car", "patch_prefix": "The carpenter beside the car", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The boys beside the windows", "patch_prefix": "The boy beside the windows", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The girls behind the tree", "patch_prefix": "The girl behind the tree", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The father near the cat", "patch_prefix": "The fathers near the cat", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The fathers behind the desk", "patch_prefix": "The father behind the desk", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The teacher behind the cats", "patch_prefix": "The teachers behind the cats", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The guys beside the cars", "patch_prefix": "The guy beside the cars", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The mothers beside the cat", "patch_prefix": "The mother beside the cat", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The poets beside the bikes", "patch_prefix": "The poet beside the bikes", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The lawyer beside the chairs", "patch_prefix": "The lawyers beside the chairs", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The carpenters near the chairs", "patch_prefix": "The carpenter near the chairs", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The kid beside the cars", "patch_prefix": "The kids beside the cars", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The farmers behind the trees", "patch_prefix": "The farmer behind the trees", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The singers beside the dog", "patch_prefix": "The singer beside the dog", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The doctor near the desks", "patch_prefix": "The doctors near the desks", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The farmers behind the dog", "patch_prefix": "The farmer behind the dog", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The kid beside the tree", "patch_prefix": "The kids beside the tree", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The singer behind the trucks", "patch_prefix": "The singers behind the trucks", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The mother beside the chair", "patch_prefix": "The mothers beside the chair", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The athletes behind the trees", "patch_prefix": "The athlete behind the trees", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The poet behind the bikes", "patch_prefix": "The poets behind the bikes", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The carpenter behind the cats", "patch_prefix": "The carpenters behind the cats", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The victim beside the tree", "patch_prefix": "The victims beside the tree", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The aunt beside the chair", "patch_prefix": "The aunts beside the chair", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The father near the trucks", "patch_prefix": "The fathers near the trucks", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The teachers near the trees", "patch_prefix": "The teacher near the trees", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The carpenter near the window", "patch_prefix": "The carpenters near the window", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The fathers beside the car", "patch_prefix": "The father beside the car", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The victims behind the cat", "patch_prefix": "The victim behind the cat", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The singer near the window", "patch_prefix": "The singers near the window", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The victim beside the table", "patch_prefix": "The victims beside the table", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The doctor near the truck", "patch_prefix": "The doctors near the truck", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The friend beside the cars", "patch_prefix": "The friends beside the cars", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The woman behind the desks", "patch_prefix": "The women behind the desks", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The kids beside the trucks", "patch_prefix": "The kid beside the trucks", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The aunts near the truck", "patch_prefix": "The aunt near the truck", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The kids behind the bike", "patch_prefix": "The kid behind the bike", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The poets behind the truck", "patch_prefix": "The poet behind the truck", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The poet behind the cat", "patch_prefix": "The poets behind the cat", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The guys near the dog", "patch_prefix": "The guy near the dog", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The singers behind the bikes", "patch_prefix": "The singer behind the bikes", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The guys near the dog", "patch_prefix": "The guy near the dog", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The guy near the windows", "patch_prefix": "The guys near the windows", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The boy behind the cats", "patch_prefix": "The boys behind the cats", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The doctors near the chairs", "patch_prefix": "The doctor near the chairs", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The men beside the desk", "patch_prefix": "The man beside the desk", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The aunt near the cats", "patch_prefix": "The aunts near the cats", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The uncle behind the bikes", "patch_prefix": "The uncles behind the bikes", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The mother beside the car", "patch_prefix": "The mothers beside the car", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The carpenter beside the table", "patch_prefix": "The carpenters beside the table", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The teacher near the car", "patch_prefix": "The teachers near the car", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The mothers near the tree", "patch_prefix": "The mother near the tree", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The doctor behind the table", "patch_prefix": "The doctors behind the table", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The boys near the window", "patch_prefix": "The boy near the window", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The woman near the bike", "patch_prefix": "The women near the bike", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The friends near the trucks", "patch_prefix": "The friend near the trucks", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The kids behind the tree", "patch_prefix": "The kid behind the tree", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The victim beside the cat", "patch_prefix": "The victims beside the cat", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The fathers beside the car", "patch_prefix": "The father beside the car", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The teacher behind the dog", "patch_prefix": "The teachers behind the dog", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The aunts beside the tree", "patch_prefix": "The aunt beside the tree", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The man beside the car", "patch_prefix": "The men beside the car", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The poet behind the dog", "patch_prefix": "The poets behind the dog", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The lawyers beside the car", "patch_prefix": "The lawyer beside the car", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The carpenters near the windows", "patch_prefix": "The carpenter near the windows", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The singers near the cars", "patch_prefix": "The singer near the cars", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The singers beside the dog", "patch_prefix": "The singer beside the dog", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The doctors beside the table", "patch_prefix": "The doctor beside the table", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The carpenters beside the chairs", "patch_prefix": "The carpenter beside the chairs", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The singers beside the desk", "patch_prefix": "The singer beside the desk", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The farmers beside the desks", "patch_prefix": "The farmer beside the desks", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The farmer near the dogs", "patch_prefix": "The farmers near the dogs", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The boys behind the bike", "patch_prefix": "The boy behind the bike", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The teacher behind the truck", "patch_prefix": "The teachers behind the truck", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The uncle beside the desks", "patch_prefix": "The uncles beside the desks", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The singer near the window", "patch_prefix": "The singers near the window", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The poet near the windows", "patch_prefix": "The poets near the windows", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The boy beside the trucks", "patch_prefix": "The boys beside the trucks", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The athletes near the trees", "patch_prefix": "The athlete near the trees", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The boys beside the dog", "patch_prefix": "The boy beside the dog", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The girls beside the table", "patch_prefix": "The girl beside the table", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The lawyers behind the cars", "patch_prefix": "The lawyer behind the cars", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The kid beside the cat", "patch_prefix": "The kids beside the cat", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The poet near the chair", "patch_prefix": "The poets near the chair", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The guy near the dog", "patch_prefix": "The guys near the dog", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The kid behind the cats", "patch_prefix": "The kids behind the cats", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The singers beside the bike", "patch_prefix": "The singer beside the bike", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The doctors beside the window", "patch_prefix": "The doctor beside the window", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The doctors behind the car", "patch_prefix": "The doctor behind the car", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The singer behind the windows", "patch_prefix": "The singers behind the windows", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The victim near the desks", "patch_prefix": "The victims near the desks", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The doctor near the dogs", "patch_prefix": "The doctors near the dogs", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The aunts beside the dog", "patch_prefix": "The aunt beside the dog", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The singer near the tables", "patch_prefix": "The singers near the tables", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The mother beside the car", "patch_prefix": "The mothers beside the car", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The mother beside the desks", "patch_prefix": "The mothers beside the desks", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The singer behind the windows", "patch_prefix": "The singers behind the windows", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The guy beside the bikes", "patch_prefix": "The guys beside the bikes", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The mother near the window", "patch_prefix": "The mothers near the window", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The uncles beside the cars", "patch_prefix": "The uncle beside the cars", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The man near the truck", "patch_prefix": "The men near the truck", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The aunt beside the trucks", "patch_prefix": "The aunts beside the trucks", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The boys behind the trees", "patch_prefix": "The boy behind the trees", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The friend beside the car", "patch_prefix": "The friends beside the car", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The friend beside the truck", "patch_prefix": "The friends beside the truck", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The father near the dogs", "patch_prefix": "The fathers near the dogs", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The aunts behind the desks", "patch_prefix": "The aunt behind the desks", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The singer beside the trees", "patch_prefix": "The singers beside the trees", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The farmers beside the windows", "patch_prefix": "The farmer beside the windows", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The teachers near the chair", "patch_prefix": "The teacher near the chair", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The friends near the desk", "patch_prefix": "The friend near the desk", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The kids behind the trucks", "patch_prefix": "The kid behind the trucks", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The lawyers beside the bike", "patch_prefix": "The lawyer beside the bike", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The woman near the chairs", "patch_prefix": "The women near the chairs", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The athlete near the trucks", "patch_prefix": "The athletes near the trucks", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The fathers behind the bikes", "patch_prefix": "The father behind the bikes", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The victims behind the tree", "patch_prefix": "The victim behind the tree", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The guys beside the tree", "patch_prefix": "The guy beside the tree", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The aunts behind the bikes", "patch_prefix": "The aunt behind the bikes", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The doctor beside the cars", "patch_prefix": "The doctors beside the cars", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The kids near the table", "patch_prefix": "The kid near the table", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The kid beside the trees", "patch_prefix": "The kids beside the trees", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The kids near the chairs", "patch_prefix": "The kid near the chairs", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The fathers near the cat", "patch_prefix": "The father near the cat", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The victim beside the chairs", "patch_prefix": "The victims beside the chairs", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The victims behind the dogs", "patch_prefix": "The victim behind the dogs", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The teachers behind the dogs", "patch_prefix": "The teacher behind the dogs", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The kids behind the trucks", "patch_prefix": "The kid behind the trucks", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The mother behind the windows", "patch_prefix": "The mothers behind the windows", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The farmers behind the table", "patch_prefix": "The farmer behind the table", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The singers beside the dog", "patch_prefix": "The singer beside the dog", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The kids beside the desks", "patch_prefix": "The kid beside the desks", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The guys near the cat", "patch_prefix": "The guy near the cat", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The doctor beside the table", "patch_prefix": "The doctors beside the table", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The girl beside the bike", "patch_prefix": "The girls beside the bike", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The poets beside the cat", "patch_prefix": "The poet beside the cat", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The singer behind the tables", "patch_prefix": "The singers behind the tables", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The guys behind the cats", "patch_prefix": "The guy behind the cats", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The men near the chair", "patch_prefix": "The man near the chair", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The teachers behind the bike", "patch_prefix": "The teacher behind the bike", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The carpenters behind the cats", "patch_prefix": "The carpenter behind the cats", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The poet beside the windows", "patch_prefix": "The poets beside the windows", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The woman near the chairs", "patch_prefix": "The women near the chairs", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The carpenter behind the chairs", "patch_prefix": "The carpenters behind the chairs", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The doctor behind the tables", "patch_prefix": "The doctors behind the tables", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The athlete near the desks", "patch_prefix": "The athletes near the desks", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The kids near the tree", "patch_prefix": "The kid near the tree", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The man beside the table", "patch_prefix": "The men beside the table", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The guys behind the dogs", "patch_prefix": "The guy behind the dogs", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The carpenters near the desk", "patch_prefix": "The carpenter near the desk", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The father behind the desks", "patch_prefix": "The fathers behind the desks", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The teachers behind the tree", "patch_prefix": "The teacher behind the tree", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The fathers behind the tables", "patch_prefix": "The father behind the tables", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The victim beside the dogs", "patch_prefix": "The victims beside the dogs", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The teachers near the dogs", "patch_prefix": "The teacher near the dogs", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The girls beside the cat", "patch_prefix": "The girl beside the cat", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The doctors beside the cats", "patch_prefix": "The doctor beside the cats", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The singer behind the chairs", "patch_prefix": "The singers behind the chairs", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The singer near the dogs", "patch_prefix": "The singers near the dogs", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The doctor behind the bike", "patch_prefix": "The doctors behind the bike", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The doctor behind the trucks", "patch_prefix": "The doctors behind the trucks", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The aunts near the table", "patch_prefix": "The aunt near the table", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The aunts behind the car", "patch_prefix": "The aunt behind the car", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The singer beside the truck", "patch_prefix": "The singers beside the truck", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The carpenter near the table", "patch_prefix": "The carpenters near the table", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The carpenters near the cat", "patch_prefix": "The carpenter near the cat", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The boys near the chairs", "patch_prefix": "The boy near the chairs", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The friend near the table", "patch_prefix": "The friends near the table", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The doctors beside the windows", "patch_prefix": "The doctor beside the windows", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The lawyers near the trees", "patch_prefix": "The lawyer near the trees", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The doctors behind the dogs", "patch_prefix": "The doctor behind the dogs", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The aunts near the dogs", "patch_prefix": "The aunt near the dogs", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The uncle beside the dogs", "patch_prefix": "The uncles beside the dogs", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The uncles near the table", "patch_prefix": "The uncle near the table", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The singers behind the dog", "patch_prefix": "The singer behind the dog", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The guy beside the dog", "patch_prefix": "The guys beside the dog", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The carpenters beside the window", "patch_prefix": "The carpenter beside the window", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The men beside the desks", "patch_prefix": "The man beside the desks", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The man near the tables", "patch_prefix": "The men near the tables", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The doctor near the dog", "patch_prefix": "The doctors near the dog", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The teacher beside the chair", "patch_prefix": "The teachers beside the chair", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The man behind the truck", "patch_prefix": "The men behind the truck", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The doctor behind the windows", "patch_prefix": "The doctors behind the windows", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The carpenter behind the cat", "patch_prefix": "The carpenters behind the cat", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The men beside the cat", "patch_prefix": "The man beside the cat", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The victims beside the tree", "patch_prefix": "The victim beside the tree", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The victim near the car", "patch_prefix": "The victims near the car", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The uncles beside the table", "patch_prefix": "The uncle beside the table", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The mother behind the dogs", "patch_prefix": "The mothers behind the dogs", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The fathers beside the window", "patch_prefix": "The father beside the window", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The poets beside the cat", "patch_prefix": "The poet beside the cat", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The woman near the cars", "patch_prefix": "The women near the cars", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The man behind the bike", "patch_prefix": "The men behind the bike", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The father behind the tables", "patch_prefix": "The fathers behind the tables", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The farmers near the bike", "patch_prefix": "The farmer near the bike", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The kid behind the window", "patch_prefix": "The kids behind the window", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The guy beside the tables", "patch_prefix": "The guys beside the tables", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The teacher near the cars", "patch_prefix": "The teachers near the cars", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The lawyers behind the cats", "patch_prefix": "The lawyer behind the cats", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The father near the table", "patch_prefix": "The fathers near the table", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The singer behind the bike", "patch_prefix": "The singers behind the bike", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The kids behind the truck", "patch_prefix": "The kid behind the truck", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The girl near the truck", "patch_prefix": "The girls near the truck", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The boys near the desk", "patch_prefix": "The boy near the desk", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The guys near the bike", "patch_prefix": "The guy near the bike", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The farmers near the truck", "patch_prefix": "The farmer near the truck", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The mother behind the chairs", "patch_prefix": "The mothers behind the chairs", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The singer beside the desk", "patch_prefix": "The singers beside the desk", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The boys behind the dog", "patch_prefix": "The boy behind the dog", "clean_answer": " do", "patch_answer": " does", "case": "plural_singular"}
+{"clean_prefix": "The singer beside the cats", "patch_prefix": "The singers beside the cats", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The uncle near the tables", "patch_prefix": "The uncles near the tables", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The man beside the windows", "patch_prefix": "The men beside the windows", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The teacher beside the trees", "patch_prefix": "The teachers beside the trees", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The father near the bikes", "patch_prefix": "The fathers near the bikes", "clean_answer": " does", "patch_answer": " do", "case": "singular_plural"}
+{"clean_prefix": "The boys behind the trucks", "patch_prefix": "The boy behind the trucks", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The farmer beside the trees", "patch_prefix": "The farmers beside the trees", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The carpenter near the trees", "patch_prefix": "The carpenters near the trees", "clean_answer": " is", "patch_answer": " are", "case": "singular_plural"}
+{"clean_prefix": "The friends beside the truck", "patch_prefix": "The friend beside the truck", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The lawyer behind the truck", "patch_prefix": "The lawyers behind the truck", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The girl near the car", "patch_prefix": "The girls near the car", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The singer behind the desk", "patch_prefix": "The singers behind the desk", "clean_answer": " does", "patch_answer": " do", "case": "singular_singular"}
+{"clean_prefix": "The singer beside the dog", "patch_prefix": "The singers beside the dog", "clean_answer": " has", "patch_answer": " have", "case": "singular_singular"}
+{"clean_prefix": "The guys near the trees", "patch_prefix": "The guy near the trees", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The doctors near the chairs", "patch_prefix": "The doctor near the chairs", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The carpenter beside the window", "patch_prefix": "The carpenters beside the window", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The kids near the dog", "patch_prefix": "The kid near the dog", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The lawyers behind the chair", "patch_prefix": "The lawyer behind the chair", "clean_answer": " have", "patch_answer": " has", "case": "plural_singular"}
+{"clean_prefix": "The lawyers beside the table", "patch_prefix": "The lawyer beside the table", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The girls behind the desks", "patch_prefix": "The girl behind the desks", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The athletes beside the trees", "patch_prefix": "The athlete beside the trees", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The doctors beside the desks", "patch_prefix": "The doctor beside the desks", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The woman near the desks", "patch_prefix": "The women near the desks", "clean_answer": " has", "patch_answer": " have", "case": "singular_plural"}
+{"clean_prefix": "The aunts beside the trucks", "patch_prefix": "The aunt beside the trucks", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The boy near the windows", "patch_prefix": "The boys near the windows", "clean_answer": " goes", "patch_answer": " go", "case": "singular_plural"}
+{"clean_prefix": "The teachers behind the bikes", "patch_prefix": "The teacher behind the bikes", "clean_answer": " are", "patch_answer": " is", "case": "plural_plural"}
+{"clean_prefix": "The fathers near the chairs", "patch_prefix": "The father near the chairs", "clean_answer": " have", "patch_answer": " has", "case": "plural_plural"}
+{"clean_prefix": "The fathers beside the bike", "patch_prefix": "The father beside the bike", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The fathers beside the dogs", "patch_prefix": "The father beside the dogs", "clean_answer": " go", "patch_answer": " goes", "case": "plural_plural"}
+{"clean_prefix": "The guys beside the trees", "patch_prefix": "The guy beside the trees", "clean_answer": " do", "patch_answer": " does", "case": "plural_plural"}
+{"clean_prefix": "The mothers behind the cat", "patch_prefix": "The mother behind the cat", "clean_answer": " go", "patch_answer": " goes", "case": "plural_singular"}
+{"clean_prefix": "The friend near the dog", "patch_prefix": "The friends near the dog", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The poet beside the cat", "patch_prefix": "The poets beside the cat", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}
+{"clean_prefix": "The singers beside the chair", "patch_prefix": "The singer beside the chair", "clean_answer": " are", "patch_answer": " is", "case": "plural_singular"}
+{"clean_prefix": "The poet beside the table", "patch_prefix": "The poets beside the table", "clean_answer": " goes", "patch_answer": " go", "case": "singular_singular"}
+{"clean_prefix": "The friend behind the bike", "patch_prefix": "The friends behind the bike", "clean_answer": " is", "patch_answer": " are", "case": "singular_singular"}

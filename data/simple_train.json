@@ -1,480 +1,480 @@
-{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The carpenter", "patch_prefix": "The carpenters", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The lawyer", "patch_prefix": "The lawyers", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The teacher", "patch_prefix": "The teachers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The women", "patch_prefix": "The woman", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The lawyer", "patch_prefix": "The lawyers", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The carpenters", "patch_prefix": "The carpenter", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The teacher", "patch_prefix": "The teachers", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The girls", "patch_prefix": "The girl", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The women", "patch_prefix": "The woman", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The boy", "patch_prefix": "The boys", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The women", "patch_prefix": "The woman", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The aunt", "patch_prefix": "The aunts", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The girls", "patch_prefix": "The girl", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The girls", "patch_prefix": "The girl", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The uncle", "patch_prefix": "The uncles", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The boy", "patch_prefix": "The boys", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The women", "patch_prefix": "The woman", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The carpenter", "patch_prefix": "The carpenters", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The women", "patch_prefix": "The woman", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The carpenter", "patch_prefix": "The carpenters", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The carpenter", "patch_prefix": "The carpenters", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The lawyer", "patch_prefix": "The lawyers", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The boy", "patch_prefix": "The boys", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The women", "patch_prefix": "The woman", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The carpenter", "patch_prefix": "The carpenters", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The carpenters", "patch_prefix": "The carpenter", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The aunt", "patch_prefix": "The aunts", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The boy", "patch_prefix": "The boys", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The teacher", "patch_prefix": "The teachers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The teacher", "patch_prefix": "The teachers", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The carpenters", "patch_prefix": "The carpenter", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The boy", "patch_prefix": "The boys", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The carpenter", "patch_prefix": "The carpenters", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The women", "patch_prefix": "The woman", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The carpenters", "patch_prefix": "The carpenter", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The lawyer", "patch_prefix": "The lawyers", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The girls", "patch_prefix": "The girl", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The uncle", "patch_prefix": "The uncles", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The aunt", "patch_prefix": "The aunts", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The uncle", "patch_prefix": "The uncles", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The aunt", "patch_prefix": "The aunts", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The carpenters", "patch_prefix": "The carpenter", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The carpenters", "patch_prefix": "The carpenter", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The teacher", "patch_prefix": "The teachers", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The aunt", "patch_prefix": "The aunts", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The uncle", "patch_prefix": "The uncles", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The girls", "patch_prefix": "The girl", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The teacher", "patch_prefix": "The teachers", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The girls", "patch_prefix": "The girl", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The uncle", "patch_prefix": "The uncles", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The girls", "patch_prefix": "The girl", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The carpenter", "patch_prefix": "The carpenters", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The boy", "patch_prefix": "The boys", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The carpenters", "patch_prefix": "The carpenter", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The carpenter", "patch_prefix": "The carpenters", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The aunt", "patch_prefix": "The aunts", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The uncle", "patch_prefix": "The uncles", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The lawyer", "patch_prefix": "The lawyers", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The boy", "patch_prefix": "The boys", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The boy", "patch_prefix": "The boys", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The carpenters", "patch_prefix": "The carpenter", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The teacher", "patch_prefix": "The teachers", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The uncle", "patch_prefix": "The uncles", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The carpenter", "patch_prefix": "The carpenters", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The carpenter", "patch_prefix": "The carpenters", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The teacher", "patch_prefix": "The teachers", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The uncle", "patch_prefix": "The uncles", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The lawyer", "patch_prefix": "The lawyers", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The lawyer", "patch_prefix": "The lawyers", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The aunt", "patch_prefix": "The aunts", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The carpenters", "patch_prefix": "The carpenter", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The aunt", "patch_prefix": "The aunts", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The aunt", "patch_prefix": "The aunts", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The lawyer", "patch_prefix": "The lawyers", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The girls", "patch_prefix": "The girl", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The carpenters", "patch_prefix": "The carpenter", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The women", "patch_prefix": "The woman", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The uncle", "patch_prefix": "The uncles", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The women", "patch_prefix": "The woman", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The boy", "patch_prefix": "The boys", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The teacher", "patch_prefix": "The teachers", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The girls", "patch_prefix": "The girl", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The aunt", "patch_prefix": "The aunts", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": "have", "patch_answer": "has", "case": "plural"}
-{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The lawyer", "patch_prefix": "The lawyers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The boy", "patch_prefix": "The boys", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": "do", "patch_answer": "does", "case": "plural"}
-{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The women", "patch_prefix": "The woman", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
-{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": "has", "patch_answer": "have", "case": "singular"}
-{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The uncle", "patch_prefix": "The uncles", "clean_answer": "does", "patch_answer": "do", "case": "singular"}
-{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": "goes", "patch_answer": "go", "case": "singular"}
-{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": "are", "patch_answer": "is", "case": "plural"}
-{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": "is", "patch_answer": "are", "case": "singular"}
-{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": "go", "patch_answer": "goes", "case": "plural"}
+{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The carpenter", "patch_prefix": "The carpenters", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The lawyer", "patch_prefix": "The lawyers", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The teacher", "patch_prefix": "The teachers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The women", "patch_prefix": "The woman", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The lawyer", "patch_prefix": "The lawyers", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The carpenters", "patch_prefix": "The carpenter", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The teacher", "patch_prefix": "The teachers", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The girls", "patch_prefix": "The girl", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The women", "patch_prefix": "The woman", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The boy", "patch_prefix": "The boys", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The women", "patch_prefix": "The woman", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The aunt", "patch_prefix": "The aunts", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The girls", "patch_prefix": "The girl", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The girls", "patch_prefix": "The girl", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The uncle", "patch_prefix": "The uncles", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The boy", "patch_prefix": "The boys", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The women", "patch_prefix": "The woman", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The carpenter", "patch_prefix": "The carpenters", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The women", "patch_prefix": "The woman", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The carpenter", "patch_prefix": "The carpenters", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The carpenter", "patch_prefix": "The carpenters", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The lawyer", "patch_prefix": "The lawyers", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The boy", "patch_prefix": "The boys", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The women", "patch_prefix": "The woman", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The carpenter", "patch_prefix": "The carpenters", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The carpenters", "patch_prefix": "The carpenter", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The aunt", "patch_prefix": "The aunts", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The boy", "patch_prefix": "The boys", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The teacher", "patch_prefix": "The teachers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The teacher", "patch_prefix": "The teachers", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The carpenters", "patch_prefix": "The carpenter", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The boy", "patch_prefix": "The boys", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The carpenter", "patch_prefix": "The carpenters", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The women", "patch_prefix": "The woman", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The carpenters", "patch_prefix": "The carpenter", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The lawyer", "patch_prefix": "The lawyers", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The girls", "patch_prefix": "The girl", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The uncle", "patch_prefix": "The uncles", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The aunt", "patch_prefix": "The aunts", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The uncle", "patch_prefix": "The uncles", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The aunt", "patch_prefix": "The aunts", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The carpenters", "patch_prefix": "The carpenter", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The carpenters", "patch_prefix": "The carpenter", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The teacher", "patch_prefix": "The teachers", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The aunt", "patch_prefix": "The aunts", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The uncle", "patch_prefix": "The uncles", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The girls", "patch_prefix": "The girl", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The teacher", "patch_prefix": "The teachers", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The girls", "patch_prefix": "The girl", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The uncle", "patch_prefix": "The uncles", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The girls", "patch_prefix": "The girl", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The carpenter", "patch_prefix": "The carpenters", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The boy", "patch_prefix": "The boys", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The carpenters", "patch_prefix": "The carpenter", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The carpenter", "patch_prefix": "The carpenters", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The aunt", "patch_prefix": "The aunts", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The uncle", "patch_prefix": "The uncles", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The lawyer", "patch_prefix": "The lawyers", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The boy", "patch_prefix": "The boys", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The boy", "patch_prefix": "The boys", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The carpenters", "patch_prefix": "The carpenter", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The poets", "patch_prefix": "The poet", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The teacher", "patch_prefix": "The teachers", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The uncle", "patch_prefix": "The uncles", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The carpenter", "patch_prefix": "The carpenters", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The carpenter", "patch_prefix": "The carpenters", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The teacher", "patch_prefix": "The teachers", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The uncle", "patch_prefix": "The uncles", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The lawyer", "patch_prefix": "The lawyers", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The lawyer", "patch_prefix": "The lawyers", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The aunt", "patch_prefix": "The aunts", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The carpenters", "patch_prefix": "The carpenter", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The aunt", "patch_prefix": "The aunts", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The aunt", "patch_prefix": "The aunts", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The fathers", "patch_prefix": "The father", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The lawyer", "patch_prefix": "The lawyers", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The girls", "patch_prefix": "The girl", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The carpenters", "patch_prefix": "The carpenter", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The women", "patch_prefix": "The woman", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The uncle", "patch_prefix": "The uncles", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The aunts", "patch_prefix": "The aunt", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The farmer", "patch_prefix": "The farmers", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The victim", "patch_prefix": "The victims", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The poet", "patch_prefix": "The poets", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The teachers", "patch_prefix": "The teacher", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The women", "patch_prefix": "The woman", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The guy", "patch_prefix": "The guys", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The uncles", "patch_prefix": "The uncle", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The lawyers", "patch_prefix": "The lawyer", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The boy", "patch_prefix": "The boys", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The singer", "patch_prefix": "The singers", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The teacher", "patch_prefix": "The teachers", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The friends", "patch_prefix": "The friend", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The doctor", "patch_prefix": "The doctors", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The kid", "patch_prefix": "The kids", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The men", "patch_prefix": "The man", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The girls", "patch_prefix": "The girl", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The aunt", "patch_prefix": "The aunts", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": " have", "patch_answer": " has", "case": "plural"}
+{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The boys", "patch_prefix": "The boy", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The athletes", "patch_prefix": "The athlete", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The girl", "patch_prefix": "The girls", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The woman", "patch_prefix": "The women", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The guys", "patch_prefix": "The guy", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The athlete", "patch_prefix": "The athletes", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The kids", "patch_prefix": "The kid", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The lawyer", "patch_prefix": "The lawyers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The boy", "patch_prefix": "The boys", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The farmers", "patch_prefix": "The farmer", "clean_answer": " do", "patch_answer": " does", "case": "plural"}
+{"clean_prefix": "The mothers", "patch_prefix": "The mother", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The women", "patch_prefix": "The woman", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The doctors", "patch_prefix": "The doctor", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
+{"clean_prefix": "The father", "patch_prefix": "The fathers", "clean_answer": " has", "patch_answer": " have", "case": "singular"}
+{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The uncle", "patch_prefix": "The uncles", "clean_answer": " does", "patch_answer": " do", "case": "singular"}
+{"clean_prefix": "The man", "patch_prefix": "The men", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The mother", "patch_prefix": "The mothers", "clean_answer": " goes", "patch_answer": " go", "case": "singular"}
+{"clean_prefix": "The victims", "patch_prefix": "The victim", "clean_answer": " are", "patch_answer": " is", "case": "plural"}
+{"clean_prefix": "The friend", "patch_prefix": "The friends", "clean_answer": " is", "patch_answer": " are", "case": "singular"}
+{"clean_prefix": "The singers", "patch_prefix": "The singer", "clean_answer": " go", "patch_answer": " goes", "case": "plural"}
