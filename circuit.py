@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from activation_utils import SparseAct
 from attribution import patching_effect, jvp
-from circuit_plotting import plot_circuit
+from circuit_plotting import plot_circuit, plot_circuit_posaligned
 from dictionary_learning import AutoEncoder
 from loading_utils import load_examples, load_examples_nopair
 from nnsight import LanguageModel
@@ -412,26 +412,44 @@ def get_circuit_cluster(dataset,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--tests', default=False, action='store_true')
-    parser.add_argument('--dataset', '-d', type=str, default='simple')
-    parser.add_argument('--num_examples', '-n', type=int, default=10)
-    parser.add_argument('--example_length', '-l', type=int, default=None)
-    parser.add_argument('--model', type=str, default='EleutherAI/pythia-70m-deduped')
-    parser.add_argument("--dict_path", type=str, default="dictionaries/pythia-70m-deduped/")
-    parser.add_argument('--d_model', type=int, default=512)
-    parser.add_argument('--dict_id', type=str, default=10)
-    parser.add_argument('--dict_size', type=int, default=32768)
-    parser.add_argument('--batch_size', type=int, default=32)
-    parser.add_argument('--aggregation', type=str, default='sum')
-    parser.add_argument('--node_threshold', type=float, default=0.2)
-    parser.add_argument('--edge_threshold', type=float, default=0.02)
-    parser.add_argument('--pen_thickness', type=float, default=1)
-    parser.add_argument('--nopair', default=False, action="store_true")
-    parser.add_argument('--plot_circuit', default=False, action='store_true')
-    parser.add_argument('--nodes_only', default=False, action='store_true')
-    parser.add_argument('--plot_only', action="store_true")
-    parser.add_argument("--circuit_dir", type=str, default="circuits/")
-    parser.add_argument("--plot_dir", type=str, default="circuits/figures/")
+    parser.add_argument('--dataset', '-d', type=str, default='simple_train',
+                        help="A subject-verb agreement dataset in data/, or a path to a cluster .json.")
+    parser.add_argument('--num_examples', '-n', type=int, default=100,
+                        help="The number of examples from the --dataset over which to average indirect effects.")
+    parser.add_argument('--example_length', '-l', type=int, default=None,
+                        help="The max length (if using sum aggregation) or exact length (if not aggregating) of examples.")
+    parser.add_argument('--model', type=str, default='EleutherAI/pythia-70m-deduped',
+                        help="The Huggingface ID of the model you wish to test.")
+    parser.add_argument("--dict_path", type=str, default="dictionaries/pythia-70m-deduped/",
+                        help="Path to all dictionaries for your language model.")
+    parser.add_argument('--d_model', type=int, default=512,
+                        help="Hidden size of the language model.")
+    parser.add_argument('--dict_id', type=str, default=10,
+                        help="ID of the dictionaries. Use `id` to obtain circuits on neurons/heads directly.")
+    parser.add_argument('--dict_size', type=int, default=32768,
+                        help="The width of the dictionary encoder.")
+    parser.add_argument('--batch_size', type=int, default=32,
+                        help="Number of examples to process at once when running circuit discovery.")
+    parser.add_argument('--aggregation', type=str, default='sum',
+                        help="Aggregation across token positions. Should be one of `sum` or `none`.")
+    parser.add_argument('--node_threshold', type=float, default=0.2,
+                        help="Indirect effect threshold for keeping circuit nodes.")
+    parser.add_argument('--edge_threshold', type=float, default=0.02,
+                        help="Indirect effect threshold for keeping edges.")
+    parser.add_argument('--pen_thickness', type=float, default=1,
+                        help="Scales the width of the edges in the circuit plot.")
+    parser.add_argument('--nopair', default=False, action="store_true",
+                        help="Use if your data does not contain contrastive (minimal) pairs.")
+    parser.add_argument('--plot_circuit', default=False, action='store_true',
+                        help="Plot the circuit after discovering it.")
+    parser.add_argument('--nodes_only', default=False, action='store_true',
+                        help="Only search for causally implicated features; do not draw edges.")
+    parser.add_argument('--plot_only', action="store_true",
+                        help="Do not run circuit discovery; just plot an existing circuit.")
+    parser.add_argument("--circuit_dir", type=str, default="circuits/",
+                        help="Directory to save/load circuits.")
+    parser.add_argument("--plot_dir", type=str, default="circuits/figures/",
+                        help="Directory to save figures.")
     parser.add_argument('--seed', type=int, default=12)
     parser.add_argument('--device', type=str, default='cuda:0')
     args = parser.parse_args()
@@ -614,17 +632,36 @@ if __name__ == '__main__':
 
     # feature annotations
     try:
-        with open(f'{args.dict_id}_{args.dict_size}_annotations.json', 'r') as f:
-            annotations = json.load(f)
+        annotations = {}
+        with open(f"annotations/{args.dict_id}_{args.dict_size}.jsonl", 'r') as annotations_data:
+            for annotation_line in annotations_data:
+                annotation = json.loads(annotation_line)
+                annotations[annotation["Name"]] = annotation["Annotation"]
     except:
         annotations = None
 
-    plot_circuit(
-        nodes, 
-        edges, 
-        layers=len(model.gpt_neox.layers), 
-        node_threshold=args.node_threshold, 
-        edge_threshold=args.edge_threshold, 
-        pen_thickness=args.pen_thickness, 
-        annotations=annotations, 
-        save_dir=f'{args.plot_dir}/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}')
+    if args.aggregation == "none":
+        example = model.tokenizer.batch_decode(examples[0]["clean_prefix"])[0]
+        plot_circuit_posaligned(
+            nodes, 
+            edges,
+            layers=len(model.gpt_neox.layers), 
+            length=args.example_length,
+            example=example,
+            node_threshold=args.node_threshold, 
+            edge_threshold=args.edge_threshold, 
+            pen_thickness=args.pen_thickness, 
+            annotations=annotations, 
+            save_dir=f'{args.plot_dir}/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}'
+        )
+    else:
+        plot_circuit(
+            nodes, 
+            edges, 
+            layers=len(model.gpt_neox.layers), 
+            node_threshold=args.node_threshold, 
+            edge_threshold=args.edge_threshold, 
+            pen_thickness=args.pen_thickness, 
+            annotations=annotations, 
+            save_dir=f'{args.plot_dir}/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}'
+        )
