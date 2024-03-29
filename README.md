@@ -1,6 +1,6 @@
 # Sparse Feature Circuits: Discovering and Editing Interpretable Causal Graphs in Language Models
 
-This repository contains code, data, and links to autoencoders for replicating the experiments of [Sparse Feature Circuits: Discovering and Editing Interpretable Causal Graphs in Language Models](TODO). 
+This repository contains code, data, and links to autoencoders for replicating the experiments of [Sparse Feature Circuits: Discovering and Editing Interpretable Causal Graphs in Language Models](https://arxiv.org/abs/2403.19647). 
 
 ## Demos and Links
 - We provide an interface for observing and downloading clusters [here](https://feature-circuits.xyz).
@@ -71,10 +71,11 @@ If you use any of the code or ideas presented here, please cite our paper:
 ```
 @article{marks-etal-2024-feature,
     author={Samuel Marks and Can Rager and Eric J. Michaud and Yonatan Belinkov and David Bau and Aaron Mueller},
+    title={Sparse Feature Circuits: Discovering and Editing Interpretable Causal Graphs in Language Models},
     year={2024},
     journal={Computing Research Repository},
-    volume={arXiv:TODO},
-    url={TODO}
+    volume={arXiv:2403.19647},
+    url={https://arxiv.org/abs/2403.19647}
 }
 ```
 
