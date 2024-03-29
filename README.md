@@ -71,7 +71,7 @@ If you use any of the code or ideas presented here, please cite our paper:
 ```
 @article{marks-etal-2024-feature,
     author={Samuel Marks and Can Rager and Eric J. Michaud and Yonatan Belinkov and David Bau and Aaron Mueller},
-	title={Sparse Feature Circuits: Discovering and Editing Interpretable Causal Graphs in Language Models},
+    title={Sparse Feature Circuits: Discovering and Editing Interpretable Causal Graphs in Language Models},
     year={2024},
     journal={Computing Research Repository},
     volume={arXiv:2403.19647},
