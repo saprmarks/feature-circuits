@@ -1,16 +1,21 @@
+
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from loading_utils import load_examples
 from attribution import patching_effect
 from nnsight import LanguageModel
 from dictionary_learning import AutoEncoder
 import torch as t
 import argparse
-from attribution import EffectOut
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='EleutherAI/pythia-70m-deduped')
+    parser.add_argument('--dict_path', type=str, default='dictionaries/pythia-70m-deduped/')
     parser.add_argument('--device', type=str, default='cuda:0')
-    parser.add_argument('--dataset', type=str, default='rc')
+    parser.add_argument('--dataset', type=str, default='rc_train')
     parser.add_argument('--num_examples', type=int, default=30)
     parser.add_argument('--dict_id', type=int, default=10)
     parser.add_argument('--activation_dim', type=int, default=512)
@@ -21,7 +26,7 @@ if __name__ == '__main__':
 
     model = LanguageModel(args.model, device_map=args.device, dispatch=True)
 
-    dataset = f'/share/projects/dictionary_circuits/data/phenomena/{args.dataset}.json'
+    dataset = f'data/{args.dataset}.json'
     examples = load_examples(dataset, args.num_examples, model, length=args.length)
     clean_inputs = t.cat([e['clean_prefix'] for e in examples], dim=0).to(args.device)
     patch_inputs = t.cat([e['patch_prefix'] for e in examples], dim=0).to(args.device)
@@ -46,26 +51,26 @@ if __name__ == '__main__':
     submodules.append(model.gpt_neox.embed_in)
     submod_names[model.gpt_neox.embed_in] = 'embed'
     ae = AutoEncoder(args.activation_dim, dictionary_size).to(args.device)
-    ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/embed/{args.dict_id}_{dictionary_size}/ae.pt'))
+    ae.load_state_dict(t.load(f'{args.dict_path}/embed/{args.dict_id}_{dictionary_size}/ae.pt'))
     dictionaries[model.gpt_neox.embed_in] = ae
     for i in range(len(model.gpt_neox.layers)):
         submodule = model.gpt_neox.layers[i].attention
         ae = AutoEncoder(args.activation_dim, dictionary_size).to(args.device)
-        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/attn_out_layer{i}/{args.dict_id}_{dictionary_size}/ae.pt'))
+        ae.load_state_dict(t.load(f'{args.dict_path}/attn_out_layer{i}/{args.dict_id}_{dictionary_size}/ae.pt'))
         submodules.append(submodule)
         submod_names[submodule] = f'attn_{i}'
         dictionaries[submodule] = ae
 
         submodule = model.gpt_neox.layers[i].mlp
         ae = AutoEncoder(args.activation_dim, dictionary_size).to(args.device)
-        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/mlp_out_layer{i}/{args.dict_id}_{dictionary_size}/ae.pt'))
+        ae.load_state_dict(t.load(f'{args.dict_path}/mlp_out_layer{i}/{args.dict_id}_{dictionary_size}/ae.pt'))
         submodules.append(submodule)
         submod_names[submodule] = f'mlp_{i}'
         dictionaries[submodule] = ae
 
         submodule = model.gpt_neox.layers[i]
         ae = AutoEncoder(args.activation_dim, dictionary_size).to(args.device)
-        ae.load_state_dict(t.load(f'/share/projects/dictionary_circuits/autoencoders/pythia-70m-deduped/resid_out_layer{i}/{args.dict_id}_{dictionary_size}/ae.pt'))
+        ae.load_state_dict(t.load(f'{args.dict_path}/resid_out_layer{i}/{args.dict_id}_{dictionary_size}/ae.pt'))
         submodules.append(submodule)
         submod_names[submodule] = f'resid_{i}'
         dictionaries[submodule] = ae
@@ -79,7 +84,7 @@ if __name__ == '__main__':
         submodules,
         dictionaries,
         metric_fn,
-        method='all-folded'
+        method='attrib'
     )
 
     ig_effects = patching_effect(
