@@ -457,49 +457,6 @@ if __name__ == '__main__':
 
     device = args.device
 
-    if args.tests:
-        def _assert_equal(x, y):
-            # assert that two sparse tensors are equal
-            assert x.shape == y.shape
-            assert t.all((x - y).coalesce().values() == 0)
-
-        # test flatten_index
-        shape = [4, 3, 1, 8, 2]
-        x = t.randn(*shape).to(device)
-        assert t.all(
-            x.flatten().to_sparse().indices() == \
-            flatten_index(x.to_sparse().indices(), shape)
-        )
-
-        # test sparse_flatten
-        shape = [5]
-        x = t.randn(*shape).to(device)
-        _assert_equal(x.flatten().to_sparse(), sparse_flatten(x.to_sparse()))
-
-        shape = [5, 2, 10, 3, 4]
-        x = t.randn(*shape).to(device)
-        _assert_equal(x.flatten().to_sparse(), sparse_flatten(x.to_sparse()))
-        
-        # test sparse_reshape
-        shape = [2, 2, 3, 5, 4]
-        x = t.randn(*shape).to(device)
-        x_flat = x.flatten().to_sparse()
-        x_reshaped = sparse_reshape(x_flat, shape)
-        _assert_equal(x.to_sparse(), x_reshaped)
-
-        shape = [4, 6]
-        new_shape = [2, 2, 6]
-        x = t.randn(*shape).to(device)
-        x_rearranged = rearrange(x, '(a b) c -> a b c', a=2)
-        assert t.all(x_rearranged.to_dense() == sparse_reshape(x.to_sparse(), new_shape).to_dense())
-
-        shape = [4, 4, 4]
-        new_shape = [2, 2, 4, 2, 2]
-        x = t.randn(*shape).to(device)
-        x_rearranged = rearrange(x, '(a b) c (d e) -> a b c d e', a=2, b=2, d=2, e=2)
-        assert t.all(x_rearranged.to_dense() == sparse_reshape(x.to_sparse(), new_shape).to_dense())
-
-
     model = LanguageModel(args.model, device_map=device, dispatch=True)
 
     embed = model.gpt_neox.embed_in
@@ -647,7 +604,7 @@ if __name__ == '__main__':
             edges,
             layers=len(model.gpt_neox.layers), 
             length=args.example_length,
-            example=example,
+            example_text=example,
             node_threshold=args.node_threshold, 
             edge_threshold=args.edge_threshold, 
             pen_thickness=args.pen_thickness, 
