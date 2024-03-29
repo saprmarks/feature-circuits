@@ -490,9 +490,8 @@ if __name__ == '__main__':
             dictionaries[resids[i]] = ae
     
     if args.nopair:
-        data_path = args.dataset
         save_basename = os.path.splitext(os.path.basename(args.dataset))[0]
-        examples = load_examples_nopair(data_path, args.num_examples, model, length=args.example_length)
+        examples = load_examples_nopair(args.dataset, args.num_examples, model, length=args.example_length)
     else:
         data_path = f"data/{args.dataset}.json"
         save_basename = args.dataset

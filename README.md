@@ -43,7 +43,7 @@ Here, we provide instructions for replicating the results from our paper.
 ### Subject–Verb Agreement
 To discover a circuit, use the following command:
 ```
-scripts/run_circuit_triangles.sh <data_type> <node_threshold> <edge_threshold> <aggregation> <dict_id>
+scripts/get_circuit.sh <data_type> <node_threshold> <edge_threshold> <aggregation> <dict_id>
 ```
 For example, to discover a sparse feature circuit for agreement across a relative clause using node threshold 0.1 and edge threshold 0.01, and with no aggregation across token positions, run this command:
 ```
@@ -61,7 +61,7 @@ To generate a circuit for the BiB classifier, use [experiments/bib_circuit.ipynb
 ### Clusters
 After downloading a cluster, run this script:
 ```
-scripts/run_circuit_triangles_clusters.sh <data_path> <node_threshold> <edge_threshold> <dict_id>
+scripts/get_circuit_nopair.sh <data_path> <node_threshold> <edge_threshold> <dict_id>
 ```
 `data_path` should be the full path to a cluster .json in the same format as those that can be downloaded [here](https://feature-circuits.xyz). By default, this will save a circuit in `circuits/` and a circuit plot in `circuits/figures/`.
 

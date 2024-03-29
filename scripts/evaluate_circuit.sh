@@ -5,7 +5,7 @@ python ablation.py \
 --dict_path dictionaries \
 --circuit rc_dict10_node0.1_edge0.01_n100_aggnone.pt \
 --data rc_test.json \
---num_examples 30 \
+--num_examples 40 \
 --length 6 \
 # arguments below are optional -- you probably don't need to change them
 --dict_id 10 \
