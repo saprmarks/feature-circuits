@@ -331,4 +331,6 @@ def plot_circuit_posaligned(nodes, edges, layers=6, length=6, example_text="The 
             )
             edgeset.add((uname, dname))
 
-    return G
+    if not os.path.exists(os.path.dirname(save_dir)):
+        os.makedirs(os.path.dirname(save_dir))
+    G.render(save_dir, format='png', cleanup=True)
