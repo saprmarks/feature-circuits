@@ -17,7 +17,7 @@ def run_with_ablations(
         metric_kwargs=dict(),
         complement=False, # if True, then use the complement of nodes
         ablation_fn=lambda x: x.mean(dim=0).expand_as(x), # what to do to the patch hidden states to produce values for ablation, default mean ablation
-        handle_resids='default', # or 'remove' to zero ablate all; 'keep' to keep all
+        handle_errors='default', # or 'remove' to zero ablate all; 'keep' to keep all
     ):
 
     if patch is None: patch = clean
@@ -47,9 +47,9 @@ def run_with_ablations(
             # ablate features
             if complement: submod_nodes = ~submod_nodes
             submod_nodes.resc = submod_nodes.resc.expand(*submod_nodes.resc.shape[:-1], res.shape[-1])
-            if handle_resids == 'remove':
+            if handle_errors == 'remove':
                 submod_nodes.resc = t.zeros_like(submod_nodes.resc).to(t.bool)
-            if handle_resids == 'keep':
+            if handle_errors == 'keep':
                 submod_nodes.resc = t.ones_like(submod_nodes.resc).to(t.bool)
 
             f[...,~submod_nodes.act] = patch_states[submodule].act[...,~submod_nodes.act]
@@ -66,17 +66,27 @@ def run_with_ablations(
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--threshold', type=float, default=0.1)
-    parser.add_argument('--ablation', type=str, default='mean')
-    parser.add_argument('--circuit', type=str)
-    parser.add_argument('--data', type=str, default='rc_test.json')
-    parser.add_argument('--num_examples', '-n', type=int, default=10)
-    parser.add_argument('--length', '-l', type=int, default=6)
-    parser.add_argument('--handle_resids', type=str, default='default')
-    parser.add_argument('--start_layer', type=int, default=-1)
-    parser.add_argument('--dict_path', type=str, default='dictionaries/pythia-70m-deduped/')
+    parser.add_argument('--threshold', type=float, default=0.1,
+                        help="Node threshold for the circuit.")
+    parser.add_argument('--ablation', type=str, default='mean',
+                        help="Ablation style. Can be one of `mean`, `resample`, `zero`.")
+    parser.add_argument('--circuit', type=str,
+                        help="Path to a circuit .pt file.")
+    parser.add_argument('--data', type=str, default='rc_test.json',
+                        help="Data on which to evaluate the circuit.")
+    parser.add_argument('--num_examples', '-n', type=int, default=100,
+                        help="Number of examples over which to evaluate the circuit.")
+    parser.add_argument('--length', '-l', type=int, default=6,
+                        help="Length of evaluation examples.")
+    parser.add_argument('--handle_errors', type=str, default='default',
+                        help="How to treat SAE error terms. Can be `default`, `keep`, or `remove`.")
+    parser.add_argument('--start_layer', type=int, default=-1,
+                        help="Layer to evaluate the circuit from. Layers below --start_layer are given to the model for free.")
+    parser.add_argument('--dict_path', type=str, default='dictionaries/pythia-70m-deduped/',
+                        help="Path to trained dictionaries.")
     parser.add_argument('--dict_id', default=10)
-    parser.add_argument('--dict_size', type=int, default=32768)
+    parser.add_argument('--dict_size', type=int, default=32768,
+                        help="Width of dictionary encoders.")
     parser.add_argument('--device', default='cuda:0')
     args = parser.parse_args()
 
@@ -163,7 +173,7 @@ if __name__ == '__main__':
         nodes,
         metric_fn,
         ablation_fn=ablation_fn,
-        handle_resids=args.handle_resids
+        handle_errors=args.handle_errors
     )
     print(f"F(C) = {fc.mean()}")
 
@@ -177,7 +187,7 @@ if __name__ == '__main__':
         metric_fn,
         ablation_fn=ablation_fn,
         complement=True,
-        handle_resids=args.handle_resids
+        handle_errors=args.handle_errors
     )
     print(f"F(C') = {fccomp.mean()}")
 
@@ -190,12 +200,9 @@ if __name__ == '__main__':
         nodes = {submod : SparseAct(act=t.zeros(dict_size, dtype=t.bool), resc=t.zeros(1, dtype=t.bool)).to(args.device) for submod in submodules},
         metric_fn=metric_fn,
         ablation_fn=ablation_fn,
-        handle_resids=args.handle_resids
+        handle_errors=args.handle_errors
     )
     print(f"F(∅) = {fempty.mean()}")
 
     print(f"faithfulness = {(fc.mean() - fempty.mean()) / (fm.mean() - fempty.mean())}")
     print(f"completeness = {(fccomp.mean() - fempty.mean()) / (fm.mean() - fempty.mean())}")
-
-
-
