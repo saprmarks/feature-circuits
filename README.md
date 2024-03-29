@@ -47,11 +47,20 @@ scripts/get_circuit.sh <data_type> <node_threshold> <edge_threshold> <aggregatio
 ```
 For example, to discover a sparse feature circuit for agreement across a relative clause using node threshold 0.1 and edge threshold 0.01, and with no aggregation across token positions, run this command:
 ```
-scripts/run_circuit_triangles.sh rc_train 0.1 0.01 none 6 10
+scripts/get_circuit.sh rc_train 0.1 0.01 none 6 10
 ```
 If you would like a circuit composed of model components instead of sparse features, replace "10" with "id".
 
 By default, this will save a circuit in `circuits/`, and a circuit plot in `circuits/figures/`.
+
+To evaluate the **faithfulness** and **completeness** of circuits across a variety of thresholds, see [experiments/faithfulness.ipynb](experiments/faithfulness.ipynb). To evaluate just a single circuit, use the following command:
+```
+scripts/evaluate_circuit.sh <circuit_path> <data_type> <node_threshold> <example_length> <dict_id>
+```
+For example, to evaluate the faithfulness and completeness if the agreement across RC circuit with node threshold 0.1, you can run
+```
+scripts/evaluate_circuit.sh circuits/rc_train_dict10_node0.1_edge0.01_n100_aggnone.pt rc_test 0.1 6 10
+```
 
 ### Bias in Bios
 All code for replicating our data processing, classifier training, and SHIFT method (including all baselines and skylines) can be found in [experiments/bib_shift.ipynb](experiments/bib_shift.ipynb).
