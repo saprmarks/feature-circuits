@@ -43,11 +43,11 @@ Here, we provide instructions for replicating the results from our paper.
 ### Subject–Verb Agreement
 To discover a circuit, use the following command:
 ```
-scripts/get_circuit.sh <data_type> <node_threshold> <edge_threshold> <aggregation> <dict_id>
+scripts/get_circuit.sh <data_type> <node_threshold> <edge_threshold> <aggregation> <example_length> <dict_id>
 ```
 For example, to discover a sparse feature circuit for agreement across a relative clause using node threshold 0.1 and edge threshold 0.01, and with no aggregation across token positions, run this command:
 ```
-scripts/run_circuit_triangles.sh rc_train 0.1 0.01 none 10
+scripts/run_circuit_triangles.sh rc_train 0.1 0.01 none 6 10
 ```
 If you would like a circuit composed of model components instead of sparse features, replace "10" with "id".
 

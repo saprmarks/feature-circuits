@@ -4,7 +4,8 @@ DATA=$1
 NODE=$2
 EDGE=$3
 AGG=$4
-DICT_ID=$5
+LENGTH=$5
+DICT_ID=$6
 
 python circuit.py \
     --model EleutherAI/pythia-70m-deduped \
@@ -14,5 +15,5 @@ python circuit.py \
 	--node_threshold $NODE \
 	--edge_threshold $EDGE \
 	--aggregation $AGG \
-    --example_length 6 \
+    --example_length $LENGTH \
     --dict_id $DICT_ID
