@@ -4,7 +4,7 @@ This repository contains code, data, and links to autoencoders for replicating t
 
 ## Demos and Links
 - We provide an interface for observing and downloading clusters [here](https://feature-circuits.xyz).
-- We are working with Neuronpedia to display sparse features in an interactive format. Stay tuned for updates!
+- View our SAEs and their features on [Neuronpedia](https://www.neuronpedia.org/p70d-sm).
 
 ## Installation
 
