@@ -3,8 +3,8 @@
 This repository contains code, data, and links to autoencoders for replicating the experiments of [Sparse Feature Circuits: Discovering and Editing Interpretable Causal Graphs in Language Models](https://arxiv.org/abs/2403.19647). 
 
 ## Demos and Links
-- We provide an interface for observing and downloading clusters [here](https://feature-circuits.xyz).
-- We are working with Neuronpedia to display sparse features in an interactive format. Stay tuned for updates!
+- We provide an interface for exploring and downloading clusters [here](https://feature-circuits.xyz).
+- View our SAEs and their features on [neuronpedia](https://www.neuronpedia.org/p70d-sm).
 
 ## Installation
 
