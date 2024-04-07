@@ -75,6 +75,15 @@ scripts/get_circuit_nopair.sh <data_path> <node_threshold> <edge_threshold> <dic
 `data_path` should be the full path to a cluster .json in the same format as those that can be downloaded [here](https://feature-circuits.xyz). By default, this will save a circuit in `circuits/` and a circuit plot in `circuits/figures/`.
 
 
+## General utilties
+The following files contain utilities which are generally useful for our circuit discovery methods:
+* `attribution.py` implements methods for attributing model behaviors to SAE features and error terms.
+* `activation_utils.py` defines the `SparseAct` object, which bundles together feature activations and error terms in a convenient way and provides utilities for working with them in a unified way.
+* `ablation.py` implements general methods useful for performing SAE feature ablations
+* `circuit.py` contains our circuit discovery code
+* `circuit_plotting.py` contains our code for plotting circuits, once discovered.
+* `loading_utils.py` contains utilities for working with our subject-verb agreement datasets and clusters.
+
 ## Citation
 If you use any of the code or ideas presented here, please cite our paper:
 ```
