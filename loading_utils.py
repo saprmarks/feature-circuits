@@ -28,7 +28,8 @@ class DictionaryCfg(): # TODO Move to dictionary_learning repo?
 
 def load_examples(dataset, num_examples, model, seed=12, pad_to_length=None, length=None):
     examples = []
-    dataset_items = open(dataset).readlines()
+    with open(dataset) as f:
+        dataset_items = f.readlines()
     random.seed(seed)
     random.shuffle(dataset_items)
     for line in dataset_items:

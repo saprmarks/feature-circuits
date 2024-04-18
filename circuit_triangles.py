@@ -287,7 +287,7 @@ def get_circuit_cluster(dataset,
     attns = [layer.attention for layer in model.gpt_neox.layers]
     mlps = [layer.mlp for layer in model.gpt_neox.layers]
     resids = [layer for layer in model.gpt_neox.layers]
-    # /om/user/ericjm/dictionary-circuits/pythia-70m-deduped/
+
     dictionaries = {}
     for i in range(len(model.gpt_neox.layers)):
         ae = AutoEncoder(d_model, dict_size).to(device)
