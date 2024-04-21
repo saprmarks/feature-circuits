@@ -50,32 +50,31 @@ if __name__ == '__main__':
     dictionaries = {}
     submodules.append(model.gpt_neox.embed_in)
     submod_names[model.gpt_neox.embed_in] = 'embed'
-    ae = AutoEncoder(args.activation_dim, dictionary_size).to(args.device)
-    ae.load_state_dict(t.load(f'{args.dict_path}/embed/{args.dict_id}_{dictionary_size}/ae.pt'))
-    dictionaries[model.gpt_neox.embed_in] = ae
+    dictionaries[model.gpt_neox.embed_in] = AutoEncoder.from_pretrained(
+        f'{args.dict_path}/embed/{args.dict_id}_{dictionary_size}/ae.pt',
+        device=args.device
+    )
     for i in range(len(model.gpt_neox.layers)):
         submodule = model.gpt_neox.layers[i].attention
-        ae = AutoEncoder(args.activation_dim, dictionary_size).to(args.device)
-        ae.load_state_dict(t.load(f'{args.dict_path}/attn_out_layer{i}/{args.dict_id}_{dictionary_size}/ae.pt'))
-        submodules.append(submodule)
         submod_names[submodule] = f'attn_{i}'
-        dictionaries[submodule] = ae
+        dictionaries[submodule] = AutoEncoder.from_pretrained(
+            f'{args.dict_path}/attn_out_layer{i}/{args.dict_id}_{dictionary_size}/ae.pt',
+            device=args.device
+        )
 
         submodule = model.gpt_neox.layers[i].mlp
-        ae = AutoEncoder(args.activation_dim, dictionary_size).to(args.device)
-        ae.load_state_dict(t.load(f'{args.dict_path}/mlp_out_layer{i}/{args.dict_id}_{dictionary_size}/ae.pt'))
-        submodules.append(submodule)
         submod_names[submodule] = f'mlp_{i}'
-        dictionaries[submodule] = ae
+        dictionaries[submodule] = AutoEncoder.from_pretrained(
+            f'{args.dict_path}/mlp_out_layer{i}/{args.dict_id}_{dictionary_size}/ae.pt',
+            device=args.device
+        )
 
         submodule = model.gpt_neox.layers[i]
-        ae = AutoEncoder(args.activation_dim, dictionary_size).to(args.device)
-        ae.load_state_dict(t.load(f'{args.dict_path}/resid_out_layer{i}/{args.dict_id}_{dictionary_size}/ae.pt'))
-        submodules.append(submodule)
         submod_names[submodule] = f'resid_{i}'
-        dictionaries[submodule] = ae
-
-
+        dictionaries[submodule] = AutoEncoder.from_pretrained(
+            f'{args.dict_path}/resid_out_layer{i}/{args.dict_id}_{dictionary_size}/ae.pt',
+            device=args.device
+        )
 
     atp_effects = patching_effect(
         clean_inputs,

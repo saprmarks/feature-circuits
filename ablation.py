@@ -112,21 +112,23 @@ if __name__ == '__main__':
     if args.dict_id != 'id':
         dict_size = args.dict_size
         dictionaries = {}
-        ae = AutoEncoder(512, dict_size).to(args.device)
-        ae.load_state_dict(t.load(f'{args.dict_path}/embed/{args.dict_id}_{dict_size}/ae.pt'))
-        dictionaries[model.gpt_neox.embed_in] = ae
+        dictionaries[model.gpt_neox.embed_in] = AutoEncoder.from_pretrained(
+            f'{args.dict_path}/embed/{args.dict_id}_{dict_size}/ae.pt',
+            device=args.device
+        )
         for i in range(len(model.gpt_neox.layers)):
-            ae = AutoEncoder(512, dict_size).to(args.device)
-            ae.load_state_dict(t.load(f'{args.dict_path}/attn_out_layer{i}/{args.dict_id}_{dict_size}/ae.pt'))
-            dictionaries[model.gpt_neox.layers[i].attention] = ae
-
-            ae = AutoEncoder(512, dict_size).to(args.device)
-            ae.load_state_dict(t.load(f'{args.dict_path}/mlp_out_layer{i}/{args.dict_id}_{dict_size}/ae.pt'))
-            dictionaries[model.gpt_neox.layers[i].mlp] = ae
-
-            ae = AutoEncoder(512, dict_size).to(args.device)
-            ae.load_state_dict(t.load(f'{args.dict_path}/resid_out_layer{i}/{args.dict_id}_{dict_size}/ae.pt'))
-            dictionaries[model.gpt_neox.layers[i]] = ae
+            dictionaries[model.gpt_neox.layers[i].attention] = AutoEncoder.from_pretrained(
+                f'{args.dict_path}/attn_out_layer{i}/{args.dict_id}_{dict_size}/ae.pt',
+                device=args.device
+            )
+            dictionaries[model.gpt_neox.layers[i].mlp] = AutoEncoder.from_pretrained(
+                f'{args.dict_path}/mlp_out_layer{i}/{args.dict_id}_{dict_size}/ae.pt',
+                device=args.device
+            )
+            dictionaries[model.gpt_neox.layers[i]] = AutoEncoder.from_pretrained(
+                f'{args.dict_path}/resid_out_layer{i}/{args.dict_id}_{dict_size}/ae.pt',
+                device=args.device
+            )
 
     elif args.dict_id == 'id':
         dict_size = 512

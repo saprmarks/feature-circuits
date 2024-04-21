@@ -302,22 +302,23 @@ def get_circuit_cluster(dataset,
     mlps = [layer.mlp for layer in model.gpt_neox.layers]
     resids = [layer for layer in model.gpt_neox.layers]
     dictionaries = {}
+    dictionaries[embed] = AutoEncoder.from_pretrained(
+        os.path.join(dict_path, f'embed/{dict_id}_{dict_size}/ae.pt'),
+        device=device
+    )
     for i in range(len(model.gpt_neox.layers)):
-        ae = AutoEncoder(d_model, dict_size).to(device)
-        ae.load_state_dict(t.load(os.path.join(dict_path, f'embed/{dict_id}_{dict_size}/ae.pt')))
-        dictionaries[embed] = ae
-
-        ae = AutoEncoder(d_model, dict_size).to(device)
-        ae.load_state_dict(t.load(os.path.join(dict_path, f'attn_out_layer{i}/{dict_id}_{dict_size}/ae.pt')))
-        dictionaries[attns[i]] = ae
-
-        ae = AutoEncoder(d_model, dict_size).to(device)
-        ae.load_state_dict(t.load(os.path.join(dict_path, f'mlp_out_layer{i}/{dict_id}_{dict_size}/ae.pt')))
-        dictionaries[mlps[i]] = ae
-
-        ae = AutoEncoder(d_model, dict_size).to(device)
-        ae.load_state_dict(t.load(os.path.join(dict_path, f'resid_out_layer{i}/{dict_id}_{dict_size}/ae.pt')))
-        dictionaries[resids[i]] = ae
+        dictionaries[attns[i]] = AutoEncoder.from_pretrained(
+            os.path.join(dict_path, f'attn_out_layer{i}/{dict_id}_{dict_size}/ae.pt'),
+            device=device
+        )
+        dictionaries[mlps[i]] = AutoEncoder.from_pretrained(
+            os.path.join(dict_path, f'mlp_out_layer{i}/{dict_id}_{dict_size}/ae.pt'),
+            device=device
+        )
+        dictionaries[resids[i]] = AutoEncoder.from_pretrained(
+            os.path.join(dict_path, f'resid_out_layer{i}/{dict_id}_{dict_size}/ae.pt'),
+            device=device
+        )
 
     examples = load_examples_nopair(dataset, max_examples, model, length=max_length)
 
@@ -473,21 +474,23 @@ if __name__ == '__main__':
             dictionaries[mlps[i]] = IdentityDict(args.d_model)
             dictionaries[resids[i]] = IdentityDict(args.d_model)
     else:
-        ae = AutoEncoder(args.d_model, args.dict_size).to(device)
-        ae.load_state_dict(t.load(f'{args.dict_path}/embed/{args.dict_id}_{args.dict_size}/ae.pt'))
-        dictionaries[embed] = ae
+        dictionaries[embed] = AutoEncoder.from_pretrained(
+            f'{args.dict_path}/embed/{args.dict_id}_{args.dict_size}/ae.pt',
+            device=device
+        )
         for i in range(len(model.gpt_neox.layers)):
-            ae = AutoEncoder(args.d_model, args.dict_size).to(device)
-            ae.load_state_dict(t.load(f'{args.dict_path}/attn_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
-            dictionaries[attns[i]] = ae
-
-            ae = AutoEncoder(args.d_model, args.dict_size).to(device)
-            ae.load_state_dict(t.load(f'{args.dict_path}/mlp_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
-            dictionaries[mlps[i]] = ae
-
-            ae = AutoEncoder(args.d_model, args.dict_size).to(device)
-            ae.load_state_dict(t.load(f'{args.dict_path}/resid_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt'))
-            dictionaries[resids[i]] = ae
+            dictionaries[attns[i]] = AutoEncoder.from_pretrained(
+                f'{args.dict_path}/attn_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt',
+                device=device
+            )
+            dictionaries[mlps[i]] = AutoEncoder.from_pretrained(
+                f'{args.dict_path}/mlp_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt',
+                device=device
+            )
+            dictionaries[resids[i]] = AutoEncoder.from_pretrained(
+                f'{args.dict_path}/resid_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt',
+                device=device
+            )
     
     if args.nopair:
         save_basename = os.path.splitext(os.path.basename(args.dataset))[0]
