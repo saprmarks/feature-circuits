@@ -5,7 +5,7 @@ from numpy import ndindex
 from typing import Dict, Union
 from activation_utils import SparseAct
 
-DEBUGGING = False
+DEBUGGING = True
 
 if DEBUGGING:
     tracer_kwargs = {'validate' : True, 'scan' : True}
@@ -321,8 +321,8 @@ def jvp(
     vjv_indices = {}
     vjv_values = {}
     if return_without_right:
-        jv_indices = {}
-        jv_values = {}
+        vj_indices = {}
+        vj_values = {}
 
     with model.trace(input, **tracer_kwargs):
         # first specify forward pass modifications
@@ -343,33 +343,42 @@ def jvp(
         y_res = y - y_hat
         downstream_act = SparseAct(act=g, res=y_res).save()
 
+
+        if isinstance(left_vec, SparseAct):
+            downstream_grads_times_acts = (left_vec @ downstream_act).to_tensor().flatten()
+            def to_backprop(feat): 
+                return downstream_grads_times_acts[feat] # should be nabla_d metric @ d
+        elif isinstance(left_vec, dict):
+            def to_backprop(feat):
+                downstream_grads_via_feat = left_vec[feat]
+                downstream_grads_via_feat_times_acts = (downstream_grads_via_feat @ downstream_act)
+                # sum over downstream features
+                return downstream_grads_via_feat_times_acts.to_tensor().sum()
+
+
         for downstream_feat in downstream_features:
-            if isinstance(left_vec, SparseAct):
-                to_backprop = (left_vec @ downstream_act).to_tensor().flatten()
-            elif isinstance(left_vec, dict):
-                to_backprop = (left_vec[downstream_feat] @ downstream_act).to_tensor().flatten()
-            else:
-                raise ValueError(f"Unknown type {type(left_vec)}")
             vjv = (upstream_act.grad @ right_vec).to_tensor().flatten()
             if return_without_right:
-                jv = (upstream_act.grad @ right_vec).to_tensor().flatten()
+                vj = upstream_act.grad.to_tensor().flatten()
             x_res.grad = t.zeros_like(x_res)
-            to_backprop[downstream_feat].backward(retain_graph=True)
-
+            to_backprop(downstream_feat).backward(retain_graph=True)
+            
             vjv_indices[downstream_feat] = vjv.nonzero().squeeze(-1).save()
             vjv_values[downstream_feat] = vjv[vjv_indices[downstream_feat]].save()
-
             if return_without_right:
-                jv_indices[downstream_feat] = jv.nonzero().squeeze(-1).save()
-                jv_values[downstream_feat] = jv[vjv_indices[downstream_feat]].save()
+                vj_indices[downstream_feat] = vj.nonzero().squeeze(-1).save()
+                vj_values[downstream_feat] = vj[vj_indices[downstream_feat]].save()
 
-    # get shapes
+        
+    # construct return values
+
+    ## get shapes
     d_downstream_contracted = len((downstream_act.value @ downstream_act.value).to_tensor().flatten())
     d_upstream_contracted = len((upstream_act.value @ upstream_act.value).to_tensor().flatten())
     if return_without_right:
         d_upstream = len(upstream_act.value.to_tensor().flatten())
-
-
+    
+    ## make tensors
     vjv_indices = t.tensor(
         [[downstream_feat for downstream_feat in downstream_features for _ in vjv_indices[downstream_feat].value],
          t.cat([vjv_indices[downstream_feat].value for downstream_feat in downstream_features], dim=0)]
@@ -378,14 +387,14 @@ def jvp(
 
     if not return_without_right:
         return t.sparse_coo_tensor(vjv_indices, vjv_values, (d_downstream_contracted, d_upstream_contracted))
-
-    jv_indices = t.tensor(
-        [[downstream_feat for downstream_feat in downstream_features for _ in jv_indices[downstream_feat].value],
-         t.cat([jv_indices[downstream_feat].value for downstream_feat in downstream_features], dim=0)]
+    
+    vj_indices = t.tensor(
+        [[downstream_feat for downstream_feat in downstream_features for _ in vj_indices[downstream_feat].value],
+         t.cat([vj_indices[downstream_feat].value for downstream_feat in downstream_features], dim=0)]
     ).to(model.device)
-    jv_values = t.cat([jv_values[downstream_feat].value for downstream_feat in downstream_features], dim=0)
+    vj_values = t.cat([vj_values[downstream_feat].value for downstream_feat in downstream_features], dim=0)
 
     return (
         t.sparse_coo_tensor(vjv_indices, vjv_values, (d_downstream_contracted, d_upstream_contracted)),
-        t.sparse_coo_tensor(jv_indices, jv_values, (d_downstream_contracted, d_upstream))
+        t.sparse_coo_tensor(vj_indices, vj_values, (d_downstream_contracted, d_upstream))
     )

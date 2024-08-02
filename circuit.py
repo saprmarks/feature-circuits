@@ -196,6 +196,7 @@ def get_circuit(
             {feat_idx : unflatten(AR_grad[feat_idx].to_dense()) for feat_idx in features_by_submod[resid]},
             deltas[prev_resid],
         )
+
         RR_effect, _ = N(prev_resid, resid)
 
         if layer > 0: 
