@@ -15,69 +15,16 @@ from circuit_plotting import plot_circuit, plot_circuit_posaligned
 from dictionary_learning import AutoEncoder
 from loading_utils import load_examples, load_examples_nopair
 from nnsight import LanguageModel
+import time
 
+from coo_utils import sparse_reshape, sparse_repeat, sparsely_expand, sparse_prod, sparse_mm, sparsely_batched_outer_prod, doubly_batched_inner_prod
 
-###### utilities for dealing with sparse COO tensors ######
-def flatten_index(idxs, shape):
-    """
-    index : a tensor of shape [n, len(shape)]
-    shape : a shape
-    return a tensor of shape [n] where each element is the flattened index
-    """
-    idxs = idxs.t()
-    # get strides from shape
-    strides = [1]
-    for i in range(len(shape)-1, 0, -1):
-        strides.append(strides[-1]*shape[i])
-    strides = list(reversed(strides))
-    strides = t.tensor(strides).to(idxs.device)
-    # flatten index
-    return (idxs * strides).sum(dim=1).unsqueeze(0)
+DEBUGGING = True
 
-def prod(l):
-    out = 1
-    for x in l: out *= x
-    return out
-
-def sparse_flatten(x):
-    x = x.coalesce()
-    return t.sparse_coo_tensor(
-        flatten_index(x.indices(), x.shape),
-        x.values(),
-        (prod(x.shape),)
-    )
-
-def reshape_index(index, shape):
-    """
-    index : a tensor of shape [n]
-    shape : a shape
-    return a tensor of shape [n, len(shape)] where each element is the reshaped index
-    """
-    multi_index = []
-    for dim in reversed(shape):
-        multi_index.append(index % dim)
-        index //= dim
-    multi_index.reverse()
-    return t.stack(multi_index, dim=-1)
-
-def sparse_reshape(x, shape):
-    """
-    x : a sparse COO tensor
-    shape : a shape
-    return x reshaped to shape
-    """
-    # first flatten x
-    x = sparse_flatten(x).coalesce()
-    new_indices = reshape_index(x.indices()[0], shape)
-    return t.sparse_coo_tensor(new_indices.t(), x.values(), shape)
-
-def sparse_mean(x, dim):
-    if isinstance(dim, int):
-        return x.sum(dim=dim) / x.shape[dim]
-    else:
-        return x.sum(dim=dim) / prod(x.shape[d] for d in dim)
-
-######## end sparse tensor utilities ########
+if DEBUGGING:
+    tracer_kwargs = {'validate' : True, 'scan' : True}
+else:
+    tracer_kwargs = {'validate' : False, 'scan' : False}
 
 
 def get_circuit(
@@ -119,6 +66,11 @@ def get_circuit(
         submod : (effects[submod].to_tensor().flatten().abs() > node_threshold).nonzero().flatten().tolist() for submod in all_submods
     }
 
+    features_by_submod_new = {
+        submod : effects[submod].abs() > node_threshold for submod in all_submods
+    }
+    breakpoint()
+
     n_layers = len(resids)
 
     nodes = {'y' : total_effect}
@@ -139,6 +91,19 @@ def get_circuit(
     edges = defaultdict(lambda:{})
     edges[f'resid_{len(resids)-1}'] = { 'y' : effects[resids[-1]].to_tensor().flatten().to_sparse() }
 
+    def N_new(upstream, downstream):
+        return jvp(
+            clean,
+            model,
+            dictionaries,
+            downstream,
+            features_by_submod_new[downstream],
+            upstream,
+            grads[downstream],
+            deltas[upstream],
+            # return_without_right=True,
+        )
+
     def N(upstream, downstream):
         return jvp(
             clean,
@@ -149,9 +114,8 @@ def get_circuit(
             upstream,
             grads[downstream],
             deltas[upstream],
-            return_without_right=True,
+            # return_without_right=True,
         )
-
 
     # now we work backward through the model to get the edges
     for layer in reversed(range(len(resids))):
@@ -159,54 +123,277 @@ def get_circuit(
         mlp = mlps[layer]
         attn = attns[layer]
 
-        MR_effect, MR_grad = N(mlp, resid)
-        AR_effect, AR_grad = N(attn, resid)
+        MR_effect = N(mlp, resid)
+        MR_effect_new = N_new(mlp, resid)
+        breakpoint()
+        # AR_effect = N(attn, resid)
 
-        edges[f'mlp_{layer}'][f'resid_{layer}'] = MR_effect
-        edges[f'attn_{layer}'][f'resid_{layer}'] = AR_effect
+        # edges[f'mlp_{layer}'][f'resid_{layer}'] = MR_effect
+        # edges[f'attn_{layer}'][f'resid_{layer}'] = AR_effect
 
         if layer > 0:
             prev_resid = resids[layer-1]
         else:
             prev_resid = embed
 
-        RM_effect, _ = N(prev_resid, mlp)
-        RA_effect, _ = N(prev_resid, attn)
+        # RM_effect = N(prev_resid, mlp)
+        # RA_effect = N(prev_resid, attn)
 
-        MR_grad = MR_grad.coalesce()
-        AR_grad = AR_grad.coalesce()
+        # get RR effect
+        W_E = dictionaries[resid].encoder.weight
+        W_D = dictionaries[resid].decoder.weight
+        W_D_prev = dictionaries[prev_resid].decoder.weight
+        downstream_grad = grads[resid]
+        downstream_idxs = features_by_submod[resid]
+        upstream_delta = deltas[prev_resid]
+        upstream_idxs = features_by_submod[prev_resid]
 
-        RMR_effect = jvp(
-            clean,
-            model,
-            dictionaries,
-            mlp,
-            features_by_submod[resid],
-            prev_resid,
-            {feat_idx : unflatten(MR_grad[feat_idx].to_dense()) for feat_idx in features_by_submod[resid]},
-            deltas[prev_resid],
+        # define some shapes
+        assert (b := downstream_grad.act.shape[0]) == upstream_delta.act.shape[0]
+        assert (s := downstream_grad.act.shape[1]) == upstream_delta.act.shape[1]
+        assert (f := downstream_grad.act.shape[2]) == upstream_delta.act.shape[2] and f == W_E.shape[0] and f == W_D_prev.shape[1]
+        assert (d := W_E.shape[1]) == W_D_prev.shape[0]
+
+        mask = t.zeros(b, s, f, device=model.device, dtype=t.bool)
+        mask[tuple(downstream_idxs.T)] = True
+        downstream_grad.act[~mask] = 0
+        downstream_grad.act = downstream_grad.act.to_sparse_coo()
+
+        mask = t.zeros(b, s, f, device=model.device, dtype=t.bool)
+        mask[tuple(upstream_idxs.T)] = True
+        upstream_delta.act[~mask] = 0
+        t.randn(512).cuda()
+        upstream_delta.act = upstream_delta.act.to_sparse_coo()
+        t.randn(512).cuda()
+        print(f"downstream_grad: {downstream_grad.act.indices().shape}")
+        print(f"upstream_delta: {upstream_delta.act.indices().shape}")
+
+
+        with t.no_grad():
+
+            # ffm_effect
+            rfm_grad = sparsely_batched_outer_prod(
+                downstream_grad.act, W_E
+            ) # [b, s, f | d]
+            fr_delta = sparsely_batched_outer_prod(
+                upstream_delta.act, W_D_prev.T
+            ) # [b, s, f | d]
+            ffm_effect = doubly_batched_inner_prod(rfm_grad, fr_delta)
+
+            # efm_effect
+            efm_effect = doubly_batched_inner_prod(rfm_grad, upstream_delta.res.to_sparse(sparse_dim=2))
+            efm_effect = efm_effect.unsqueeze(-1)
+
+            # fem_effect
+            rem_grad = downstream_grad.res @ (t.eye(d, device=model.device) - W_D @ W_E)
+            fr_delta = sparsely_batched_outer_prod(
+                upstream_delta.act, W_D_prev.T
+            )
+            fem_effect = doubly_batched_inner_prod(
+                rem_grad.to_sparse(sparse_dim=2), fr_delta
+            )
+            fem_effect = fem_effect.unsqueeze(2)
+
+            # eem_effect
+            eem_effect = (downstream_grad.res.view(b, s, 1, 1, d) * \
+                upstream_delta.res.view(1, 1, b, s, d)).sum(dim=-1)
+            eem_effect =  eem_effect.unsqueeze(2).unsqueeze(-1).to_sparse()
+
+            # aggregate into RR_effect
+            RR_effect = t.cat(
+                [
+                    t.cat([ffm_effect, efm_effect], dim=-1),
+                    t.cat([fem_effect, eem_effect], dim=-1)
+                ],
+                dim=2
+            )
+
+
+
+
+            ffm_grad = sparse_prod(downstream_grad.act, W_E @ W_D).coalesce() # [b, s, f, f]
+            print(f"ffm_grad: {ffm_grad.indices().shape}")
+            ffm_grad = sparse_repeat(
+                sparse_reshape(
+                    ffm_grad, (b, s, 1, 1, f, f)
+                ), (1, 1, b, s, 1, 1)
+            ).coalesce()
+            print(f"ffm_grad: {ffm_grad.indices().shape}")
+            ud = sparse_repeat(
+                    sparse_reshape(
+                        upstream_delta.act, (1, 1, b, s, 1, f)
+                    ), (b, s, 1, 1, f, 1)
+                ).coalesce()
+            print(f"ud: {ud.indices().shape}")
+
+            breakpoint()
+            ffm_effect = jank_multiply(ffm_grad, ud)
+            breakpoint()
+            ffm_effect = ffm_effect.coalesce()
+            breakpoint()
+            assert False, "You made it!"
+            print(f"ffm: {time.time() - start}")
+
+            # assert False, "You made it!"
+
+            W_E_sp = sparsely_expand(W_E, downstream_idxs, b, s) # [b, s, b, s, f, d]
+            print(f"sparsely_expand: {time.time() - start}")
+
+            # ff
+            start = time.time()
+            # ff_grad = sparse_mm(W_E_sp, W_D_prev.expand(b, s, b, s, d, f))
+            breakpoint()
+            ff_grad = sparsely_expand(W_E @ W_D_prev, downstream_idxs, b, s).coalesce()
+            breakpoint()
+            aux = downstream_grad.act.reshape(b, s, 1, 1, f, 1).to_sparse_coo()
+            aux = sparse_repeat(aux, (1, 1, b, s, 1, f)).coalesce()
+            breakpoint()
+            t.save(ff_grad, "ff_grad.pt")
+            t.save(aux, "aux.pt")
+            breakpoint()
+            ff_grad * aux
+
+            ff_effect = sparse_repeat(
+                    downstream_grad.act.reshape(b, s, 1, 1, f, 1).to_sparse_coo(), (1, 1, b, s, 1, f)
+                ).coalesce() * \
+                    ff_grad * sparse_repeat(
+                        upstream_delta.act.reshape(1, 1, b, s, 1, f).to_sparse_coo(), (b, s, 1, 1, f, 1)
+                    ).coalesce()
+            print(f"ff: {time.time() - start}")
+
+            # ef
+            start = time.time()
+            ef_effect = downstream_grad.act.reshape(b, s, 1, 1, f, 1).expand(b, s, b, s, f, 1).to_sparse_coo() * \
+                W_E_sp @ \
+                    upstream_delta.res.reshape(1, 1, b, s, d, 1).expand(b, s, b, s, d, 1).to_sparse_coo()
+            print(f"ef: {time.time() - start}")
+
+            # fe
+            start = time.time()
+            fe_grad = (W_D_prev - (W_D @ W_E) @ W_D_prev).expand(b, s, b, s, d, d)
+            fe_effect = downstream_grad.res.reshape(b, s, 1, 1, 1, d).expand(b, s, b, s, 1, d) @ \
+                fe_grad * \
+                    upstream_delta.act.reshape(1, 1, b, s, 1, f).expand(b, s, b, s, 1, f)
+            fe_effect = fe_effect.to_sparse_coo()
+            print(f"fe: {time.time() - start}")
+
+            # ee
+            start = time.time()
+            ee_effect = downstream_grad.res.reshape(b, s, 1, 1, 1, d).expand(b, s, b, s, 1, d) @ \
+                upstream_delta.res.reshape(1, 1, b, s, d, 1).expand(b, s, b, s, d, 1)
+            ee_effect = ee_effect.to_sparse_coo()
+            print(f"ee: {time.time() - start}")
+
+        
+        # # put everything in [b, s, b, s, ...] format
+
+        # W_E_indices = t.stack(
+        #     [
+        #         downstrean_idxs
+        #     ]
+        # )
+
+        # W_E = W_E.expand(b, s, b, s, f, d)
+        # W_D = W_D.expand(b, s, b, s, d, f)
+        # W_D_prev = W_D_prev.expand(b, s, b, s, d, f)
+
+        # # # zero out the rows of W_E not in downstream_idxs
+        # # mask = t.zeros_like(W_E, device=model.device, dtype=t.bool)
+        # # mask[..., downstream_idxs,:] = True
+        # # W_E[~mask] = 0
+
+
+        # # ## zero out all rows of W_E not in downstream_idxs
+        # # mask = t.zeros_like(W_E, device=model.device, dtype=t.bool)
+        # # breakpoint()
+        # # mask[downstream_idxs] = True
+        # # breakpoint()
+        # # W_E[~mask] = 0
+        # # W_E = W_E.to_sparse_coo()
+
+        # # ff_effect
+        # ff_grad = W_E @ W_D_prev
+        # ff_effect = downstream_grad.act.reshape(b, s, 1, 1, f, 1).expand(b, s, b, s, f, f) * \
+        #     ff_grad * \
+        #         upstream_delta.act.reshape(1, 1, b, s, 1, f).expand(b, s, b, s, f, f)
+
+        # # # ff_effect
+        # # ff_grad = W_E @ W_D_prev.to_sparse_coo() # [f, f]
+        # # fm_grad = downstream_grad.act.reshape(b, s, f, 1, 1, 1).expand(b, s, f, b, s, f).to_sparse_coo() # [b, s, f, b, s, f]
+        # # ff_effect = fm_grad * \
+        # #     sparse_repeat(sparse_reshape(ff_grad, (1, 1, f, 1, 1, f)), (b, s, 1, b, s, 1)) * \
+        # #         upstream_delta.act.reshape(1, 1, 1, b, s, f).expand(b, s, f, b, s, f).to_sparse_coo() # [b, s, f, b, s, f]
+        
+        # # ef_effect
+        # ef_effect = downstream_grad.act.reshape(b, s, 1, 1, f, 1).expand(b, s, b, s, f, 1) * \
+        #     W_E @ \
+        #         upstream_delta.res.reshape(1, 1, b, s, d, 1).expand(b, s, b, s, d, 1)
+
+        # # # ef_effect
+        # # ef_effect = downstream_grad.act.reshape(b, s, f, 1, 1, 1).expand(b, s, f, b, s, 1).to_sparse_coo() * \
+        # #     sparse_repeat(
+        # #         sparse_reshape(
+        # #             sparse_repeat(sparse_reshape(W_E, (1, 1, f, d)), (b, s, 1, 1)) @ upstream_delta.res.unsqueeze(-1).permute(2, 0, 1, 3), # [f, b, s, 1]
+        # #             (1, 1, f, b, s, 1)
+        # #         ),
+        # #         (b, s, 1, 1, 1, 1)
+        # #     ) # [b, s, f, b, s, 1]
+
+        # # fe_effect
+        # fe_grad = W_D_prev - W_D @ ff_grad
+        # fe_effect = downstream_grad.res.reshape(b, s, 1, 1, 1, d).expand(b, s, b, s, 1, d) @ \
+        #     fe_grad * \
+        #         upstrea_delta.act.reshape(1, 1, b, s, 1, f).expand(b, s, b, s, 1, f)
+
+        # # # fe_effect
+        # # fe_grad = W_D_prev.to_sparse_coo() - W_D.to_sparse_coo() @ ff_grad # [d, f]
+        # # fe_effect = sparse_repeat(
+        # #     sparse_reshape(
+        # #         downstream_grad.res.reshape(b, s, 1, d) @ \
+        # #             sparse_repeat(sparse_reshape(fe_grad, (1, 1, d, f)), (b, s, 1, 1)), # [b, s, 1, f]
+        # #             (b, s, 1, 1, 1, f)
+        # #     ),
+        # #     (1, 1, 1, b, s, 1)
+        # # ) * upstream_delta.act.reshape(1, 1, 1, b, s, f).expand(b, s, 1, b, s, f).to_sparse_coo() # [b, s, 1, b, s, f]
+
+        # # ee_effect
+        # ee_effect = downstream_grad.res.reshape(b, s, 1, 1, 1, d).expand(b, s, b, s, 1, d) @ \
+        #     upstream_delta.res.reshape(1, 1, b, s, d, 1).expand(b, s, b, s, d, 1)
+
+        # # ee_effect
+        # ee_effect = (
+        #     downstream_grad.res.reshape(b, s, 1, 1, 1, d).expand(b, s, b, s, 1, d) @ \
+        #         upstream_delta.res.reshape(1, 1, b, s, d, 1).expand(b, s, b, s, d, 1)
+        # ).reshape(b, s, 1, b, s, 1).to_sparse_coo() # [b, s, 1, b, s, 1]
+
+        # RR_effect
+        RR_effect = t.cat(
+            [
+                t.cat([ff_effect, ef_effect], dim=-1),
+                t.cat([fe_effect, ee_effect], dim=-1)
+            ],
+            dim=-2
         )
-        RAR_effect = jvp(
-            clean,
-            model,
-            dictionaries,
-            attn,
-            features_by_submod[resid],
-            prev_resid,
-            {feat_idx : unflatten(AR_grad[feat_idx].to_dense()) for feat_idx in features_by_submod[resid]},
-            deltas[prev_resid],
-        )
+        RR_effect = RR_effect.permute(0, 1, 4, 2, 3, 5).to_sparse_coo()
 
-        RR_effect, _ = N(prev_resid, resid)
+        # # RR_effect
+        # RR_effect = t.cat(
+        #     [
+        #         t.cat([ff_effect, ef_effect], dim=-1), # [b, s, f, b, s, f+1]
+        #         t.cat([fe_effect, ee_effect], dim=-1), # [b, s, 1, b, s, f+1]
+        #     ],
+        #     dim=2
+        # )
+        # assert RR_effect.shape == (b, s, f+1, b, s, f+1)
 
         if layer > 0: 
             edges[f'resid_{layer-1}'][f'mlp_{layer}'] = RM_effect
             edges[f'resid_{layer-1}'][f'attn_{layer}'] = RA_effect
-            edges[f'resid_{layer-1}'][f'resid_{layer}'] = RR_effect - RMR_effect - RAR_effect
+            edges[f'resid_{layer-1}'][f'resid_{layer}'] = RR_effect
         else:
             edges['embed'][f'mlp_{layer}'] = RM_effect
             edges['embed'][f'attn_{layer}'] = RA_effect
-            edges['embed'][f'resid_0'] = RR_effect - RMR_effect - RAR_effect
+            edges['embed'][f'resid_0'] = RR_effect
 
     # rearrange weight matrices
     for child in edges:

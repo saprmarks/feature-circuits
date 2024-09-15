@@ -4,13 +4,26 @@ from tqdm import tqdm
 from numpy import ndindex
 from typing import Dict, Union
 from activation_utils import SparseAct
+from einops import einsum
 
-DEBUGGING = True
+DEBUGGING = False
+is_tuple = {}
 
 if DEBUGGING:
     tracer_kwargs = {'validate' : True, 'scan' : True}
 else:
     tracer_kwargs = {'validate' : False, 'scan' : False}
+
+def profile(model, submodules):
+    """
+    Set a global is_tuple dictionary identifying whether
+    each submodule's output is a tuple.
+    """
+    if not all([submodule in is_tuple for submodule in submodules]):
+        with model.trace("_", scan=True, validate=True):
+            for submodule in submodules:
+                is_tuple[submodule] = type(submodule.output.shape) == tuple
+
 
 EffectOut = namedtuple('EffectOut', ['effects', 'deltas', 'grads', 'total_effect'])
 
@@ -23,13 +36,6 @@ def _pe_attrib(
         metric_fn,
         metric_kwargs=dict(),
 ):
-    
-    # first run through a test input to figure out which hidden states are tuples
-    is_tuple = {}
-    with model.trace("_"):
-        for submodule in submodules:
-            is_tuple[submodule] = type(submodule.output.shape) == tuple
-
     hidden_states_clean = {}
     grads = {}
     with model.trace(clean, **tracer_kwargs):
@@ -87,6 +93,68 @@ def _pe_attrib(
     
     return EffectOut(effects, deltas, grads, total_effect)
 
+def _pe_analytic(
+    clean,
+    patch,
+    model,
+    submodules,
+    dictionaries,
+    metric_fn,
+    metric_kwargs=dict(),
+):
+    # get activations and gradients at clean input
+    hidden_states_clean = {}
+    grads = {}
+    with model.trace(clean, **tracer_kwargs):
+        for submodule in submodules:
+            dictionary = dictionaries[submodule]
+            x = submodule.output
+            if is_tuple[submodule]:
+                x = x[0]
+            x_hat, f = dictionary(x, output_features=True) # x_hat implicitly depends on f
+            residual = x - x_hat
+            hidden_states_clean[submodule] = SparseAct(act=f, res=residual).save()
+            feat_grads = einsum(dictionary.decoder.weight, x.grad, "d_model n_feats, ... d_model -> ... n_feats")
+            grads[submodule] = SparseAct(act=feat_grads, res=x.grad).save()
+        metric_clean = metric_fn(model, **metric_kwargs).save()
+        metric_clean.sum().backward()
+    hidden_states_clean = {k : v.value for k, v in hidden_states_clean.items()}
+    grads = {k : v.value for k, v in grads.items()}
+
+    # get activations at patch input
+    if patch is None:
+        hidden_states_patch = {
+            k : SparseAct(act=t.zeros_like(v.act), res=t.zeros_like(v.res)) for k, v in hidden_states_clean.items()
+        }
+        total_effect = None
+    else:
+        hidden_states_patch = {}
+        with model.trace(patch, **tracer_kwargs), t.inference_mode():
+            for submodule in submodules:
+                dictionary = dictionaries[submodule]
+                x = submodule.output
+                if is_tuple[submodule]:
+                    x = x[0]
+                x_hat, f = dictionary(x, output_features=True)
+                residual = x - x_hat
+                hidden_states_patch[submodule] = SparseAct(act=f, res=residual).save()
+            metric_patch = metric_fn(model, **metric_kwargs).save()
+        total_effect = (metric_patch.value - metric_clean.value).detach()
+        hidden_states_patch = {k : v.value for k, v in hidden_states_patch.items()}
+
+    effects = {}
+    deltas = {}
+    for submodule in submodules:
+        patch_state, clean_state, grad = hidden_states_patch[submodule], hidden_states_clean[submodule], grads[submodule]
+        delta = patch_state - clean_state.detach() if patch_state is not None else -clean_state.detach()
+        effect = delta @ grad
+        effects[submodule] = effect
+        deltas[submodule] = delta
+    
+    total_effect = total_effect if total_effect is not None else None
+    
+    return EffectOut(effects, deltas, grads, total_effect)    
+
 def _pe_ig(
         clean,
         patch,
@@ -97,13 +165,6 @@ def _pe_ig(
         steps=10,
         metric_kwargs=dict(),
 ):
-    
-    # first run through a test input to figure out which hidden states are tuples
-    is_tuple = {}
-    with model.trace("_"):
-        for submodule in submodules:
-            is_tuple[submodule] = type(submodule.output.shape) == tuple
-
     hidden_states_clean = {}
     with model.trace(clean, **tracer_kwargs), t.no_grad():
         for submodule in submodules:
@@ -184,14 +245,7 @@ def _pe_exact(
     submodules,
     dictionaries,
     metric_fn,
-    ):
-
-    # first run through a test input to figure out which hidden states are tuples
-    is_tuple = {}
-    with model.trace("_"):
-        for submodule in submodules:
-            is_tuple[submodule] = type(submodule.output.shape) == tuple
-
+):
     hidden_states_clean = {}
     with model.trace(clean, **tracer_kwargs), t.inference_mode():
         for submodule in submodules:
@@ -280,6 +334,8 @@ def patching_effect(
         steps=10,
         metric_kwargs=dict()
 ):
+    profile(model, submodules)
+
     if method == 'attrib':
         return _pe_attrib(clean, patch, model, submodules, dictionaries, metric_fn, metric_kwargs=metric_kwargs)
     elif method == 'ig':
@@ -288,6 +344,65 @@ def patching_effect(
         return _pe_exact(clean, patch, model, submodules, dictionaries, metric_fn)
     else:
         raise ValueError(f"Unknown method {method}")
+
+def jvp_new(
+    input,
+    model,
+    dictionaries,
+    downstream_submod,
+    downstream_features,
+    upstream_submod,
+    left_vec: SparseAct,
+    right_vec: SparseAct,
+):
+    profile(model, [downstream_submod, upstream_submod])
+
+    downstream_dict, upstream_dict = dictionaries[downstream_submod], dictionaries[upstream_submod]
+    b, s, f_down = downstream_features.act.shape
+    assert f_down == downstream_dict.decoder.weight.shape[-1]
+    f_up = upstream_dict.decoder.weight.shape[-1]
+
+
+    vjv_values = {}
+
+    with model.trace(input, **tracer_kwargs):
+        # forward pass modifications
+        x = upstream_submod.output
+        if is_tuple[upstream_submod]:
+            x = x[0]
+        x_hat, f = upstream_dict(x, output_features=True)
+        x_res = x - x_hat
+        if is_tuple[upstream_submod]:
+            upstream_submod.output[0][:] = x_hat + x_res
+        else:
+            upstream_submod.output = x_hat + x_res
+        upstream_act = SparseAct(act=f, res=x_res).save()
+        
+        y = downstream_submod.output
+        if is_tuple[downstream_submod]:
+            y = y[0]
+        y_hat, g = downstream_dict(y, output_features=True)
+        y_res = y - y_hat
+        if is_tuple[downstream_submod]:
+            downstream_submod.output[0][:] = y_hat + y_res
+        else:
+            downstream_submod.output = y_hat + y_res
+        downstream_act = SparseAct(act=g, res=y_res).save()
+
+        to_backprops = (left_vec @ downstream_act).to_tensor()
+
+        for downstream_feat_idx in downstream_features.to_tensor().nonzero():
+            vjv = (upstream_act.grad @ right_vec).to_tensor().flatten()
+            x_res.grad = t.zeros_like(x_res.grad)
+            to_backprops[tuple(downstream_feat_idx)].backward(retain_graph=True)
+
+            vjv_values[downstream_feat_idx] = vjv[vjv_indices[downstream_feat_idx]].save()
+
+    vjv_indices = t.stack(vjv_values.keys(), dim=0, device=model.device).T
+    vjv_values = t.stack([v.value for v in vjv_values.values()], dim=0, device=model.device)
+
+    return t.sparse_coo_tensor(vjv_indices, vjv_values, size=(b, s, f_down+1, b, s, f_up+1))
+
 
 def jvp(
         input,
@@ -310,11 +425,7 @@ def jvp(
         else:
             return t.sparse_coo_tensor(t.zeros((2, 0), dtype=t.long), t.zeros(0)).to(model.device), t.sparse_coo_tensor(t.zeros((2, 0), dtype=t.long), t.zeros(0)).to(model.device)
 
-    # first run through a test input to figure out which hidden states are tuples
-    is_tuple = {}
-    with model.trace("_"):
-        is_tuple[upstream_submod] = type(upstream_submod.output.shape) == tuple
-        is_tuple[downstream_submod] = type(downstream_submod.output.shape) == tuple
+    profile(model, [downstream_submod, upstream_submod])
 
     downstream_dict, upstream_dict = dictionaries[downstream_submod], dictionaries[upstream_submod]
 
