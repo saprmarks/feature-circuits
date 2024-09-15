@@ -94,14 +94,14 @@ def _pe_ig(
         submodules,
         dictionaries,
         metric_fn,
-        use_input=None,
+        use_inputs=None,
         steps=10,
         metric_kwargs=dict(),
 ):
-    if use_input is None:
-        use_input = {}
+    if use_inputs is None:
+        use_inputs = {}
         for submodule in submodules:
-            use_input[submodule] = False
+            use_inputs[submodule] = False
 
     # first run through a test input to figure out which hidden states are tuples
     is_tuple = {}
@@ -113,8 +113,8 @@ def _pe_ig(
     with model.trace(clean, **tracer_kwargs), t.no_grad():
         for submodule in submodules:
             dictionary = dictionaries[submodule]
-            x = submodule.output if not use_input[submodule] else submodule.input
-            if use_input[submodule]:
+            x = submodule.output if not use_inputs[submodule] else submodule.input
+            if use_inputs[submodule]:
                 x = x[0][0]
             if is_tuple[submodule]:
                 x = x[0]
@@ -135,8 +135,8 @@ def _pe_ig(
         with model.trace(patch, **tracer_kwargs), t.no_grad():
             for submodule in submodules:
                 dictionary = dictionaries[submodule]
-                x = submodule.output if not use_input[submodule] else submodule.input
-                if use_input[submodule]:
+                x = submodule.output if not use_inputs[submodule] else submodule.input
+                if use_inputs[submodule]:
                     x = x[0][0]
                 elif is_tuple[submodule]:
                     x = x[0]
@@ -165,7 +165,7 @@ def _pe_ig(
                 f.res.retain_grad()
                 fs.append(f)
                 with tracer.invoke(clean, scan=tracer_kwargs['scan']):
-                    if use_input[submodule]:
+                    if use_inputs[submodule]:
                         submodule.input[0][0][:] = dictionary.decode(f.act) + f.res
                     elif is_tuple[submodule]:
                         submodule.output[0][:] = dictionary.decode(f.act) + f.res
@@ -288,14 +288,14 @@ def patching_effect(
         dictionaries,
         metric_fn,
         method='attrib',
-        use_input=None,
+        use_inputs=None,
         steps=10,
         metric_kwargs=dict()
 ):
     if method == 'attrib':
         return _pe_attrib(clean, patch, model, submodules, dictionaries, metric_fn, metric_kwargs=metric_kwargs)
     elif method == 'ig':
-        return _pe_ig(clean, patch, model, submodules, dictionaries, metric_fn, use_input=use_input, steps=steps, metric_kwargs=metric_kwargs)
+        return _pe_ig(clean, patch, model, submodules, dictionaries, metric_fn, use_inputs=use_inputs, steps=steps, metric_kwargs=metric_kwargs)
     elif method == 'exact':
         return _pe_exact(clean, patch, model, submodules, dictionaries, metric_fn)
     else:
