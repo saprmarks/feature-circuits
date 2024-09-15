@@ -4,6 +4,10 @@ from tqdm import tqdm
 from numpy import ndindex
 from typing import Dict, Union
 from activation_utils import SparseAct
+from dataclasses import dataclass
+import nnsight
+from dictionary_learning.dictionary import Dictionary
+from typing import Callable
 
 DEBUGGING = False
 
@@ -14,40 +18,57 @@ else:
 
 EffectOut = namedtuple('EffectOut', ['effects', 'deltas', 'grads', 'total_effect'])
 
+@dataclass(frozen=True)
+class Submodule:
+    name: str
+    submodule: nnsight.envoy.Envoy
+    use_input: bool = False
+    is_tuple: bool = False
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def get_activation(self):
+        if self.use_input:
+            return self.submodule.input[0][0]
+        else:
+            if self.is_tuple:
+                return self.submodule.output[0]
+            else:
+                return self.submodule.output
+
+    def set_activation(self, x):
+        if self.use_input:
+            self.submodule.input[0][0][:] = x
+        else:
+            if self.is_tuple:
+                self.submodule.output[0][:] = x
+            else:
+                self.submodule.output = x
+
+
 def _pe_attrib(
         clean,
         patch,
         model,
-        submodules,
-        dictionaries,
+        submodules: list[Submodule],
+        dictionaries: dict[Submodule, Dictionary],
         metric_fn,
         metric_kwargs=dict(),
 ):
-    
-    # first run through a test input to figure out which hidden states are tuples
-    is_tuple = {}
-    with model.trace("_"):
-        for submodule in submodules:
-            is_tuple[submodule] = type(submodule.output.shape) == tuple
-
     hidden_states_clean = {}
     grads = {}
     with model.trace(clean, **tracer_kwargs):
         for submodule in submodules:
             dictionary = dictionaries[submodule]
-            x = submodule.output
-            if is_tuple[submodule]:
-                x = x[0]
+            x = submodule.get_activation()
             x_hat, f = dictionary(x, output_features=True) # x_hat implicitly depends on f
             residual = x - x_hat
             hidden_states_clean[submodule] = SparseAct(act=f, res=residual).save()
             grads[submodule] = hidden_states_clean[submodule].grad.save()
             residual.grad = t.zeros_like(residual)
             x_recon = x_hat + residual
-            if is_tuple[submodule]:
-                submodule.output[0][:] = x_recon
-            else:
-                submodule.output = x_recon
+            submodule.set_activation(x_recon)
             x.grad = x_recon.grad
         metric_clean = metric_fn(model, **metric_kwargs).save()
         metric_clean.sum().backward()
@@ -64,9 +85,7 @@ def _pe_attrib(
         with model.trace(patch, **tracer_kwargs), t.inference_mode():
             for submodule in submodules:
                 dictionary = dictionaries[submodule]
-                x = submodule.output
-                if is_tuple[submodule]:
-                    x = x[0]
+                x = submodule.get_activation()
                 x_hat, f = dictionary(x, output_features=True)
                 residual = x - x_hat
                 hidden_states_patch[submodule] = SparseAct(act=f, res=residual).save()
@@ -98,26 +117,11 @@ def _pe_ig(
         steps=10,
         metric_kwargs=dict(),
 ):
-    if use_input is None:
-        use_input = {}
-        for submodule in submodules:
-            use_input[submodule] = False
-
-    # first run through a test input to figure out which hidden states are tuples
-    is_tuple = {}
-    with model.trace("_"):
-        for submodule in submodules:
-            is_tuple[submodule] = type(submodule.output.shape) == tuple
-
     hidden_states_clean = {}
     with model.trace(clean, **tracer_kwargs), t.no_grad():
         for submodule in submodules:
             dictionary = dictionaries[submodule]
-            x = submodule.output if not use_input[submodule] else submodule.input
-            if use_input[submodule]:
-                x = x[0][0]
-            if is_tuple[submodule]:
-                x = x[0]
+            x = submodule.get_activation()
             f = dictionary.encode(x)
             x_hat = dictionary.decode(f)
             residual = x - x_hat
@@ -135,11 +139,7 @@ def _pe_ig(
         with model.trace(patch, **tracer_kwargs), t.no_grad():
             for submodule in submodules:
                 dictionary = dictionaries[submodule]
-                x = submodule.output if not use_input[submodule] else submodule.input
-                if use_input[submodule]:
-                    x = x[0][0]
-                elif is_tuple[submodule]:
-                    x = x[0]
+                x = submodule.get_activation()
                 f = dictionary.encode(x)
                 x_hat = dictionary.decode(f)
                 residual = x - x_hat
@@ -165,12 +165,7 @@ def _pe_ig(
                 f.res.retain_grad()
                 fs.append(f)
                 with tracer.invoke(clean, scan=tracer_kwargs['scan']):
-                    if use_input[submodule]:
-                        submodule.input[0][0][:] = dictionary.decode(f.act) + f.res
-                    elif is_tuple[submodule]:
-                        submodule.output[0][:] = dictionary.decode(f.act) + f.res
-                    else:
-                        submodule.output = dictionary.decode(f.act) + f.res
+                    submodule.set_activation(dictionary.decode(f.act) + f.res)
                     metrics.append(metric_fn(model, **metric_kwargs))
             metric = sum([m for m in metrics])
             metric.sum().backward(retain_graph=True) # TODO : why is this necessary? Probably shouldn't be, contact jaden
@@ -197,19 +192,11 @@ def _pe_exact(
     metric_fn,
     ):
 
-    # first run through a test input to figure out which hidden states are tuples
-    is_tuple = {}
-    with model.trace("_"):
-        for submodule in submodules:
-            is_tuple[submodule] = type(submodule.output.shape) == tuple
-
     hidden_states_clean = {}
     with model.trace(clean, **tracer_kwargs), t.inference_mode():
         for submodule in submodules:
             dictionary = dictionaries[submodule]
-            x = submodule.output
-            if is_tuple[submodule]:
-                x = x[0]
+            x = submodule.get_activation()
             f = dictionary.encode(x)
             x_hat = dictionary.decode(f)
             residual = x - x_hat
@@ -227,9 +214,7 @@ def _pe_exact(
         with model.trace(patch, **tracer_kwargs), t.inference_mode():
             for submodule in submodules:
                 dictionary = dictionaries[submodule]
-                x = submodule.output
-                if is_tuple[submodule]:
-                    x = x[0]
+                x = submodule.get_activation()
                 f = dictionary.encode(x)
                 x_hat = dictionary.decode(f)
                 residual = x - x_hat
@@ -254,10 +239,7 @@ def _pe_exact(
                     f = clean_state.act.clone()
                     f[tuple(idx)] = patch_state.act[tuple(idx)]
                     x_hat = dictionary.decode(f)
-                    if is_tuple[submodule]:
-                        submodule.output[0][:] = x_hat + clean_state.res
-                    else:
-                        submodule.output = x_hat + clean_state.res
+                    submodule.set_activation(x_hat + clean_state.res)
                     metric = metric_fn(model).save()
                 effect.act[tuple(idx)] = (metric.value - metric_clean.value).sum()
 
@@ -267,10 +249,7 @@ def _pe_exact(
                     res = clean_state.res.clone()
                     res[tuple(idx)] = patch_state.res[tuple(idx)]
                     x_hat = dictionary.decode(clean_state.act)
-                    if is_tuple[submodule]:
-                        submodule.output[0][:] = x_hat + res
-                    else:
-                        submodule.output = x_hat + res
+                    submodule.set_activation(x_hat + res)
                     metric = metric_fn(model).save()
                 effect.resc[tuple(idx)] = (metric.value - metric_clean.value).sum()
         
