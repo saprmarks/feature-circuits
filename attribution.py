@@ -94,10 +94,15 @@ def _pe_ig(
         submodules,
         dictionaries,
         metric_fn,
+        use_input=None,
         steps=10,
         metric_kwargs=dict(),
 ):
-    
+    if use_input is None:
+        use_input = {}
+        for submodule in submodules:
+            use_input[submodule] = False
+
     # first run through a test input to figure out which hidden states are tuples
     is_tuple = {}
     with model.trace("_"):
@@ -108,7 +113,9 @@ def _pe_ig(
     with model.trace(clean, **tracer_kwargs), t.no_grad():
         for submodule in submodules:
             dictionary = dictionaries[submodule]
-            x = submodule.output
+            x = submodule.output if not use_input[submodule] else submodule.input
+            if use_input[submodule]:
+                x = x[0][0]
             if is_tuple[submodule]:
                 x = x[0]
             f = dictionary.encode(x)
@@ -128,8 +135,10 @@ def _pe_ig(
         with model.trace(patch, **tracer_kwargs), t.no_grad():
             for submodule in submodules:
                 dictionary = dictionaries[submodule]
-                x = submodule.output
-                if is_tuple[submodule]:
+                x = submodule.output if not use_input[submodule] else submodule.input
+                if use_input[submodule]:
+                    x = x[0][0]
+                elif is_tuple[submodule]:
                     x = x[0]
                 f = dictionary.encode(x)
                 x_hat = dictionary.decode(f)
@@ -156,14 +165,16 @@ def _pe_ig(
                 f.res.retain_grad()
                 fs.append(f)
                 with tracer.invoke(clean, scan=tracer_kwargs['scan']):
-                    if is_tuple[submodule]:
+                    if use_input[submodule]:
+                        submodule.input[0][0][:] = dictionary.decode(f.act) + f.res
+                    elif is_tuple[submodule]:
                         submodule.output[0][:] = dictionary.decode(f.act) + f.res
                     else:
                         submodule.output = dictionary.decode(f.act) + f.res
                     metrics.append(metric_fn(model, **metric_kwargs))
             metric = sum([m for m in metrics])
             metric.sum().backward(retain_graph=True) # TODO : why is this necessary? Probably shouldn't be, contact jaden
-
+        
         mean_grad = sum([f.act.grad for f in fs]) / steps
         mean_residual_grad = sum([f.res.grad for f in fs]) / steps
         grad = SparseAct(act=mean_grad, res=mean_residual_grad)
@@ -277,13 +288,14 @@ def patching_effect(
         dictionaries,
         metric_fn,
         method='attrib',
+        use_input=None,
         steps=10,
         metric_kwargs=dict()
 ):
     if method == 'attrib':
         return _pe_attrib(clean, patch, model, submodules, dictionaries, metric_fn, metric_kwargs=metric_kwargs)
     elif method == 'ig':
-        return _pe_ig(clean, patch, model, submodules, dictionaries, metric_fn, steps=steps, metric_kwargs=metric_kwargs)
+        return _pe_ig(clean, patch, model, submodules, dictionaries, metric_fn, use_input=use_input, steps=steps, metric_kwargs=metric_kwargs)
     elif method == 'exact':
         return _pe_exact(clean, patch, model, submodules, dictionaries, metric_fn)
     else:
