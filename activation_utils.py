@@ -123,25 +123,6 @@ class SparseAct():
     
     def __invert__(self) -> SparseAct:
             return self._map(lambda x, _: ~x)
-
-
-    def __gt__(self, other) -> SparseAct:
-        if isinstance(other, (int, float)):
-            kwargs = {}
-            for attr in ['act', 'res', 'resc']:
-                if getattr(self, attr) is not None:
-                    kwargs[attr] = getattr(self, attr) > other
-            return SparseAct(**kwargs)
-        raise ValueError("SparseAct can only be compared to a scalar.")
-    
-    def __lt__(self, other) -> SparseAct:
-        if isinstance(other, (int, float)):
-            kwargs = {}
-            for attr in ['act', 'res', 'resc']:
-                if getattr(self, attr) is not None:
-                    kwargs[attr] = getattr(self, attr) < other
-            return SparseAct(**kwargs)
-        raise ValueError("SparseAct can only be compared to a scalar.")
     
     def __getitem__(self, index: int):
         return self.act[index]
@@ -228,6 +209,9 @@ class SparseAct():
             if getattr(self, attr) is not None:
                 setattr(self, attr, getattr(self, attr).to(device))
         return self
+
+    def __eq__(self, other):
+        return self._map(lambda x, y: x == y, other)
     
     def __gt__(self, other):
         return self._map(lambda x, y: x > y, other)

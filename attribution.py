@@ -355,13 +355,20 @@ def jvp_new(
     left_vec: SparseAct,
     right_vec: SparseAct,
 ):
-    profile(model, [downstream_submod, upstream_submod])
 
     downstream_dict, upstream_dict = dictionaries[downstream_submod], dictionaries[upstream_submod]
     b, s, f_down = downstream_features.act.shape
     assert f_down == downstream_dict.decoder.weight.shape[-1]
     f_up = upstream_dict.decoder.weight.shape[-1]
 
+    if t.all(downstream_features.to_tensor() == 0):
+        return t.sparse_coo_tensor(
+            t.zeros((2 * downstream_features.act.dim(), 0), dtype=t.long), 
+            t.zeros(0), 
+            size=(b, s, f_down+1, b, s, f_up+1)
+        ).to(model.device)
+
+    profile(model, [downstream_submod, upstream_submod])
 
     vjv_values = {}
 
@@ -392,14 +399,14 @@ def jvp_new(
         to_backprops = (left_vec @ downstream_act).to_tensor()
 
         for downstream_feat_idx in downstream_features.to_tensor().nonzero():
-            vjv = (upstream_act.grad @ right_vec).to_tensor().flatten()
+            vjv = (upstream_act.grad @ right_vec).to_tensor()
             x_res.grad = t.zeros_like(x_res.grad)
             to_backprops[tuple(downstream_feat_idx)].backward(retain_graph=True)
 
-            vjv_values[downstream_feat_idx] = vjv[vjv_indices[downstream_feat_idx]].save()
+            vjv_values[downstream_feat_idx] = vjv.save()
 
-    vjv_indices = t.stack(vjv_values.keys(), dim=0, device=model.device).T
-    vjv_values = t.stack([v.value for v in vjv_values.values()], dim=0, device=model.device)
+    vjv_indices = t.stack(list(vjv_values.keys()), dim=0).T
+    vjv_values = t.stack([v.value for v in vjv_values.values()], dim=0)
 
     return t.sparse_coo_tensor(vjv_indices, vjv_values, size=(b, s, f_down+1, b, s, f_up+1))
 
