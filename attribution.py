@@ -21,7 +21,7 @@ EffectOut = namedtuple('EffectOut', ['effects', 'deltas', 'grads', 'total_effect
 @dataclass(frozen=True)
 class Submodule:
     name: str
-    submodule: nnsight.envoy.Envoy
+    submodule: nnsight.Envoy
     use_input: bool = False
     is_tuple: bool = False
 
@@ -107,15 +107,14 @@ def _pe_attrib(
     return EffectOut(effects, deltas, grads, total_effect)
 
 def _pe_ig(
-        clean,
-        patch,
-        model,
-        submodules,
-        dictionaries,
-        metric_fn,
-        use_inputs=None,
-        steps=10,
-        metric_kwargs=dict(),
+    clean,
+    patch,
+    model,
+    submodules: list[Submodule],
+    dictionaries: dict[Submodule, Dictionary],
+    metric_fn,
+    steps=10,
+    metric_kwargs=dict(),
 ):
     hidden_states_clean = {}
     with model.trace(clean, **tracer_kwargs), t.no_grad():
@@ -125,7 +124,7 @@ def _pe_ig(
             f = dictionary.encode(x)
             x_hat = dictionary.decode(f)
             residual = x - x_hat
-            hidden_states_clean[submodule] = SparseAct(act=f.save(), res=residual.save())
+            hidden_states_clean[submodule] = SparseAct(act=f.save(), res=residual.save()) # type: ignore
         metric_clean = metric_fn(model, **metric_kwargs).save()
     hidden_states_clean = {k : v.value for k, v in hidden_states_clean.items()}
 
@@ -143,7 +142,7 @@ def _pe_ig(
                 f = dictionary.encode(x)
                 x_hat = dictionary.decode(f)
                 residual = x - x_hat
-                hidden_states_patch[submodule] = SparseAct(act=f.save(), res=residual.save())
+                hidden_states_patch[submodule] = SparseAct(act=f.save(), res=residual.save()) # type: ignore
             metric_patch = metric_fn(model, **metric_kwargs).save()
         total_effect = (metric_patch.value - metric_clean.value).detach()
         hidden_states_patch = {k : v.value for k, v in hidden_states_patch.items()}
@@ -168,11 +167,11 @@ def _pe_ig(
                     submodule.set_activation(dictionary.decode(f.act) + f.res)
                     metrics.append(metric_fn(model, **metric_kwargs))
             metric = sum([m for m in metrics])
-            metric.sum().backward(retain_graph=True) # TODO : why is this necessary? Probably shouldn't be, contact jaden
+            metric.sum().backward(retain_graph=True) # type: ignore
         
         mean_grad = sum([f.act.grad for f in fs]) / steps
         mean_residual_grad = sum([f.res.grad for f in fs]) / steps
-        grad = SparseAct(act=mean_grad, res=mean_residual_grad)
+        grad = SparseAct(act=mean_grad, res=mean_residual_grad) # type: ignore
         delta = (patch_state - clean_state).detach() if patch_state is not None else -clean_state.detach()
         effect = grad @ delta
 
@@ -187,8 +186,8 @@ def _pe_exact(
     clean,
     patch,
     model,
-    submodules,
-    dictionaries,
+    submodules: list[Submodule],
+    dictionaries: dict[Submodule, Dictionary],
     metric_fn,
     ):
 
@@ -200,7 +199,7 @@ def _pe_exact(
             f = dictionary.encode(x)
             x_hat = dictionary.decode(f)
             residual = x - x_hat
-            hidden_states_clean[submodule] = SparseAct(act=f, res=residual).save()
+            hidden_states_clean[submodule] = SparseAct(act=f, res=residual).save() # type: ignore
         metric_clean = metric_fn(model).save()
     hidden_states_clean = {k : v.value for k, v in hidden_states_clean.items()}
 
@@ -218,7 +217,7 @@ def _pe_exact(
                 f = dictionary.encode(x)
                 x_hat = dictionary.decode(f)
                 residual = x - x_hat
-                hidden_states_patch[submodule] = SparseAct(act=f, res=residual).save()
+                hidden_states_patch[submodule] = SparseAct(act=f, res=residual).save() # type: ignore
             metric_patch = metric_fn(model).save()
         total_effect = metric_patch.value - metric_clean.value
         hidden_states_patch = {k : v.value for k, v in hidden_states_patch.items()}
@@ -243,15 +242,15 @@ def _pe_exact(
                     metric = metric_fn(model).save()
                 effect.act[tuple(idx)] = (metric.value - metric_clean.value).sum()
 
-        for idx in list(ndindex(effect.resc.shape)):
+        for idx in list(ndindex(effect.resc.shape)): # type: ignore
             with t.inference_mode():
                 with model.trace(clean, **tracer_kwargs):
                     res = clean_state.res.clone()
-                    res[tuple(idx)] = patch_state.res[tuple(idx)]
+                    res[tuple(idx)] = patch_state.res[tuple(idx)] # type: ignore
                     x_hat = dictionary.decode(clean_state.act)
                     submodule.set_activation(x_hat + res)
                     metric = metric_fn(model).save()
-                effect.resc[tuple(idx)] = (metric.value - metric_clean.value).sum()
+                effect.resc[tuple(idx)] = (metric.value - metric_clean.value).sum() # type: ignore
         
         effects[submodule] = effect
         deltas[submodule] = patch_state - clean_state
@@ -263,18 +262,17 @@ def patching_effect(
         clean,
         patch,
         model,
-        submodules,
-        dictionaries,
-        metric_fn,
+        submodules: list[Submodule],
+        dictionaries: dict[Submodule, Dictionary],
+        metric_fn: Callable[[nnsight.Envoy], t.Tensor],
         method='attrib',
-        use_inputs=None,
         steps=10,
         metric_kwargs=dict()
 ):
     if method == 'attrib':
         return _pe_attrib(clean, patch, model, submodules, dictionaries, metric_fn, metric_kwargs=metric_kwargs)
     elif method == 'ig':
-        return _pe_ig(clean, patch, model, submodules, dictionaries, metric_fn, use_inputs=use_inputs, steps=steps, metric_kwargs=metric_kwargs)
+        return _pe_ig(clean, patch, model, submodules, dictionaries, metric_fn, steps=steps, metric_kwargs=metric_kwargs)
     elif method == 'exact':
         return _pe_exact(clean, patch, model, submodules, dictionaries, metric_fn)
     else:
