@@ -113,7 +113,7 @@ def _pe_ig(
         submodules,
         dictionaries,
         metric_fn,
-        use_input=None,
+        use_inputs=None,
         steps=10,
         metric_kwargs=dict(),
 ):
@@ -267,14 +267,14 @@ def patching_effect(
         dictionaries,
         metric_fn,
         method='attrib',
-        use_input=None,
+        use_inputs=None,
         steps=10,
         metric_kwargs=dict()
 ):
     if method == 'attrib':
         return _pe_attrib(clean, patch, model, submodules, dictionaries, metric_fn, metric_kwargs=metric_kwargs)
     elif method == 'ig':
-        return _pe_ig(clean, patch, model, submodules, dictionaries, metric_fn, use_input=use_input, steps=steps, metric_kwargs=metric_kwargs)
+        return _pe_ig(clean, patch, model, submodules, dictionaries, metric_fn, use_inputs=use_inputs, steps=steps, metric_kwargs=metric_kwargs)
     elif method == 'exact':
         return _pe_exact(clean, patch, model, submodules, dictionaries, metric_fn)
     else:
