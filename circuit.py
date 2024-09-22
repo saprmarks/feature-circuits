@@ -10,74 +10,21 @@ from einops import rearrange
 from tqdm import tqdm
 
 from activation_utils import SparseAct
-from attribution import patching_effect, jvp
+from attribution import patching_effect, jvp, jvp_new
 from circuit_plotting import plot_circuit, plot_circuit_posaligned
 from dictionary_learning import AutoEncoder
 from loading_utils import load_examples, load_examples_nopair
 from nnsight import LanguageModel
+import time
 
+from coo_utils import sparse_reshape, sparse_repeat, sparsely_expand, sparse_prod, sparse_mm, sparsely_batched_outer_prod, doubly_batched_inner_prod
 
-###### utilities for dealing with sparse COO tensors ######
-def flatten_index(idxs, shape):
-    """
-    index : a tensor of shape [n, len(shape)]
-    shape : a shape
-    return a tensor of shape [n] where each element is the flattened index
-    """
-    idxs = idxs.t()
-    # get strides from shape
-    strides = [1]
-    for i in range(len(shape)-1, 0, -1):
-        strides.append(strides[-1]*shape[i])
-    strides = list(reversed(strides))
-    strides = t.tensor(strides).to(idxs.device)
-    # flatten index
-    return (idxs * strides).sum(dim=1).unsqueeze(0)
+DEBUGGING = True
 
-def prod(l):
-    out = 1
-    for x in l: out *= x
-    return out
-
-def sparse_flatten(x):
-    x = x.coalesce()
-    return t.sparse_coo_tensor(
-        flatten_index(x.indices(), x.shape),
-        x.values(),
-        (prod(x.shape),)
-    )
-
-def reshape_index(index, shape):
-    """
-    index : a tensor of shape [n]
-    shape : a shape
-    return a tensor of shape [n, len(shape)] where each element is the reshaped index
-    """
-    multi_index = []
-    for dim in reversed(shape):
-        multi_index.append(index % dim)
-        index //= dim
-    multi_index.reverse()
-    return t.stack(multi_index, dim=-1)
-
-def sparse_reshape(x, shape):
-    """
-    x : a sparse COO tensor
-    shape : a shape
-    return x reshaped to shape
-    """
-    # first flatten x
-    x = sparse_flatten(x).coalesce()
-    new_indices = reshape_index(x.indices()[0], shape)
-    return t.sparse_coo_tensor(new_indices.t(), x.values(), shape)
-
-def sparse_mean(x, dim):
-    if isinstance(dim, int):
-        return x.sum(dim=dim) / x.shape[dim]
-    else:
-        return x.sum(dim=dim) / prod(x.shape[d] for d in dim)
-
-######## end sparse tensor utilities ########
+if DEBUGGING:
+    tracer_kwargs = {'validate' : True, 'scan' : True}
+else:
+    tracer_kwargs = {'validate' : False, 'scan' : False}
 
 
 def get_circuit(
@@ -110,13 +57,17 @@ def get_circuit(
         method='ig' # get better approximations for early layers by using ig
     )
 
-    def unflatten(tensor): # will break if dictionaries vary in size between layers
-        b, s, f = effects[resids[0]].act.shape
-        unflattened = rearrange(tensor, '(b s x) -> b s x', b=b, s=s)
-        return SparseAct(act=unflattened[...,:f], res=unflattened[...,f:])
+    # def unflatten(tensor): # will break if dictionaries vary in size between layers
+    #     b, s, f = effects[resids[0]].act.shape
+    #     unflattened = rearrange(tensor, '(b s x) -> b s x', b=b, s=s)
+    #     return SparseAct(act=unflattened[...,:f], res=unflattened[...,f:])
     
-    features_by_submod = {
-        submod : (effects[submod].to_tensor().flatten().abs() > node_threshold).nonzero().flatten().tolist() for submod in all_submods
+    # features_by_submod = {
+    #     submod : (effects[submod].to_tensor().flatten().abs() > node_threshold).nonzero().flatten().tolist() for submod in all_submods
+    # }
+
+    features_by_submod_new = {
+        submod : effects[submod].abs() > node_threshold for submod in all_submods
     }
 
     n_layers = len(resids)
@@ -139,19 +90,31 @@ def get_circuit(
     edges = defaultdict(lambda:{})
     edges[f'resid_{len(resids)-1}'] = { 'y' : effects[resids[-1]].to_tensor().flatten().to_sparse() }
 
-    def N(upstream, downstream):
-        return jvp(
+    def N_new(upstream, downstream):
+        return jvp_new(
             clean,
             model,
             dictionaries,
             downstream,
-            features_by_submod[downstream],
+            features_by_submod_new[downstream],
             upstream,
             grads[downstream],
             deltas[upstream],
-            return_without_right=True,
+            # return_without_right=True,
         )
 
+    # def N(upstream, downstream):
+    #     return jvp(
+    #         clean,
+    #         model,
+    #         dictionaries,
+    #         downstream,
+    #         features_by_submod[downstream],
+    #         upstream,
+    #         grads[downstream],
+    #         deltas[upstream],
+    #         # return_without_right=True,
+    #     )
 
     # now we work backward through the model to get the edges
     for layer in reversed(range(len(resids))):
@@ -159,8 +122,9 @@ def get_circuit(
         mlp = mlps[layer]
         attn = attns[layer]
 
-        MR_effect, MR_grad = N(mlp, resid)
-        AR_effect, AR_grad = N(attn, resid)
+        # MR_effect = N(mlp, resid)
+        MR_effect = N_new(mlp, resid)
+        AR_effect = N_new(attn, resid)
 
         edges[f'mlp_{layer}'][f'resid_{layer}'] = MR_effect
         edges[f'attn_{layer}'][f'resid_{layer}'] = AR_effect
@@ -170,42 +134,86 @@ def get_circuit(
         else:
             prev_resid = embed
 
-        RM_effect, _ = N(prev_resid, mlp)
-        RA_effect, _ = N(prev_resid, attn)
+        RM_effect = N_new(prev_resid, mlp)
+        RA_effect = N_new(prev_resid, attn)
 
-        MR_grad = MR_grad.coalesce()
-        AR_grad = AR_grad.coalesce()
+        # get RR effect
+        W_E = dictionaries[resid].encoder.weight
+        W_D = dictionaries[resid].decoder.weight
+        W_D_prev = dictionaries[prev_resid].decoder.weight
+        downstream_grad = grads[resid]
+        downstream_idxs = features_by_submod_new[resid].act.nonzero()
+        upstream_delta = deltas[prev_resid]
+        upstream_idxs = features_by_submod_new[prev_resid].act.nonzero()
 
-        RMR_effect = jvp(
-            clean,
-            model,
-            dictionaries,
-            mlp,
-            features_by_submod[resid],
-            prev_resid,
-            {feat_idx : unflatten(MR_grad[feat_idx].to_dense()) for feat_idx in features_by_submod[resid]},
-            deltas[prev_resid],
-        )
-        RAR_effect = jvp(
-            clean,
-            model,
-            dictionaries,
-            attn,
-            features_by_submod[resid],
-            prev_resid,
-            {feat_idx : unflatten(AR_grad[feat_idx].to_dense()) for feat_idx in features_by_submod[resid]},
-            deltas[prev_resid],
-        )
-        RR_effect, _ = N(prev_resid, resid)
+        # define some shapes
+        assert (b := downstream_grad.act.shape[0]) == upstream_delta.act.shape[0]
+        assert (s := downstream_grad.act.shape[1]) == upstream_delta.act.shape[1]
+        assert (f := downstream_grad.act.shape[2]) == upstream_delta.act.shape[2] and f == W_E.shape[0] and f == W_D_prev.shape[1]
+        assert (d := W_E.shape[1]) == W_D_prev.shape[0]
+
+        mask = t.zeros(b, s, f, device=model.device, dtype=t.bool)
+        mask[tuple(downstream_idxs.T)] = True
+        downstream_grad.act[~mask] = 0
+        downstream_grad.act = downstream_grad.act.to_sparse_coo()
+
+        mask = t.zeros(b, s, f, device=model.device, dtype=t.bool)
+        mask[tuple(upstream_idxs.T)] = True
+        upstream_delta.act[~mask] = 0
+        upstream_delta.act = upstream_delta.act.to_sparse_coo()
+
+
+        with t.no_grad():
+
+            # ffm_effect
+            rfm_grad = sparsely_batched_outer_prod(
+                downstream_grad.act, W_E
+            ) # [b, s, f | d]
+            fr_delta = sparsely_batched_outer_prod(
+                upstream_delta.act, W_D_prev.T
+            ) # [b, s, f | d]
+            ffm_effect = doubly_batched_inner_prod(rfm_grad, fr_delta)
+
+            # efm_effect
+            efm_effect = doubly_batched_inner_prod(rfm_grad, upstream_delta.res.to_sparse(sparse_dim=2))
+            efm_effect = efm_effect.unsqueeze(-1)
+
+            # fem_effect
+            frm_grad = (downstream_grad.res.unsqueeze(-2) @ W_D_prev).squeeze(-2) # [b, s, f]
+            frm_effect = frm_grad * upstream_delta.act # [b, s, f]
+            fem_effect = frm_effect - ffm_effect.sum(dim=(0, 1, 2))
+            fem_effect = sparse_reshape(fem_effect, (b, s, 1, b, s, f))
+            # rem_grad = downstream_grad.res @ (t.eye(d, device=model.device) - W_D @ W_E)
+            # fr_delta = sparsely_batched_outer_prod(
+            #     upstream_delta.act, W_D_prev.T
+            # )
+            # fem_effect = doubly_batched_inner_prod(
+            #     rem_grad.to_sparse(sparse_dim=2), fr_delta
+            # )
+            # fem_effect = fem_effect.unsqueeze(2)
+
+            # eem_effect
+            eem_effect = (downstream_grad.res.view(b, s, 1, 1, d) * \
+                upstream_delta.res.view(1, 1, b, s, d)).sum(dim=-1)
+            eem_effect =  eem_effect.unsqueeze(2).unsqueeze(-1).to_sparse()
+
+            # aggregate into RR_effect
+            RR_effect = t.cat(
+                [
+                    t.cat([ffm_effect, efm_effect], dim=-1),
+                    t.cat([fem_effect, eem_effect], dim=-1)
+                ],
+                dim=2
+            )
 
         if layer > 0: 
             edges[f'resid_{layer-1}'][f'mlp_{layer}'] = RM_effect
             edges[f'resid_{layer-1}'][f'attn_{layer}'] = RA_effect
-            edges[f'resid_{layer-1}'][f'resid_{layer}'] = RR_effect - RMR_effect - RAR_effect
+            edges[f'resid_{layer-1}'][f'resid_{layer}'] = RR_effect
         else:
             edges['embed'][f'mlp_{layer}'] = RM_effect
             edges['embed'][f'attn_{layer}'] = RA_effect
-            edges['embed'][f'resid_0'] = RR_effect - RMR_effect - RAR_effect
+            edges['embed'][f'resid_0'] = RR_effect
 
     # rearrange weight matrices
     for child in edges:
@@ -216,9 +224,13 @@ def get_circuit(
             if parent == 'y':
                 weight_matrix = sparse_reshape(weight_matrix, (bc, sc, fc+1))
             else:
-                bp, sp, fp = nodes[parent].act.shape
-                assert bp == bc
-                weight_matrix = sparse_reshape(weight_matrix, (bp, sp, fp+1, bc, sc, fc+1))
+                continue
+                # bp, sp, fp = nodes[parent].act.shape
+                # assert bp == bc
+                # try:
+                #     weight_matrix = sparse_reshape(weight_matrix, (bp, sp, fp+1, bc, sc, fc+1))
+                # except:
+                #     breakpoint()
             edges[child][parent] = weight_matrix
     
     if aggregation == 'sum':
@@ -265,7 +277,7 @@ def get_circuit(
                 else:
                     bp, sp, fp = nodes[parent].act.shape
                     assert bp == bc
-                    weight_matrix = sparse_reshape(weight_matrix, (bp, sp, fp+1, bc, sc, fc+1))
+                    # weight_matrix = sparse_reshape(weight_matrix, (bp, sp, fp+1, bc, sc, fc+1))
                     weight_matrix = weight_matrix.sum(dim=(0, 3)) / bc
                 edges[child][parent] = weight_matrix
         for node in nodes:

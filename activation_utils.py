@@ -85,7 +85,6 @@ class SparseAct:
     
     def __invert__(self) -> SparseAct:
             return self._map(lambda x, _: ~x)
-
     
     def __getitem__(self, index: int):
         return self.act[index]
@@ -155,6 +154,9 @@ class SparseAct:
             if getattr(self, attr) is not None:
                 setattr(self, attr, getattr(self, attr).to(device))
         return self
+
+    def __eq__(self, other): # type: ignore
+        return self._map(lambda x, y: x == y, other)
     
     def __gt__(self, other):
         return self._map(lambda x, y: x > y, other)
