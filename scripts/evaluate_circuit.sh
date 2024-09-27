@@ -1,20 +1,22 @@
 #!/bin/bash
 
-CIRCUIT=$1
-EVAL_DATA=$2
-THRESHOLD=$3
-LENGTH=$4
-DICTID=$5
+MODEL=$1
+CIRCUIT=$2
+EVAL_DATA=$3
+THRESHOLD=$4
+LENGTH=$5
+DICTID=$6
 
 # Run the ablation.py script with the specified arguments
 python ablation.py \
---dict_path dictionaries/pythia-70m-deduped/ \
+--model $MODEL \
+--dict_path sae_lens \
 --circuit $CIRCUIT \
 --data ${EVAL_DATA}.json \
 --num_examples 40 \
 --length $LENGTH \
 --dict_id $DICTID \
---dict_size 32768 \
+--dict_size 16384 \
 --threshold $THRESHOLD \
 --ablation mean \
 --handle_errors 'default' \
