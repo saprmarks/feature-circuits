@@ -35,7 +35,7 @@ def _load_pythia_saes_and_submodules(
         dtype=dtype,
         device=device,
     )
-    for i, layer in enumerate(model.gpt_neox.layers[:thru_layer]):
+    for i, layer in enumerate(model.gpt_neox.layers[:thru_layer+1]):
         attns.append(
             attn := Submodule(
                 name = f"attn_{i}",
@@ -133,7 +133,7 @@ def _load_gemma_saes_and_submodules(
         submodule=model.model.embed_tokens,
     )
     dictionaries[embed] = load_gemma_sae("embed", 0, dtype=dtype, device=device)
-    for i, layer in tqdm(enumerate(model.model.layers[:thru_layer]), total=thru_layer, desc="Loading Gemma SAEs"):
+    for i, layer in tqdm(enumerate(model.model.layers[:thru_layer+1]), total=thru_layer+1, desc="Loading Gemma SAEs"):
         attns.append(
             attn := Submodule(
                 name=f"attn_{i}",
