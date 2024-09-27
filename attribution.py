@@ -5,36 +5,24 @@ from numpy import ndindex
 from typing import Dict, Union
 from activation_utils import SparseAct
 from dataclasses import dataclass
-import nnsight
+from nnsight.envoy import Envoy
 from dictionary_learning.dictionary import Dictionary
 from typing import Callable
 from einops import einsum
 
 DEBUGGING = False
-is_tuple = {}
 
 if DEBUGGING:
     tracer_kwargs = {'validate' : True, 'scan' : True}
 else:
     tracer_kwargs = {'validate' : False, 'scan' : False}
 
-def profile(model, submodules):
-    """
-    Set a global is_tuple dictionary identifying whether
-    each submodule's output is a tuple.
-    """
-    if not all([submodule in is_tuple for submodule in submodules]):
-        with model.trace("_", scan=True, validate=True):
-            for submodule in submodules:
-                is_tuple[submodule] = type(submodule.output.shape) == tuple
-
-
 EffectOut = namedtuple('EffectOut', ['effects', 'deltas', 'grads', 'total_effect'])
 
 @dataclass(frozen=True)
 class Submodule:
     name: str
-    submodule: nnsight.Envoy
+    submodule: Envoy
     use_input: bool = False
     is_tuple: bool = False
 
@@ -277,12 +265,11 @@ def patching_effect(
         model,
         submodules: list[Submodule],
         dictionaries: dict[Submodule, Dictionary],
-        metric_fn: Callable[[nnsight.Envoy], t.Tensor],
+        metric_fn: Callable[[Envoy], t.Tensor],
         method='attrib',
         steps=10,
         metric_kwargs=dict()
 ):
-    profile(model, submodules)
 
     if method == 'attrib':
         return _pe_attrib(clean, patch, model, submodules, dictionaries, metric_fn, metric_kwargs=metric_kwargs)
@@ -316,33 +303,21 @@ def jvp(
             size=(b, s, f_down+1, b, s, f_up+1)
         ).to(model.device)
 
-    profile(model, [downstream_submod, upstream_submod])
 
     vjv_values = {}
 
     with model.trace(input, **tracer_kwargs):
         # forward pass modifications
-        x = upstream_submod.output
-        if is_tuple[upstream_submod]:
-            x = x[0]
+        x = upstream_submod.get_activation()
         x_hat, f = upstream_dict(x, output_features=True)
         x_res = x - x_hat
-        if is_tuple[upstream_submod]:
-            upstream_submod.output[0][:] = x_hat + x_res
-        else:
-            upstream_submod.output = x_hat + x_res
+        upstream_submod.set_activation(x_hat + x_res)
         upstream_act = SparseAct(act=f, res=x_res).save()
         
-        y = downstream_submod.output
-        if is_tuple[downstream_submod]:
-            y = y[0]
+        y = downstream_submod.get_activation()
         y_hat, g = downstream_dict(y, output_features=True)
         y_res = y - y_hat
-        
-        if is_tuple[downstream_submod]:
-            downstream_submod.output[0][:] = y_hat + y_res
-        else:
-            downstream_submod.output = y_hat + y_res
+        downstream_submod.set_activation(y_hat + y_res)
         downstream_act = SparseAct(act=g, res=y_res).save()
 
         to_backprops = (left_vec @ downstream_act).to_tensor()
@@ -352,7 +327,7 @@ def jvp(
             x_res.grad = t.zeros_like(x_res.grad)
             to_backprops[tuple(downstream_feat_idx)].backward(retain_graph=True)
 
-            vjv_values[downstream_feat_idx] = vjv.save()
+            vjv_values[downstream_feat_idx] = vjv.save() # type: ignore
 
     vjv_indices = t.stack(list(vjv_values.keys()), dim=0).T
     vjv_values = t.stack([v.value for v in vjv_values.values()], dim=0)
