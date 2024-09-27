@@ -5,6 +5,8 @@ from dictionary_learning.dictionary import IdentityDict
 from argparse import ArgumentParser
 from activation_utils import SparseAct
 from loading_utils import load_examples
+from attribution import Submodule
+from dictionary_loading_utils import load_saes_and_submodules
 
 def run_with_ablations(
         clean, # clean inputs
@@ -25,10 +27,9 @@ def run_with_ablations(
     with model.trace(patch), t.no_grad():
         for submodule in submodules:
             dictionary = dictionaries[submodule]
-            x = submodule.output
-            if type(x.shape) == tuple:
-                x = x[0]
-            x_hat, f = dictionary(x, output_features=True)
+            x = submodule.get_activation()
+            f = dictionary.encode(x)
+            x_hat = dictionary.decode(f)
             patch_states[submodule] = SparseAct(act=f, res=x - x_hat).save()
     patch_states = {k : ablation_fn(v.value) for k, v in patch_states.items()}
 
@@ -36,11 +37,8 @@ def run_with_ablations(
     with model.trace(clean), t.no_grad():
         for submodule in submodules:
             dictionary = dictionaries[submodule]
-            submod_nodes = nodes[submodule].clone()
-            x = submodule.output
-            is_tuple = type(x.shape) == tuple
-            if is_tuple:
-                x = x[0]
+            submod_nodes = nodes[submodule.submodule].clone()
+            x = submodule.get_activation()
             f = dictionary.encode(x)
             res = x - dictionary(x)
 
@@ -55,10 +53,11 @@ def run_with_ablations(
             f[...,~submod_nodes.act] = patch_states[submodule].act[...,~submod_nodes.act]
             res[...,~submod_nodes.resc] = patch_states[submodule].res[...,~submod_nodes.resc]
             
-            if is_tuple:
-                submodule.output[0][:] = dictionary.decode(f) + res
-            else:
-                submodule.output = dictionary.decode(f) + res
+            submodule.set_activation(dictionary.decode(f) + res)
+            # if is_tuple:
+            #     submodule.output[0][:] = dictionary.decode(f) + res
+            # else:
+            #     submodule.output = dictionary.decode(f) + res
 
         metric = metric_fn(model, **metric_kwargs).save()
     return metric.value
@@ -66,6 +65,8 @@ def run_with_ablations(
 
 if __name__ == '__main__':
     parser = ArgumentParser()
+    parser.add_argument('--model', type=str, default="EleutherAI/pythia-70m-deduped",
+                        help="Name of model on which we evaluate faithfulness.")
     parser.add_argument('--threshold', type=float, default=0.1,
                         help="Node threshold for the circuit.")
     parser.add_argument('--ablation', type=str, default='mean',
@@ -90,68 +91,99 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='cuda:0')
     args = parser.parse_args()
 
-    model = LanguageModel('EleutherAI/pythia-70m-deduped', device_map=args.device, dispatch=True)
+    DEVICE = "cuda:0"
+
+    if "gemma-2" in args.model:
+        model = LanguageModel(args.model, device_map=args.device, dispatch=True,
+                              torch_dtype=t.bfloat16, attn_implementation="eager")
+        embed_submod = Submodule(
+            name = "embed",
+            submodule=model.model.embed_tokens,
+        )
+        model_layers = model.model.layers
+        out_submod = model.lm_head
+    else:
+        model = LanguageModel(args.model, device_map=args.device, dispatch=True)
+        embed_submod = Submodule(
+            name="embed",
+            submodule=model.gpt_neox.embed_in
+        )
+        model_layers = model.gpt_neox.layers
+        out_submod = model.embed_out
 
     submodules = []
-    if args.start_layer < 0: submodules.append(model.gpt_neox.embed_in)
-    for i in range(args.start_layer, len(model.gpt_neox.layers)):
-        submodules.extend([
-            model.gpt_neox.layers[i].attention,
-            model.gpt_neox.layers[i].mlp,
-            model.gpt_neox.layers[i]
-        ])
+    if args.start_layer < 0: submodules.append(embed_submod)
+    for i in range(args.start_layer, len(model_layers)):
+        if "gemma-2" in args.model:
+            submodules.extend([
+                Submodule(submodule=model.model.layers[i].self_attn.o_proj, use_input=True, name=f"attn_{i}"),
+                Submodule(submodule=model.model.layers[i].post_feedforward_layernorm, name=f"mlp_{i}"),
+                Submodule(submodule=model.model.layers[i], is_tuple=True, name=f"resid_{i}")
+            ])
+        else:
+            submodules.extend([
+                Submodule(submodule=model.gpt_neox.layers[i].attention, name=f"attn_{i}"),
+                Submodule(model.gpt_neox.layers[i].mlp, name=f"mlp_{i}"),
+                Submodule(model.gpt_neox.layers[i], name=f"resid_{i}", is_tuple=True)
+            ])
 
-    submod_names = {
-        model.gpt_neox.embed_in : 'embed'
-    }
-    for i in range(len(model.gpt_neox.layers)):
-        submod_names[model.gpt_neox.layers[i].attention] = f'attn_{i}'
-        submod_names[model.gpt_neox.layers[i].mlp] = f'mlp_{i}'
-        submod_names[model.gpt_neox.layers[i]] = f'resid_{i}'
+    # submod_names = {
+    #     embed_submod.submodule : 'embed'
+    # }
+    # for i in range(len(model.gpt_neox.layers)):
+    #     submod_names[model.gpt_neox.layers[i].attention] = f'attn_{i}'
+    #     submod_names[model.gpt_neox.layers[i].mlp] = f'mlp_{i}'
+    #     submod_names[model.gpt_neox.layers[i]] = f'resid_{i}'
     
     if args.dict_id != 'id':
         dict_size = args.dict_size
-        dictionaries = {}
-        dictionaries[model.gpt_neox.embed_in] = AutoEncoder.from_pretrained(
-            f'{args.dict_path}/embed/{args.dict_id}_{dict_size}/ae.pt',
-            device=args.device
+        _, dictionaries = load_saes_and_submodules(
+            model, 
+            args.model, 
+            dtype=t.bfloat16,
+            device=DEVICE,
         )
-        for i in range(len(model.gpt_neox.layers)):
-            dictionaries[model.gpt_neox.layers[i].attention] = AutoEncoder.from_pretrained(
-                f'{args.dict_path}/attn_out_layer{i}/{args.dict_id}_{dict_size}/ae.pt',
-                device=args.device
-            )
-            dictionaries[model.gpt_neox.layers[i].mlp] = AutoEncoder.from_pretrained(
-                f'{args.dict_path}/mlp_out_layer{i}/{args.dict_id}_{dict_size}/ae.pt',
-                device=args.device
-            )
-            dictionaries[model.gpt_neox.layers[i]] = AutoEncoder.from_pretrained(
-                f'{args.dict_path}/resid_out_layer{i}/{args.dict_id}_{dict_size}/ae.pt',
-                device=args.device
-            )
+        # dictionaries = {}
+        # dictionaries[embed_submod] = AutoEncoder.from_pretrained(
+        #     f'{args.dict_path}/embed/{args.dict_id}_{dict_size}/ae.pt',
+        #     device=args.device
+        # )
+        # for i in range(len(model_layers)):
+        #     dictionaries[model_layers[i].attention] = AutoEncoder.from_pretrained(
+        #         f'{args.dict_path}/attn_out_layer{i}/{args.dict_id}_{dict_size}/ae.pt',
+        #         device=args.device
+        #     )
+        #     dictionaries[model_layers[i].mlp] = AutoEncoder.from_pretrained(
+        #         f'{args.dict_path}/mlp_out_layer{i}/{args.dict_id}_{dict_size}/ae.pt',
+        #         device=args.device
+        #     )
+        #     dictionaries[model_layers[i]] = AutoEncoder.from_pretrained(
+        #         f'{args.dict_path}/resid_out_layer{i}/{args.dict_id}_{dict_size}/ae.pt',
+        #         device=args.device
+        #     )
 
     elif args.dict_id == 'id':
-        dict_size = 512
+        dict_size = 512 if "pythia-70m" in args.model else 2304     # TODO: probably won't work for Gemma attention
         dictionaries = {submod : IdentityDict(dict_size).to(args.device) for submod in submodules}
     
     nodes = t.load(args.circuit)['nodes']
     nodes = {
-        submod : nodes[submod_names[submod]].abs() > args.threshold for submod in submodules
+        submod.submodule : nodes[submod.name].abs() > args.threshold for submod in submodules
     }
     n_features = sum([n.act.sum().item() for n in nodes.values()])
     n_errs = sum([n.resc.sum().item() for n in nodes.values()])
     print(f"# features = {n_features}")
     print(f"# triangles = {n_errs}")
 
-    examples = load_examples(f'data/{args.data}', args.num_examples, model, length=args.length)
+    examples = load_examples(f'data/{args.data}', args.num_examples, model, pad_to_length=args.length)
     clean_inputs = t.cat([e['clean_prefix'] for e in examples], dim=0).to(args.device)
     clean_answer_idxs = t.tensor([e['clean_answer'] for e in examples], dtype=t.long, device=args.device)
     patch_inputs = t.cat([e['patch_prefix'] for e in examples], dim=0).to(args.device)
     patch_answer_idxs = t.tensor([e['patch_answer'] for e in examples], dtype=t.long, device=args.device)
     def metric_fn(model):
         return (
-            - t.gather(model.embed_out.output[:,-1,:], dim=-1, index=patch_answer_idxs.view(-1, 1)).squeeze(-1) + \
-            t.gather(model.embed_out.output[:,-1,:], dim=-1, index=clean_answer_idxs.view(-1, 1)).squeeze(-1)
+            - t.gather(out_submod.output[:,-1,:], dim=-1, index=patch_answer_idxs.view(-1, 1)).squeeze(-1) + \
+            t.gather(out_submod.output[:,-1,:], dim=-1, index=clean_answer_idxs.view(-1, 1)).squeeze(-1)
         )
     
     if args.ablation == 'resample': 
