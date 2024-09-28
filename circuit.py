@@ -10,11 +10,13 @@ from einops import rearrange
 from tqdm import tqdm
 
 from activation_utils import SparseAct
-from attribution import patching_effect, jvp, jvp_new
+from attribution import patching_effect, jvp, Submodule
 from circuit_plotting import plot_circuit, plot_circuit_posaligned
 from dictionary_learning import AutoEncoder
 from loading_utils import load_examples, load_examples_nopair
+from dictionary_loading_utils import load_saes_and_submodules
 from nnsight import LanguageModel
+from nnsight.envoy import Envoy
 import time
 
 from coo_utils import sparse_reshape, sparse_repeat, sparsely_expand, sparse_prod, sparse_mm, sparsely_batched_outer_prod, doubly_batched_inner_prod
@@ -66,7 +68,7 @@ def get_circuit(
     #     submod : (effects[submod].to_tensor().flatten().abs() > node_threshold).nonzero().flatten().tolist() for submod in all_submods
     # }
 
-    features_by_submod_new = {
+    features_by_submod = {
         submod : effects[submod].abs() > node_threshold for submod in all_submods
     }
 
@@ -90,31 +92,18 @@ def get_circuit(
     edges = defaultdict(lambda:{})
     edges[f'resid_{len(resids)-1}'] = { 'y' : effects[resids[-1]].to_tensor().flatten().to_sparse() }
 
-    def N_new(upstream, downstream):
-        return jvp_new(
+    def N(upstream, downstream):
+        return jvp(
             clean,
             model,
             dictionaries,
             downstream,
-            features_by_submod_new[downstream],
+            features_by_submod[downstream],
             upstream,
             grads[downstream],
             deltas[upstream],
             # return_without_right=True,
         )
-
-    # def N(upstream, downstream):
-    #     return jvp(
-    #         clean,
-    #         model,
-    #         dictionaries,
-    #         downstream,
-    #         features_by_submod[downstream],
-    #         upstream,
-    #         grads[downstream],
-    #         deltas[upstream],
-    #         # return_without_right=True,
-    #     )
 
     # now we work backward through the model to get the edges
     for layer in reversed(range(len(resids))):
@@ -123,8 +112,8 @@ def get_circuit(
         attn = attns[layer]
 
         # MR_effect = N(mlp, resid)
-        MR_effect = N_new(mlp, resid)
-        AR_effect = N_new(attn, resid)
+        MR_effect = N(mlp, resid)
+        AR_effect = N(attn, resid)
 
         edges[f'mlp_{layer}'][f'resid_{layer}'] = MR_effect
         edges[f'attn_{layer}'][f'resid_{layer}'] = AR_effect
@@ -134,17 +123,17 @@ def get_circuit(
         else:
             prev_resid = embed
 
-        RM_effect = N_new(prev_resid, mlp)
-        RA_effect = N_new(prev_resid, attn)
+        RM_effect = N(prev_resid, mlp)
+        RA_effect = N(prev_resid, attn)
 
         # get RR effect
         W_E = dictionaries[resid].encoder.weight
         W_D = dictionaries[resid].decoder.weight
         W_D_prev = dictionaries[prev_resid].decoder.weight
         downstream_grad = grads[resid]
-        downstream_idxs = features_by_submod_new[resid].act.nonzero()
+        downstream_idxs = features_by_submod[resid].act.nonzero()
         upstream_delta = deltas[prev_resid]
-        upstream_idxs = features_by_submod_new[prev_resid].act.nonzero()
+        upstream_idxs = features_by_submod[prev_resid].act.nonzero()
 
         # define some shapes
         assert (b := downstream_grad.act.shape[0]) == upstream_delta.act.shape[0]
@@ -183,14 +172,6 @@ def get_circuit(
             frm_effect = frm_grad * upstream_delta.act # [b, s, f]
             fem_effect = frm_effect - ffm_effect.sum(dim=(0, 1, 2))
             fem_effect = sparse_reshape(fem_effect, (b, s, 1, b, s, f))
-            # rem_grad = downstream_grad.res @ (t.eye(d, device=model.device) - W_D @ W_E)
-            # fr_delta = sparsely_batched_outer_prod(
-            #     upstream_delta.act, W_D_prev.T
-            # )
-            # fem_effect = doubly_batched_inner_prod(
-            #     rem_grad.to_sparse(sparse_dim=2), fr_delta
-            # )
-            # fem_effect = fem_effect.unsqueeze(2)
 
             # eem_effect
             eem_effect = (downstream_grad.res.view(b, s, 1, 1, d) * \
@@ -467,42 +448,27 @@ if __name__ == '__main__':
     parser.add_argument('--device', type=str, default='cuda:0')
     args = parser.parse_args()
 
+    device = t.device(args.device)
+    if args.model == "EleutherAI/pythia-70m-deduped":
+        model = LanguageModel(args.model, device_map=device, dispatch=True)
+    elif args.model == "google/gemma-2-2b":
+        model = LanguageModel(args.model, device_map=device, dispatch=True, attn_implementation="eager")
 
-    device = args.device
+    n_layers = {
+        "EleutherAI/pythia-70m-deduped" : 6,
+        "google/gemma-2-2b" : 26,
+    }[args.model]
+    parallel_attn = {
+        "EleutherAI/pythia-70m-deduped" : True,
+        "google/gemma-2-2b" : False,
+    }[args.model]
 
-    model = LanguageModel(args.model, device_map=device, dispatch=True)
-
-    embed = model.gpt_neox.embed_in
-    attns = [layer.attention for layer in model.gpt_neox.layers]
-    mlps = [layer.mlp for layer in model.gpt_neox.layers]
-    resids = [layer for layer in model.gpt_neox.layers]
-
-    dictionaries = {}
-    if args.dict_id == 'id':
-        from dictionary_learning.dictionary import IdentityDict
-        dictionaries[embed] = IdentityDict(args.d_model)
-        for i in range(len(model.gpt_neox.layers)):
-            dictionaries[attns[i]] = IdentityDict(args.d_model)
-            dictionaries[mlps[i]] = IdentityDict(args.d_model)
-            dictionaries[resids[i]] = IdentityDict(args.d_model)
-    else:
-        dictionaries[embed] = AutoEncoder.from_pretrained(
-            f'{args.dict_path}/embed/{args.dict_id}_{args.dict_size}/ae.pt',
-            device=device
-        )
-        for i in range(len(model.gpt_neox.layers)):
-            dictionaries[attns[i]] = AutoEncoder.from_pretrained(
-                f'{args.dict_path}/attn_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt',
-                device=device
-            )
-            dictionaries[mlps[i]] = AutoEncoder.from_pretrained(
-                f'{args.dict_path}/mlp_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt',
-                device=device
-            )
-            dictionaries[resids[i]] = AutoEncoder.from_pretrained(
-                f'{args.dict_path}/resid_out_layer{i}/{args.dict_id}_{args.dict_size}/ae.pt',
-                device=device
-            )
+    submodules, dictionaries = load_saes_and_submodules(
+        model,
+        args.model,
+        separate_by_type=True,
+        device=device,
+    )
     
     if args.nopair:
         save_basename = os.path.splitext(os.path.basename(args.dataset))[0]
@@ -516,7 +482,7 @@ if __name__ == '__main__':
             examples = load_examples(data_path, args.num_examples, model, length=args.example_length)
     
     batch_size = args.batch_size
-    num_examples = min([args.num_examples, len(examples)])
+    num_examples = min([args.num_examples, len(examples)]) # TODO check that Gemma tokenizer doesn't mess up data preparation
     n_batches = math.ceil(num_examples / batch_size)
     batches = [
         examples[batch*batch_size:(batch+1)*batch_size] for batch in range(n_batches)
@@ -554,10 +520,10 @@ if __name__ == '__main__':
                 clean_inputs,
                 patch_inputs,
                 model,
-                embed,
-                attns,
-                mlps,
-                resids,
+                submodules.embed,
+                submodules.attns,
+                submodules.mlps,
+                submodules.resids,
                 dictionaries,
                 metric_fn,
                 nodes_only=args.nodes_only,
@@ -616,7 +582,7 @@ if __name__ == '__main__':
         plot_circuit_posaligned(
             nodes, 
             edges,
-            layers=len(model.gpt_neox.layers), 
+            layers=len(layers),
             length=args.example_length,
             example_text=example,
             node_threshold=args.node_threshold, 
@@ -629,7 +595,7 @@ if __name__ == '__main__':
         plot_circuit(
             nodes, 
             edges, 
-            layers=len(model.gpt_neox.layers), 
+            layers=len(layers),
             node_threshold=args.node_threshold, 
             edge_threshold=args.edge_threshold, 
             pen_thickness=args.pen_thickness, 
