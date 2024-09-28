@@ -15,6 +15,7 @@ def _load_pythia_saes_and_submodules(
     model,
     thru_layer: int | None = None,
     separate_by_type: bool = False,
+    include_embed: bool = True,
     dtype: t.dtype = t.float32,
     device: t.device = t.device("cpu"),
 ):
@@ -26,15 +27,18 @@ def _load_pythia_saes_and_submodules(
     mlps = []
     resids = []
     dictionaries = {}
-    embed = Submodule(
-        name = "embed",
-        submodule=model.gpt_neox.embed_in,
-    )
-    dictionaries[embed] = AutoEncoder.from_pretrained(
-        f"{DICT_DIR}/pythia-70m-deduped/embed/10_32768/ae.pt",
-        dtype=dtype,
-        device=device,
-    )
+    if include_embed:
+        embed = Submodule(
+            name = "embed",
+            submodule=model.gpt_neox.embed_in,
+        )
+        dictionaries[embed] = AutoEncoder.from_pretrained(
+            f"{DICT_DIR}/pythia-70m-deduped/embed/10_32768/ae.pt",
+            dtype=dtype,
+            device=device,
+        )
+    else:
+        embed = None
     for i, layer in enumerate(model.gpt_neox.layers[:thru_layer+1]):
         attns.append(
             attn := Submodule(
@@ -75,7 +79,9 @@ def _load_pythia_saes_and_submodules(
     if separate_by_type:
         return DictionaryStash(embed, attns, mlps, resids), dictionaries
     else:
-        submodules = [embed] + [
+        submodules = (
+            [embed] if include_embed else []
+         ) + [
             x for layer_dictionaries in zip(attns, mlps, resids) for x in layer_dictionaries
         ]
         return submodules, dictionaries
@@ -112,11 +118,11 @@ def load_gemma_sae(
         device=device,
     )
 
-# TODO fix to support embedding SAEs
 def _load_gemma_saes_and_submodules(
     model,
     thru_layer: int | None = None,
     separate_by_type: bool = False,
+    include_embed: bool = True,
     dtype: t.dtype = t.float32,
     device: t.device = t.device("cpu"),
 ):
@@ -128,11 +134,14 @@ def _load_gemma_saes_and_submodules(
     mlps = []
     resids = []
     dictionaries = {}
-    embed = Submodule(
-        name = "embed",
-        submodule=model.model.embed_tokens,
-    )
-    dictionaries[embed] = load_gemma_sae("embed", 0, dtype=dtype, device=device)
+    if include_embed:
+        embed = Submodule(
+            name = "embed",
+            submodule=model.model.embed_tokens,
+        )
+        dictionaries[embed] = load_gemma_sae("embed", 0, dtype=dtype, device=device)
+    else:
+        embed = None
     for i, layer in tqdm(enumerate(model.model.layers[:thru_layer+1]), total=thru_layer+1, desc="Loading Gemma SAEs"):
         attns.append(
             attn := Submodule(
@@ -161,7 +170,9 @@ def _load_gemma_saes_and_submodules(
     if separate_by_type:
         return DictionaryStash(embed, attns, mlps, resids), dictionaries
     else:
-        submodules = [embed] + [
+        submodules = (
+            [embed] if include_embed else []
+        )+ [
             x for layer_dictionaries in zip(attns, mlps, resids) for x in layer_dictionaries
         ]
         return submodules, dictionaries
@@ -172,12 +183,13 @@ def load_saes_and_submodules(
     model_name: Literal["EleutherAI/pythia-70m-deduped", "google/gemma-2-2b"],
     thru_layer: int | None = None,
     separate_by_type: bool = False,
+    include_embed: bool = True,
     dtype: t.dtype = t.float32,
     device: t.device = t.device("cpu"),
 ):
     if model_name == "EleutherAI/pythia-70m-deduped":
-        return _load_pythia_saes_and_submodules(model, thru_layer=thru_layer, separate_by_type=separate_by_type, dtype=dtype, device=device)
+        return _load_pythia_saes_and_submodules(model, thru_layer=thru_layer, separate_by_type=separate_by_type, include_embed=include_embed, dtype=dtype, device=device)
     elif model_name == "google/gemma-2-2b":
-        return _load_gemma_saes_and_submodules(model, thru_layer=thru_layer, separate_by_type=separate_by_type, dtype=dtype, device=device)
+        return _load_gemma_saes_and_submodules(model, thru_layer=thru_layer, separate_by_type=separate_by_type, include_embed=include_embed, dtype=dtype, device=device)
     else:
         raise ValueError(f"Model {model_name} not supported")
