@@ -21,4 +21,5 @@ python ablation.py \
 --ablation mean \
 --handle_errors 'default' \
 --start_layer 2 \
+--batch_size 20 \
 --device cuda:0
