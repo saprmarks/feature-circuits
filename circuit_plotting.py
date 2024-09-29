@@ -164,8 +164,15 @@ def plot_circuit(nodes, edges, layers=6, node_threshold=0.1, edge_threshold=0.01
     G.render(save_dir, format='png', cleanup=True)
 
 
-def plot_circuit_posaligned(nodes, edges, layers=6, length=6, example_text="The managers that the parent likes",
-                            node_threshold=0.1, edge_threshold=0.01, pen_thickness=3, annotations=None, save_dir='circuit'):
+def plot_circuit_posaligned(
+    nodes, edges, 
+    layers=6, length=6, 
+    example_text="The managers that the parent likes",
+    node_threshold=0.1, edge_threshold=0.01, 
+    pen_thickness=3, node_width=1, node_height=0.2,
+    annotations=None, 
+    save_dir='circuit'
+):
 
     # get min and max node effects
     min_effect = min([v.to_tensor().min() for n, v in nodes.items() if n != 'y'])

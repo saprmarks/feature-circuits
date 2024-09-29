@@ -257,34 +257,22 @@ def doubly_batched_inner_prod(A, B):
     """
     A: [..., | d]
     B: [..., | d]
-    Returns: all pairwise inner products, fully sparse [..., ...]
+    Returns: fully sparse shape [... |] tensor of dot products
     """
-    assert A.shape[-1] == B.shape[-1]
+    assert A.shape == B.shape
 
-    # if A.dim() == 1:
-    #     B = B.coalesce()
-    #     indices = B.indices()
-    #     values = A @ B.values().T
-    # elif B.dim() == 1:
-    #     A = A.coalesce()
-    #     indices = A.indices()
-    #     values = A.values() @ B
-    # else:
     A, B = A.coalesce(), B.coalesce()
-    A_idxs, B_idxs = A.indices(), B.indices()
-    indices = t.concat(
-        [
-            A_idxs.unsqueeze(2).expand(-1, -1, B_idxs.shape[1]),
-            B_idxs.unsqueeze(1).expand(-1, A_idxs.shape[1], -1),
-        ],
-        dim=0
-    )
-    indices = indices.reshape(indices.shape[0], -1)
+    return (A * B).sum(dim=-1)
 
-    values = (A.values() @ B.values().T).flatten()
-
-    return t.sparse_coo_tensor(indices, values, size=(*A.shape[:-1], *B.shape[:-1]))
-
+def diag_embed(x):
+    """
+    Given a sparse tensor x, return a sparse tensor of shape [*x.shape, *x.shape]
+    which embeds x along the diagonal.
+    """
+    x = x.coalesce()
+    indices = x.indices()
+    indices = t.cat([indices, indices], dim=0)
+    return t.sparse_coo_tensor(indices, x.values(), size=(*x.shape, *x.shape))
 
 if __name__ == "__main__":
     x = t.randn(50, 50, 50)
@@ -372,19 +360,29 @@ B = t.randn(5, 30).to(t.device("cuda") if t.cuda.is_available() else t.device("c
 result = sparsely_batched_outer_prod(A, B)
 assert t.allclose(result.to_dense(), A.to_dense().unsqueeze(-1) * B)
 
-# test doubly_batched_inner_prod
-A = t.randn(10, 3, 5, 30).to(t.device("cuda") if t.cuda.is_available() else t.device("cpu"))
-B = t.randn(8, 9, 30).to(t.device("cuda") if t.cuda.is_available() else t.device("cpu"))
+# # test doubly_batched_inner_prod
+# A = t.randn(10, 3, 5, 30).to(t.device("cuda") if t.cuda.is_available() else t.device("cpu"))
+# B = t.randn(8, 9, 30).to(t.device("cuda") if t.cuda.is_available() else t.device("cpu"))
+# A[t.rand_like(A) > 0.5] = 0
+# B[t.rand_like(B) > 0.5] = 0
+
+# result_dense = (A.view(10, 3, 5, 1, 1, 30) * B.view(1, 1, 8, 9, 30)).sum(dim=-1)
+
+# A = A.to_sparse(sparse_dim=3)
+# B = B.to_sparse(sparse_dim=2)
+# result_sparse = doubly_batched_inner_prod(A, B)
+
+# assert t.allclose(result_sparse.to_dense(), result_dense, atol=1e-4)
+
+# test diag_embed
+A = t.randn(2, 3, 5).to(t.device("cuda") if t.cuda.is_available() else t.device("cpu"))
 A[t.rand_like(A) > 0.5] = 0
-B[t.rand_like(B) > 0.5] = 0
+A_sp = A.to_sparse_coo()
 
-result_dense = (A.view(10, 3, 5, 1, 1, 30) * B.view(1, 1, 8, 9, 30)).sum(dim=-1)
+correct = t.diag_embed(A.flatten()).reshape(*A.shape, *A.shape)
+assert t.allclose(correct, diag_embed(A_sp).to_dense())
 
-A = A.to_sparse(sparse_dim=3)
-B = B.to_sparse(sparse_dim=2)
-result_sparse = doubly_batched_inner_prod(A, B)
 
-assert t.allclose(result_sparse.to_dense(), result_dense, atol=1e-4)
 
 # A = t.randn(30).to(t.device("cuda") if t.cuda.is_available() else t.device("cpu"))
 # B = t.randn(8, 9, 30).to(t.device("cuda") if t.cuda.is_available() else t.device("cpu"))

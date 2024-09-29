@@ -47,6 +47,15 @@ class Submodule:
             else:
                 self.submodule.output = x
 
+    def stop_grad(self):
+        if self.use_input:
+            self.submodule.input[0][0].grad = t.zeros_like(self.submodule.input[0][0])
+        else:
+            if self.is_tuple:
+                self.submodule.output[0].grad = t.zeros_like(self.submodule.output[0])
+            else:
+                self.submodule.output.grad = t.zeros_like(self.submodule.output)
+
 
 def _pe_attrib(
         clean,
@@ -119,7 +128,7 @@ def _pe_ig(
     metric_kwargs=dict(),
 ):
     hidden_states_clean = {}
-    with model.trace(clean, **tracer_kwargs), t.no_grad():
+    with t.no_grad(), model.trace(clean, **tracer_kwargs):
         for submodule in submodules:
             dictionary = dictionaries[submodule]
             x = submodule.get_activation()
@@ -137,7 +146,7 @@ def _pe_ig(
         total_effect = None
     else:
         hidden_states_patch = {}
-        with model.trace(patch, **tracer_kwargs), t.no_grad():
+        with t.no_grad(), model.trace(patch, **tracer_kwargs):
             for submodule in submodules:
                 dictionary = dictionaries[submodule]
                 x = submodule.get_activation()
@@ -162,8 +171,8 @@ def _pe_ig(
             for step in range(steps):
                 alpha = step / steps
                 f = (1 - alpha) * clean_state + alpha * patch_state
-                f.act.retain_grad()
-                f.res.retain_grad()
+                f.act.requires_grad_().retain_grad()
+                f.res.requires_grad_().retain_grad()
                 fs.append(f)
                 with tracer.invoke(clean, scan=tracer_kwargs['scan']):
                     submodule.set_activation(dictionary.decode(f.act) + f.res)
@@ -289,47 +298,83 @@ def jvp(
     upstream_submod,
     left_vec: SparseAct,
     right_vec: SparseAct,
+    intermediate_stopgrads: list[Submodule] = [],
 ):
 
     downstream_dict, upstream_dict = dictionaries[downstream_submod], dictionaries[upstream_submod]
-    b, s, f_down = downstream_features.act.shape
-    assert f_down == downstream_dict.decoder.weight.shape[-1]
-    f_up = upstream_dict.decoder.weight.shape[-1]
+    b, s, n_feats = downstream_features.act.shape
 
     if t.all(downstream_features.to_tensor() == 0):
         return t.sparse_coo_tensor(
             t.zeros((2 * downstream_features.act.dim(), 0), dtype=t.long), 
             t.zeros(0), 
-            size=(b, s, f_down+1, b, s, f_up+1)
+            size=(b, s, n_feats+1, b, s, n_feats+1)
         ).to(model.device)
 
 
     vjv_values = {}
+    
+    try:
+        with model.trace(input, **tracer_kwargs):
+            # forward pass modifications
+            x = upstream_submod.get_activation()
+            x_hat, f = upstream_dict.hacked_forward_for_sfc(x) # hacking around an nnsight bug
+            x_res = x - x_hat
+            upstream_submod.set_activation(x_hat + x_res)
+            upstream_act = SparseAct(act=f, res=x_res).save()
+            
+            y = downstream_submod.get_activation()
+            y_hat, g = downstream_dict.hacked_forward_for_sfc(y) # hacking around an nnsight bug
+            y_res = y - y_hat
+            downstream_act = SparseAct(act=g, res=y_res)
 
-    with model.trace(input, **tracer_kwargs):
-        # forward pass modifications
-        x = upstream_submod.get_activation()
-        x_hat, f = upstream_dict(x, output_features=True)
-        x_res = x - x_hat
-        upstream_submod.set_activation(x_hat + x_res)
-        upstream_act = SparseAct(act=f, res=x_res).save()
-        
-        y = downstream_submod.get_activation()
-        y_hat, g = downstream_dict(y, output_features=True)
-        y_res = y - y_hat
-        downstream_submod.set_activation(y_hat + y_res)
-        downstream_act = SparseAct(act=g, res=y_res).save()
+            to_backprops = (left_vec @ downstream_act).to_tensor()
 
-        to_backprops = (left_vec @ downstream_act).to_tensor()
+            for downstream_feat_idx in downstream_features.to_tensor().nonzero():
+                # stop grad
+                for submodule in intermediate_stopgrads:
+                    submodule.stop_grad()
+                x_res.grad = t.zeros_like(x_res.grad)
 
-        for downstream_feat_idx in downstream_features.to_tensor().nonzero():
-            vjv = (upstream_act.grad @ right_vec).to_tensor()
-            x_res.grad = t.zeros_like(x_res.grad)
-            to_backprops[tuple(downstream_feat_idx)].backward(retain_graph=True)
+                vjv = (upstream_act.grad @ right_vec).to_tensor()
+                to_backprops[tuple(downstream_feat_idx)].backward(retain_graph=True)
 
-            vjv_values[downstream_feat_idx] = vjv.save() # type: ignore
+                vjv_values[downstream_feat_idx] = vjv.save() # type: ignore
+    except:
+        breakpoint()
+        raise
+    
+    # else:  # do this inefficiently with multiple forward passes to work around an nnsight bug
+    #     print("inefficiency!")
+    #     for downstream_feat_idx in downstream_features.to_tensor().nonzero():
+    #         with model.trace(input, **tracer_kwargs):
+    #             # forward pass modifications
+    #             x = upstream_submod.get_activation()
+    #             x_hat, f = upstream_dict(x, output_features=True)
+    #             x_res = x - x_hat
+    #             upstream_submod.set_activation(x_hat + x_res)
+    #             upstream_act = SparseAct(act=f, res=x_res).save()
+                
+    #             y = downstream_submod.get_activation()
+    #             y_hat, g = downstream_dict(y, output_features=True)
+    #             y_res = y - y_hat
+    #             downstream_submod.set_activation(y_hat + y_res)
+    #             downstream_act = SparseAct(act=g, res=y_res).save()
+
+    #             to_backprops = (left_vec @ downstream_act).to_tensor()
+
+    #             # stop grad
+    #             for submodule in intermediate_stopgrads:
+    #                 submodule.stop_grad()
+    #             x_res.grad = t.zeros_like(x_res.grad)
+
+    #             vjv = (upstream_act.grad @ right_vec).to_tensor()
+    #             to_backprops[tuple(downstream_feat_idx)].backward(retain_graph=True)
+
+    #             vjv_values[downstream_feat_idx] = vjv.save()
+
 
     vjv_indices = t.stack(list(vjv_values.keys()), dim=0).T
     vjv_values = t.stack([v.value for v in vjv_values.values()], dim=0)
 
-    return t.sparse_coo_tensor(vjv_indices, vjv_values, size=(b, s, f_down+1, b, s, f_up+1))
+    return t.sparse_coo_tensor(vjv_indices, vjv_values, size=(b, s, n_feats+1, b, s, n_feats+1))

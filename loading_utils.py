@@ -23,6 +23,7 @@ def load_examples(dataset, num_examples, model, seed=12, pad_to_length=None, len
     dataset_items = open(dataset).readlines()
     random.seed(seed)
     random.shuffle(dataset_items)
+    breakpoint()
     for line in dataset_items:
         data = json.loads(line)
         clean_prefix = model.tokenizer(data["clean_prefix"], return_tensors="pt",
@@ -33,26 +34,32 @@ def load_examples(dataset, num_examples, model, seed=12, pad_to_length=None, len
                                         padding=False).input_ids
         patch_answer = model.tokenizer(data["patch_answer"], return_tensors="pt",
                                         padding=False).input_ids
-        # only keep examples where answers are single tokens
+        breakpoint()
+        # only keep examples where clean and patch inputs are the same length
         if clean_prefix.shape[1] != patch_prefix.shape[1]:
             continue
-        # only keep examples where clean and patch inputs are the same length
+        # only keep examples where answers are single tokens
+        breakpoint()
         if clean_answer.shape[1] != 1 or patch_answer.shape[1] != 1:
             continue
+        breakpoint()
         # if we specify a `length`, filter examples if they don't match
         if length and clean_prefix.shape[1] != length:
             continue
+        breakpoint()
         # if we specify `pad_to_length`, left-pad all inputs to a max length
         prefix_length_wo_pad = clean_prefix.shape[1]
         if pad_to_length:
             model.tokenizer.padding_side = 'right'
             pad_length = pad_to_length - prefix_length_wo_pad
+            breakpoint()
             if pad_length < 0:  # example too long
                 continue
+            breakpoint()
             # left padding: reverse, right-pad, reverse
             clean_prefix = t.flip(F.pad(t.flip(clean_prefix, (1,)), (0, pad_length), value=model.tokenizer.pad_token_id), (1,))
             patch_prefix = t.flip(F.pad(t.flip(patch_prefix, (1,)), (0, pad_length), value=model.tokenizer.pad_token_id), (1,))
-        
+        breakpoint()
         example_dict = {"clean_prefix": clean_prefix,
                         "patch_prefix": patch_prefix,
                         "clean_answer": clean_answer.item(),
@@ -60,6 +67,7 @@ def load_examples(dataset, num_examples, model, seed=12, pad_to_length=None, len
                         "annotations": get_annotation(dataset, model, data),
                         "prefix_length_wo_pad": prefix_length_wo_pad,}
         examples.append(example_dict)
+        breakpoint()
         if len(examples) >= num_examples:
             break
 

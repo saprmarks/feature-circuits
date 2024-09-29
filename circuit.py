@@ -11,15 +11,15 @@ from tqdm import tqdm
 
 from activation_utils import SparseAct
 from attribution import patching_effect, jvp, Submodule
-from circuit_plotting import plot_circuit, plot_circuit_posaligned
+from circuit_plotting_new import plot_circuit, plot_circuit_posaligned
 from dictionary_learning import AutoEncoder
-from loading_utils import load_examples, load_examples_nopair
+from loading_utils_new import load_examples, load_examples_nopair
 from dictionary_loading_utils import load_saes_and_submodules
 from nnsight import LanguageModel
 from nnsight.envoy import Envoy
 import time
 
-from coo_utils import sparse_reshape, sparse_repeat, sparsely_expand, sparse_prod, sparse_mm, sparsely_batched_outer_prod, doubly_batched_inner_prod
+from coo_utils import sparse_reshape, diag_embed, sparsely_batched_outer_prod, doubly_batched_inner_prod
 
 DEBUGGING = True
 
@@ -42,10 +42,15 @@ def get_circuit(
         metric_kwargs=dict(),
         aggregation='sum', # or 'none' for not aggregating across sequence position
         nodes_only=False,
+        parallel_attn=False,
         node_threshold=0.1,
         edge_threshold=0.01,
 ):
-    all_submods = [embed] + [submod for layer_submods in zip(mlps, attns, resids) for submod in layer_submods]
+    all_submods = (
+        [embed] if embed is not None else []
+    ) + [
+        submod for layer_submods in zip(attns, mlps, resids) for submod in layer_submods
+    ]
     
     # first get the patching effect of everything on y
     effects, deltas, grads, total_effect = patching_effect(
@@ -75,7 +80,8 @@ def get_circuit(
     n_layers = len(resids)
 
     nodes = {'y' : total_effect}
-    nodes['embed'] = effects[embed]
+    if embed is not None:
+        nodes['embed'] = effects[embed]
     for i in range(n_layers):
         nodes[f'attn_{i}'] = effects[attns[i]]
         nodes[f'mlp_{i}'] = effects[mlps[i]]
@@ -92,7 +98,7 @@ def get_circuit(
     edges = defaultdict(lambda:{})
     edges[f'resid_{len(resids)-1}'] = { 'y' : effects[resids[-1]].to_tensor().flatten().to_sparse() }
 
-    def N(upstream, downstream):
+    def N(upstream, downstream, midstream=[]):
         return jvp(
             clean,
             model,
@@ -102,7 +108,7 @@ def get_circuit(
             upstream,
             grads[downstream],
             deltas[upstream],
-            # return_without_right=True,
+            intermediate_stopgrads=midstream,
         )
 
     # now we work backward through the model to get the edges
@@ -111,90 +117,106 @@ def get_circuit(
         mlp = mlps[layer]
         attn = attns[layer]
 
-        # MR_effect = N(mlp, resid)
         MR_effect = N(mlp, resid)
-        AR_effect = N(attn, resid)
-
+        AR_effect = N(attn, resid, [mlp])
         edges[f'mlp_{layer}'][f'resid_{layer}'] = MR_effect
         edges[f'attn_{layer}'][f'resid_{layer}'] = AR_effect
 
+        if parallel_attn:
+            AM_effect = N(attn, mlp)
+            edges[f'attn_{layer}'][f'mlp_{layer}'] = AM_effect
+        
         if layer > 0:
             prev_resid = resids[layer-1]
         else:
             prev_resid = embed
+        
+        if prev_resid is not None:
+            RM_effect = N(prev_resid, mlp, [attn])
+            RA_effect = N(prev_resid, attn)
+            RR_effect = N(prev_resid, resid, [mlp, attn])
+            
+            if layer > 0:
+                edges[f'resid_{layer-1}'][f'mlp_{layer}'] = RM_effect
+                edges[f'resid_{layer-1}'][f'attn_{layer}'] = RA_effect
+                edges[f'resid_{layer-1}'][f'resid_{layer}'] = RR_effect
+            else:
+                edges['embed'][f'mlp_{layer}'] = RM_effect
+                edges['embed'][f'attn_{layer}'] = RA_effect
+                edges['embed'][f'resid_0'] = RR_effect
 
-        RM_effect = N(prev_resid, mlp)
-        RA_effect = N(prev_resid, attn)
+        # RM_effect = N(prev_resid, mlp)
+        # RA_effect = N(prev_resid, attn)
+        # RR_effect = N(prev_resid, resid, [mlp, attn])
 
-        # get RR effect
-        W_E = dictionaries[resid].encoder.weight
-        W_D = dictionaries[resid].decoder.weight
-        W_D_prev = dictionaries[prev_resid].decoder.weight
-        downstream_grad = grads[resid]
-        downstream_idxs = features_by_submod[resid].act.nonzero()
-        upstream_delta = deltas[prev_resid]
-        upstream_idxs = features_by_submod[prev_resid].act.nonzero()
+        # # get RR effect
+        # # W_E = dictionaries[resid].encoder.weight
+        # # W_D = dictionaries[resid].decoder.weight
+        # # W_D_prev = dictionaries[prev_resid].decoder.weight
+        # # downstream_grad = grads[resid]
+        # # downstream_idxs = features_by_submod[resid].act.nonzero()
+        # # upstream_delta = deltas[prev_resid]
+        # # upstream_idxs = features_by_submod[prev_resid].act.nonzero()
 
-        # define some shapes
-        assert (b := downstream_grad.act.shape[0]) == upstream_delta.act.shape[0]
-        assert (s := downstream_grad.act.shape[1]) == upstream_delta.act.shape[1]
-        assert (f := downstream_grad.act.shape[2]) == upstream_delta.act.shape[2] and f == W_E.shape[0] and f == W_D_prev.shape[1]
-        assert (d := W_E.shape[1]) == W_D_prev.shape[0]
+        # # # define some shapes
+        # # assert (b := downstream_grad.act.shape[0]) == upstream_delta.act.shape[0]
+        # # assert (s := downstream_grad.act.shape[1]) == upstream_delta.act.shape[1]
+        # # assert (f := downstream_grad.act.shape[2]) == upstream_delta.act.shape[2] and f == W_E.shape[0] and f == W_D_prev.shape[1]
+        # # assert (d := W_E.shape[1]) == W_D_prev.shape[0]
 
-        mask = t.zeros(b, s, f, device=model.device, dtype=t.bool)
-        mask[tuple(downstream_idxs.T)] = True
-        downstream_grad.act[~mask] = 0
-        downstream_grad.act = downstream_grad.act.to_sparse_coo()
+        # # mask = t.zeros(b, s, f, device=model.device, dtype=t.bool)
+        # # mask[tuple(downstream_idxs.T)] = True
+        # # downstream_grad.act[~mask] = 0
+        # # downstream_grad.act = downstream_grad.act.to_sparse_coo()
 
-        mask = t.zeros(b, s, f, device=model.device, dtype=t.bool)
-        mask[tuple(upstream_idxs.T)] = True
-        upstream_delta.act[~mask] = 0
-        upstream_delta.act = upstream_delta.act.to_sparse_coo()
+        # # mask = t.zeros(b, s, f, device=model.device, dtype=t.bool)
+        # # mask[tuple(upstream_idxs.T)] = True
+        # # upstream_delta.act[~mask] = 0
+        # # upstream_delta.act = upstream_delta.act.to_sparse_coo()
 
+        # # with t.no_grad():
 
-        with t.no_grad():
+        # #     # ffm_effect
+        # #     rfm_grad = sparsely_batched_outer_prod(
+        # #         downstream_grad.act, W_E
+        # #     ) # [b, s, f | d]
+        # #     fr_delta = sparsely_batched_outer_prod(
+        # #         upstream_delta.act, W_D_prev.T
+        # #     ) # [b, s, f | d]
+        # #     ffm_effect = doubly_batched_inner_prod(rfm_grad, fr_delta) # [b, s, f, b, s, f]
 
-            # ffm_effect
-            rfm_grad = sparsely_batched_outer_prod(
-                downstream_grad.act, W_E
-            ) # [b, s, f | d]
-            fr_delta = sparsely_batched_outer_prod(
-                upstream_delta.act, W_D_prev.T
-            ) # [b, s, f | d]
-            ffm_effect = doubly_batched_inner_prod(rfm_grad, fr_delta)
+        # #     # efm_effect
+        # #     efm_effect = doubly_batched_inner_prod(rfm_grad, upstream_delta.res.to_sparse(sparse_dim=2))
+        # #     efm_effect = efm_effect.unsqueeze(-1)
 
-            # efm_effect
-            efm_effect = doubly_batched_inner_prod(rfm_grad, upstream_delta.res.to_sparse(sparse_dim=2))
-            efm_effect = efm_effect.unsqueeze(-1)
+        # #     # fem_effect
+        # #     frm_grad = (downstream_grad.res.unsqueeze(-2) @ W_D_prev).squeeze(-2) # [b, s, f]
+        # #     frm_effect = frm_grad * upstream_delta.act # [b, s, f]
+        # #     fem_effect = frm_effect - ffm_effect.sum(dim=(0, 1, 2))
+        # #     fem_effect = sparse_reshape(fem_effect, (b, s, 1, b, s, f))
 
-            # fem_effect
-            frm_grad = (downstream_grad.res.unsqueeze(-2) @ W_D_prev).squeeze(-2) # [b, s, f]
-            frm_effect = frm_grad * upstream_delta.act # [b, s, f]
-            fem_effect = frm_effect - ffm_effect.sum(dim=(0, 1, 2))
-            fem_effect = sparse_reshape(fem_effect, (b, s, 1, b, s, f))
+        # #     # eem_effect
+        # #     eem_effect = (downstream_grad.res.view(b, s, 1, 1, d) * \
+        # #         upstream_delta.res.view(1, 1, b, s, d)).sum(dim=-1)
+        # #     eem_effect =  eem_effect.unsqueeze(2).unsqueeze(-1).to_sparse()
 
-            # eem_effect
-            eem_effect = (downstream_grad.res.view(b, s, 1, 1, d) * \
-                upstream_delta.res.view(1, 1, b, s, d)).sum(dim=-1)
-            eem_effect =  eem_effect.unsqueeze(2).unsqueeze(-1).to_sparse()
+        # #     # aggregate into RR_effect
+        # #     RR_effect = t.cat(
+        # #         [
+        # #             t.cat([ffm_effect, efm_effect], dim=-1),
+        # #             t.cat([fem_effect, eem_effect], dim=-1)
+        # #         ],
+        # #         dim=2
+        # #     )
 
-            # aggregate into RR_effect
-            RR_effect = t.cat(
-                [
-                    t.cat([ffm_effect, efm_effect], dim=-1),
-                    t.cat([fem_effect, eem_effect], dim=-1)
-                ],
-                dim=2
-            )
-
-        if layer > 0: 
-            edges[f'resid_{layer-1}'][f'mlp_{layer}'] = RM_effect
-            edges[f'resid_{layer-1}'][f'attn_{layer}'] = RA_effect
-            edges[f'resid_{layer-1}'][f'resid_{layer}'] = RR_effect
-        else:
-            edges['embed'][f'mlp_{layer}'] = RM_effect
-            edges['embed'][f'attn_{layer}'] = RA_effect
-            edges['embed'][f'resid_0'] = RR_effect
+        # if layer > 0: 
+        #     edges[f'resid_{layer-1}'][f'mlp_{layer}'] = RM_effect
+        #     edges[f'resid_{layer-1}'][f'attn_{layer}'] = RA_effect
+        #     edges[f'resid_{layer-1}'][f'resid_{layer}'] = RR_effect
+        # else:
+        #     edges['embed'][f'mlp_{layer}'] = RM_effect
+        #     edges['embed'][f'attn_{layer}'] = RA_effect
+        #     edges['embed'][f'resid_0'] = RR_effect
 
     # rearrange weight matrices
     for child in edges:
@@ -438,7 +460,7 @@ if __name__ == '__main__':
                         help="Plot the circuit after discovering it.")
     parser.add_argument('--nodes_only', default=False, action='store_true',
                         help="Only search for causally implicated features; do not draw edges.")
-    parser.add_argument('--plot_only', action="store_true",
+    parser.add_argument('--plot_only', default=False, action="store_true",
                         help="Do not run circuit discovery; just plot an existing circuit.")
     parser.add_argument("--circuit_dir", type=str, default="circuits/",
                         help="Directory to save/load circuits.")
@@ -449,57 +471,81 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     device = t.device(args.device)
-    if args.model == "EleutherAI/pythia-70m-deduped":
-        model = LanguageModel(args.model, device_map=device, dispatch=True)
-    elif args.model == "google/gemma-2-2b":
-        model = LanguageModel(args.model, device_map=device, dispatch=True, attn_implementation="eager")
 
     n_layers = {
         "EleutherAI/pythia-70m-deduped" : 6,
         "google/gemma-2-2b" : 26,
     }[args.model]
     parallel_attn = {
+        "EleutherAI/pythia-70m-deduped" : False,
+        "google/gemma-2-2b" : True,
+    }[args.model]
+    include_embed = {
         "EleutherAI/pythia-70m-deduped" : True,
         "google/gemma-2-2b" : False,
     }[args.model]
+    dtype = {
+        "EleutherAI/pythia-70m-deduped" : t.float32,
+        "google/gemma-2-2b" : t.bfloat16,
+    }[args.model]
 
-    submodules, dictionaries = load_saes_and_submodules(
-        model,
-        args.model,
-        separate_by_type=True,
-        device=device,
-    )
+    if args.model == "EleutherAI/pythia-70m-deduped":
+        model = LanguageModel(args.model, device_map=device, dispatch=True)
+    elif args.model == "google/gemma-2-2b":
+        model = LanguageModel(args.model, device_map=device, dispatch=True, attn_implementation="eager", torch_dtype=dtype)
     
     if args.nopair:
+        raise NotImplementedError("No-pair mode is not yet implemented for new data loading.")
         save_basename = os.path.splitext(os.path.basename(args.dataset))[0]
         examples = load_examples_nopair(args.dataset, args.num_examples, model, length=args.example_length)
     else:
         data_path = f"data/{args.dataset}.json"
         save_basename = args.dataset
         if args.aggregation == "sum":
+            raise NotImplementedError("Sum aggregation is not yet implemented for new data loading.")
             examples = load_examples(data_path, args.num_examples, model, pad_to_length=args.example_length)
         else:
-            examples = load_examples(data_path, args.num_examples, model, length=args.example_length)
+            examples = load_examples(data_path, args.num_examples, model, use_min_length_only=True)
+    
+    num_examples = min([args.num_examples, len(examples)])
+    if num_examples < args.num_examples: # warn the user
+        print(f"Total number of examples is less than {args.num_examples}. Using {num_examples} examples instead.")
     
     batch_size = args.batch_size
-    num_examples = min([args.num_examples, len(examples)]) # TODO check that Gemma tokenizer doesn't mess up data preparation
     n_batches = math.ceil(num_examples / batch_size)
     batches = [
         examples[batch*batch_size:(batch+1)*batch_size] for batch in range(n_batches)
     ]
-    if num_examples < args.num_examples: # warn the user
-        print(f"Total number of examples is less than {args.num_examples}. Using {num_examples} examples instead.")
 
     if not args.plot_only:
+        submodules, dictionaries = load_saes_and_submodules(
+            model,
+            args.model,
+            separate_by_type=True,
+            include_embed=include_embed,
+            device=device,
+            dtype=dtype,
+        )
+
+
         running_nodes = None
         running_edges = None
 
         for batch in tqdm(batches, desc="Batches"):
                 
-            clean_inputs = t.cat([e['clean_prefix'] for e in batch], dim=0).to(device)
-            clean_answer_idxs = t.tensor([e['clean_answer'] for e in batch], dtype=t.long, device=device)
+            clean_inputs = [
+                e['clean_prefix'] for e in batch
+            ]
+            clean_answer_idxs = t.tensor(
+                [
+                    model.tokenizer(e['clean_answer']).input_ids[-1] for e in batch
+                ],
+                dtype=t.long,
+                device=device
+            )
 
             if args.nopair:
+                raise NotImplementedError("No-pair mode is not yet implemented for new data loading.")
                 patch_inputs = None
                 def metric_fn(model):
                     return (
@@ -508,12 +554,21 @@ if __name__ == '__main__':
                         ).squeeze(-1)
                     )
             else:
-                patch_inputs = t.cat([e['patch_prefix'] for e in batch], dim=0).to(device)
-                patch_answer_idxs = t.tensor([e['patch_answer'] for e in batch], dtype=t.long, device=device)
+                patch_inputs = [
+                    e['patch_prefix'] for e in batch
+                ]
+                patch_answer_idxs = t.tensor(
+                    [
+                        model.tokenizer(e['patch_answer']).input_ids[-1] for e in batch
+                    ],
+                    dtype=t.long,
+                    device=device
+                )
                 def metric_fn(model):
+                    logits = model.output.logits[:,-1,:]
                     return (
-                        t.gather(model.embed_out.output[:,-1,:], dim=-1, index=patch_answer_idxs.view(-1, 1)).squeeze(-1) - \
-                        t.gather(model.embed_out.output[:,-1,:], dim=-1, index=clean_answer_idxs.view(-1, 1)).squeeze(-1)
+                        t.gather(logits, dim=-1, index=patch_answer_idxs.view(-1, 1)).squeeze(-1) - \
+                        t.gather(logits, dim=-1, index=clean_answer_idxs.view(-1, 1)).squeeze(-1)
                     )
             
             nodes, edges = get_circuit(
@@ -530,6 +585,7 @@ if __name__ == '__main__':
                 aggregation=args.aggregation,
                 node_threshold=args.node_threshold,
                 edge_threshold=args.edge_threshold,
+                parallel_attn=parallel_attn,
             )
 
             if running_nodes is None:
@@ -578,24 +634,25 @@ if __name__ == '__main__':
         annotations = None
 
     if args.aggregation == "none":
-        example = model.tokenizer.batch_decode(examples[0]["clean_prefix"])[0]
+        example = examples[0]["clean_prefix"]
         plot_circuit_posaligned(
             nodes, 
             edges,
-            layers=len(layers),
+            layers=n_layers,
             length=args.example_length,
             example_text=example,
             node_threshold=args.node_threshold, 
             edge_threshold=args.edge_threshold, 
-            pen_thickness=args.pen_thickness, 
+            pen_thickness=4,
             annotations=annotations, 
-            save_dir=f'{args.plot_dir}/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}'
+            save_dir=f'{args.plot_dir}/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}',
+            gemma_mode=(args.model == "google/gemma-2-2b"),
         )
     else:
         plot_circuit(
             nodes, 
             edges, 
-            layers=len(layers),
+            layers=n_layers,
             node_threshold=args.node_threshold, 
             edge_threshold=args.edge_threshold, 
             pen_thickness=args.pen_thickness, 
