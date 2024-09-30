@@ -1,6 +1,6 @@
 from re import split
 from collections import namedtuple
-from dictionary_learning import AutoEncoder, JumpReluAutoEncoder
+from dictionary_learning import AutoEncoder, JumpReluAutoEncoder, IdentityDict
 from attribution import Submodule
 from typing import Literal
 import torch as t
@@ -16,6 +16,7 @@ def _load_pythia_saes_and_submodules(
     thru_layer: int | None = None,
     separate_by_type: bool = False,
     include_embed: bool = True,
+    neurons: bool = False,
     dtype: t.dtype = t.float32,
     device: t.device = t.device("cpu"),
 ):
@@ -32,11 +33,14 @@ def _load_pythia_saes_and_submodules(
             name = "embed",
             submodule=model.gpt_neox.embed_in,
         )
-        dictionaries[embed] = AutoEncoder.from_pretrained(
-            f"{DICT_DIR}/pythia-70m-deduped/embed/10_32768/ae.pt",
-            dtype=dtype,
-            device=device,
-        )
+        if not neurons:
+            dictionaries[embed] = AutoEncoder.from_pretrained(
+                f"{DICT_DIR}/pythia-70m-deduped/embed/10_32768/ae.pt",
+                dtype=dtype,
+                device=device,
+            )
+        else:
+            dictionaries[embed] = IdentityDict(512)
     else:
         embed = None
     for i, layer in enumerate(model.gpt_neox.layers[:thru_layer+1]):
@@ -47,21 +51,11 @@ def _load_pythia_saes_and_submodules(
                 is_tuple=True,
             )
         )
-        dictionaries[attn] = AutoEncoder.from_pretrained(
-            f"{DICT_DIR}/pythia-70m-deduped/attn_out_layer{i}/10_32768/ae.pt",
-            dtype=dtype,
-            device=device,
-        )
         mlps.append(
             mlp := Submodule(
                 name = f"mlp_{i}",
                 submodule=layer.mlp,
             )
-        )
-        dictionaries[mlp] = AutoEncoder.from_pretrained(
-            f"{DICT_DIR}/pythia-70m-deduped/mlp_out_layer{i}/10_32768/ae.pt",
-            dtype=dtype,
-            device=device,
         )
         resids.append(
             resid := Submodule(
@@ -70,11 +64,26 @@ def _load_pythia_saes_and_submodules(
                 is_tuple=True,
             )
         )
-        dictionaries[resid] = AutoEncoder.from_pretrained(
-            f"{DICT_DIR}/pythia-70m-deduped/resid_out_layer{i}/10_32768/ae.pt",
-            dtype=dtype,
-            device=device,
-        )
+        if not neurons:
+            dictionaries[attn] = AutoEncoder.from_pretrained(
+                f"{DICT_DIR}/pythia-70m-deduped/attn_out_layer{i}/10_32768/ae.pt",
+                dtype=dtype,
+                device=device,
+            )
+            dictionaries[mlp] = AutoEncoder.from_pretrained(
+                f"{DICT_DIR}/pythia-70m-deduped/mlp_out_layer{i}/10_32768/ae.pt",
+                dtype=dtype,
+                device=device,
+            )
+            dictionaries[resid] = AutoEncoder.from_pretrained(
+                f"{DICT_DIR}/pythia-70m-deduped/resid_out_layer{i}/10_32768/ae.pt",
+                dtype=dtype,
+                device=device,
+            )
+        else:
+            dictionaries[attn] = IdentityDict(512)
+            dictionaries[mlp] = IdentityDict(512)
+            dictionaries[resid] = IdentityDict(512)
 
     if separate_by_type:
         return DictionaryStash(embed, attns, mlps, resids), dictionaries
@@ -90,9 +99,16 @@ def load_gemma_sae(
     submod_type: Literal["embed", "attn", "mlp", "resid"],
     layer: int,
     width: Literal["16k", "65k"] = "16k",
+    neurons: bool = False,
     dtype: t.dtype = t.float32,
     device: t.device = t.device("cpu"),
 ):
+    if neurons:
+        if submod_type != "attn":
+            return IdentityDict(2304)
+        else:
+            return IdentityDict(2048)
+
     repo_id = "google/gemma-scope-2b-pt-" + (
         "res" if submod_type in ["embed", "resid"] else
         "att" if submod_type == "attn" else
@@ -123,6 +139,7 @@ def _load_gemma_saes_and_submodules(
     thru_layer: int | None = None,
     separate_by_type: bool = False,
     include_embed: bool = True,
+    neurons: bool = False,
     dtype: t.dtype = t.float32,
     device: t.device = t.device("cpu"),
 ):
@@ -139,7 +156,7 @@ def _load_gemma_saes_and_submodules(
             name = "embed",
             submodule=model.model.embed_tokens,
         )
-        dictionaries[embed] = load_gemma_sae("embed", 0, dtype=dtype, device=device)
+        dictionaries[embed] = load_gemma_sae("embed", 0, neurons=neurons, dtype=dtype, device=device)
     else:
         embed = None
     for i, layer in tqdm(enumerate(model.model.layers[:thru_layer+1]), total=thru_layer+1, desc="Loading Gemma SAEs"):
@@ -150,14 +167,14 @@ def _load_gemma_saes_and_submodules(
                 use_input=True
             )
         )
-        dictionaries[attn] = load_gemma_sae("attn", i, dtype=dtype, device=device)
+        dictionaries[attn] = load_gemma_sae("attn", i, neurons=neurons, dtype=dtype, device=device)
         mlps.append(
             mlp := Submodule(
                 name=f"mlp_{i}",
                 submodule=layer.post_feedforward_layernorm,
             )
         )
-        dictionaries[mlp] = load_gemma_sae("mlp", i, dtype=dtype, device=device)
+        dictionaries[mlp] = load_gemma_sae("mlp", i, neurons=neurons, dtype=dtype, device=device)
         resids.append(
             resid := Submodule(
                 name=f"resid_{i}",
@@ -165,7 +182,7 @@ def _load_gemma_saes_and_submodules(
                 is_tuple=True,
             )
         )
-        dictionaries[resid] = load_gemma_sae("resid", i, dtype=dtype, device=device)
+        dictionaries[resid] = load_gemma_sae("resid", i, neurons=neurons, dtype=dtype, device=device)
 
     if separate_by_type:
         return DictionaryStash(embed, attns, mlps, resids), dictionaries
@@ -184,12 +201,13 @@ def load_saes_and_submodules(
     thru_layer: int | None = None,
     separate_by_type: bool = False,
     include_embed: bool = True,
+    neurons: bool = False,
     dtype: t.dtype = t.float32,
     device: t.device = t.device("cpu"),
 ):
     if model_name == "EleutherAI/pythia-70m-deduped":
-        return _load_pythia_saes_and_submodules(model, thru_layer=thru_layer, separate_by_type=separate_by_type, include_embed=include_embed, dtype=dtype, device=device)
+        return _load_pythia_saes_and_submodules(model, thru_layer=thru_layer, separate_by_type=separate_by_type, include_embed=include_embed, neurons=neurons, dtype=dtype, device=device)
     elif model_name == "google/gemma-2-2b":
-        return _load_gemma_saes_and_submodules(model, thru_layer=thru_layer, separate_by_type=separate_by_type, include_embed=include_embed, dtype=dtype, device=device)
+        return _load_gemma_saes_and_submodules(model, thru_layer=thru_layer, separate_by_type=separate_by_type, include_embed=include_embed, neurons=neurons, dtype=dtype, device=device)
     else:
         raise ValueError(f"Model {model_name} not supported")

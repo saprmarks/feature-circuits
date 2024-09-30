@@ -440,10 +440,8 @@ if __name__ == '__main__':
                         help="Path to all dictionaries for your language model.")
     parser.add_argument('--d_model', type=int, default=512,
                         help="Hidden size of the language model.")
-    parser.add_argument('--dict_id', type=str, default=10,
-                        help="ID of the dictionaries. Use `id` to obtain circuits on neurons/heads directly.")
-    parser.add_argument('--dict_size', type=int, default=32768,
-                        help="The width of the dictionary encoder.")
+    parser.add_argument('--use_neurons', default=False, action="store_true",
+                        help="Use neurons instead of features.")
     parser.add_argument('--batch_size', type=int, default=32,
                         help="Number of examples to process at once when running circuit discovery.")
     parser.add_argument('--aggregation', type=str, default='sum',
@@ -462,7 +460,7 @@ if __name__ == '__main__':
                         help="Only search for causally implicated features; do not draw edges.")
     parser.add_argument('--plot_only', default=False, action="store_true",
                         help="Do not run circuit discovery; just plot an existing circuit.")
-    parser.add_argument("--circuit_dir", type=str, default="circuits/",
+    parser.add_argument("--circuit_dir", type=str, default="circuits",
                         help="Directory to save/load circuits.")
     parser.add_argument("--plot_dir", type=str, default="circuits/figures/",
                         help="Directory to save figures.")
@@ -500,7 +498,6 @@ if __name__ == '__main__':
         examples = load_examples_nopair(args.dataset, args.num_examples, model, length=args.example_length)
     else:
         data_path = f"data/{args.dataset}.json"
-        save_basename = args.dataset
         if args.aggregation == "sum":
             raise NotImplementedError("Sum aggregation is not yet implemented for new data loading.")
             examples = load_examples(data_path, args.num_examples, model, pad_to_length=args.example_length)
@@ -517,12 +514,42 @@ if __name__ == '__main__':
         examples[batch*batch_size:(batch+1)*batch_size] for batch in range(n_batches)
     ]
 
-    if not args.plot_only:
+    loaded_from_disk = False
+    save_base = f"{args.model.split('/')[-1]}_{args.dataset}_n{num_examples}_agg{args.aggregation}" + (
+        "_neurons" if args.use_neurons else ""
+    )
+    node_suffix = f"node{args.node_threshold}" if not args.nodes_only else "nodeall"
+    if os.path.exists(
+        save_path := f"{args.circuit_dir}/{save_base}_{node_suffix}.pt"
+    ):
+        print(f"Loading circuit from {save_path}")
+        with open(save_path, 'rb') as infile:
+            save_dict = t.load(infile)
+        nodes = save_dict['nodes']
+        edges = save_dict['edges']
+        loaded_from_disk = True
+    elif not args.nodes_only:
+        for f in os.listdir(args.circuit_dir):
+            if "nodeall" in f: continue
+            if f.startswith(save_base):
+                node_thresh = float(f.split(".")[0].split("_node")[-1])
+                if node_thresh < args.node_threshold:
+                    print(f"Loading circuit from {args.circuit_dir}/{f}")
+                    with open(f"{args.circuit_dir}/{f}", 'rb') as infile:
+                        save_dict = t.load(infile)
+                    nodes = save_dict['nodes']
+                    edges = save_dict['edges']
+                    loaded_from_disk = True
+                    break
+
+    if not loaded_from_disk:
+        print("computing circuit")
         submodules, dictionaries = load_saes_and_submodules(
             model,
             args.model,
             separate_by_type=True,
             include_embed=include_embed,
+            neurons=args.use_neurons,
             device=device,
             dtype=dtype,
         )
@@ -614,24 +641,19 @@ if __name__ == '__main__':
             "nodes": nodes,
             "edges": edges
         }
-        with open(f'{args.circuit_dir}/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}.pt', 'wb') as outfile:
+        with open(save_path, 'wb') as outfile:
             t.save(save_dict, outfile)
 
-    else:
-        with open(f'{args.circuit_dir}/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}.pt', 'rb') as infile:
-            save_dict = t.load(infile)
-        nodes = save_dict['nodes']
-        edges = save_dict['edges']
-
-    # feature annotations
-    try:
-        annotations = {}
-        with open(f"annotations/{args.dict_id}_{args.dict_size}.jsonl", 'r') as annotations_data:
-            for annotation_line in annotations_data:
-                annotation = json.loads(annotation_line)
-                annotations[annotation["Name"]] = annotation["Annotation"]
-    except:
-        annotations = None
+    annotations = None
+    # # feature annotations
+    # try:
+    #     annotations = {}
+    #     with open(f"annotations/{args.dict_id}_{args.dict_size}.jsonl", 'r') as annotations_data:
+    #         for annotation_line in annotations_data:
+    #             annotation = json.loads(annotation_line)
+    #             annotations[annotation["Name"]] = annotation["Annotation"]
+    # except:
+    #     annotations = None
 
     if args.aggregation == "none":
         example = examples[0]["clean_prefix"]
@@ -639,16 +661,16 @@ if __name__ == '__main__':
             nodes, 
             edges,
             layers=n_layers,
-            length=args.example_length,
             example_text=example,
             node_threshold=args.node_threshold, 
             edge_threshold=args.edge_threshold, 
             pen_thickness=4,
             annotations=annotations, 
-            save_dir=f'{args.plot_dir}/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}',
+            save_dir=f'{args.plot_dir}/{save_base}_node{args.node_threshold}_edge{args.edge_threshold}',
             gemma_mode=(args.model == "google/gemma-2-2b"),
         )
     else:
+        raise NotImplementedError("Sum aggregation is not yet implemented for new data loading.")
         plot_circuit(
             nodes, 
             edges, 

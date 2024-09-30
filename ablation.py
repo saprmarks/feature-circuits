@@ -39,7 +39,7 @@ def run_with_ablations(
     with model.trace(clean), t.no_grad():
         for submodule in submodules:
             dictionary = dictionaries[submodule]
-            submod_nodes = nodes[submodule.submodule].clone()
+            submod_nodes = nodes[submodule]
             x = submodule.get_activation()
             f = dictionary.encode(x)
             res = x - dictionary(x)
@@ -56,10 +56,6 @@ def run_with_ablations(
             res[...,~submod_nodes.resc] = patch_states[submodule].res[...,~submod_nodes.resc]
             
             submodule.set_activation(dictionary.decode(f) + res)
-            # if is_tuple:
-            #     submodule.output[0][:] = dictionary.decode(f) + res
-            # else:
-            #     submodule.output = dictionary.decode(f) + res
 
         metric = metric_fn(model, **metric_kwargs).save()
     return metric.value
