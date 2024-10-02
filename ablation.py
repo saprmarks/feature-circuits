@@ -69,157 +69,86 @@ if __name__ == '__main__':
                         help="Node threshold for the circuit.")
     parser.add_argument('--ablation', type=str, default='mean',
                         help="Ablation style. Can be one of `mean`, `resample`, `zero`.")
-    parser.add_argument('--circuit', type=str,
+    parser.add_argument('--circuit', type=str, required=True,
                         help="Path to a circuit .pt file.")
     parser.add_argument('--data', type=str, default='rc_test.json',
                         help="Data on which to evaluate the circuit.")
-    parser.add_argument('--batch_size', type=int, default=8,
-                        help="Batch size for processing examples.")
-    parser.add_argument('--num_examples', '-n', type=int, default=100,
+    parser.add_argument('--examples', type=int, default=100,
                         help="Number of examples over which to evaluate the circuit.")
-    parser.add_argument('--length', '-l', type=int, default=6,
-                        help="Length of evaluation examples.")
     parser.add_argument('--handle_errors', type=str, default='default',
                         help="How to treat SAE error terms. Can be `default`, `keep`, or `remove`.")
     parser.add_argument('--start_layer', type=int, default=-1,
                         help="Layer to evaluate the circuit from. Layers below --start_layer are given to the model for free.")
-    parser.add_argument('--dict_path', type=str, default='dictionaries/pythia-70m-deduped/',
-                        help="Path to trained dictionaries.")
-    parser.add_argument('--dict_id', default=10)
-    parser.add_argument('--dict_size', type=int, default=32768,
-                        help="Width of dictionary encoders.")
     parser.add_argument('--device', default='cuda:0')
     args = parser.parse_args()
 
-    DEVICE = "cuda:0"
+    dtype = {
+        "EleutherAI/pythia-70m-deduped": t.float32,
+        "google/gemma-2-2b" : t.bfloat16,
+    }[args.model]
 
-    if "gemma-2" in args.model:
-        model = LanguageModel(args.model, device_map=args.device, dispatch=True,
-                              torch_dtype=t.bfloat16, attn_implementation="eager")
-        embed_submod = Submodule(
-            name = "embed",
-            submodule=model.model.embed_tokens,
-        )
-        model_layers = model.model.layers
-        out_submod = model.lm_head
-    else:
-        model = LanguageModel(args.model, device_map=args.device, dispatch=True)
-        embed_submod = Submodule(
-            name="embed",
-            submodule=model.gpt_neox.embed_in
-        )
-        model_layers = model.gpt_neox.layers
-        out_submod = model.embed_out
+    model = LanguageModel(args.model, attn_implementation="eager", torch_dtype=dtype, device_map=args.device, dispatch=True)
 
-    # submodules = []
-    # if args.start_layer < 0: submodules.append(embed_submod)
-    # for i in range(args.start_layer, len(model_layers)):
-    #     if "gemma-2" in args.model:
-    #         submodules.extend([
-    #             Submodule(submodule=model.model.layers[i].self_attn.o_proj, use_input=True, name=f"attn_{i}"),
-    #             Submodule(submodule=model.model.layers[i].post_feedforward_layernorm, name=f"mlp_{i}"),
-    #             Submodule(submodule=model.model.layers[i], is_tuple=True, name=f"resid_{i}")
-    #         ])
-    #     else:
-    #         submodules.extend([
-    #             Submodule(submodule=model.gpt_neox.layers[i].attention, name=f"attn_{i}"),
-    #             Submodule(model.gpt_neox.layers[i].mlp, name=f"mlp_{i}"),
-    #             Submodule(model.gpt_neox.layers[i], name=f"resid_{i}", is_tuple=True)
-    #         ])
+    submodules, dictionaries = load_saes_and_submodules(model, include_embed=False, dtype=dtype, device=args.device)
 
-    # submod_names = {
-    #     embed_submod.submodule : 'embed'
-    # }
-    # for i in range(len(model.gpt_neox.layers)):
-    #     submod_names[model.gpt_neox.layers[i].attention] = f'attn_{i}'
-    #     submod_names[model.gpt_neox.layers[i].mlp] = f'mlp_{i}'
-    #     submod_names[model.gpt_neox.layers[i]] = f'resid_{i}'
-    
-    if args.dict_id != 'id':
-        if "gemma-2" in args.model:
-            include_embed = False
-        else:
-            include_embed = True
-        dict_size = args.dict_size
-        submodules, dictionaries = load_saes_and_submodules(
-            model, 
-            args.model, 
-            dtype=t.bfloat16,
-            device=DEVICE,
-            include_embed=include_embed
-        )
-        submodules = [s for s in submodules if int(s.name.split("_")[-1]) > args.start_layer]
-        # dictionaries = {}
-        # dictionaries[embed_submod] = AutoEncoder.from_pretrained(
-        #     f'{args.dict_path}/embed/{args.dict_id}_{dict_size}/ae.pt',
-        #     device=args.device
-        # )
-        # for i in range(len(model_layers)):
-        #     dictionaries[model_layers[i].attention] = AutoEncoder.from_pretrained(
-        #         f'{args.dict_path}/attn_out_layer{i}/{args.dict_id}_{dict_size}/ae.pt',
-        #         device=args.device
-        #     )
-        #     dictionaries[model_layers[i].mlp] = AutoEncoder.from_pretrained(
-        #         f'{args.dict_path}/mlp_out_layer{i}/{args.dict_id}_{dict_size}/ae.pt',
-        #         device=args.device
-        #     )
-        #     dictionaries[model_layers[i]] = AutoEncoder.from_pretrained(
-        #         f'{args.dict_path}/resid_out_layer{i}/{args.dict_id}_{dict_size}/ae.pt',
-        #         device=args.device
-        #     )
+    submodules = [s for s in submodules if int(s.name.split("_")[-1]) >= args.start_layer]
 
-    elif args.dict_id == 'id':
-        dict_size = 512 if "pythia-70m" in args.model else 2304     # TODO: probably won't work for Gemma attention
-        dictionaries = {submod : IdentityDict(dict_size).to(args.device) for submod in submodules}
-    
-    nodes = t.load(args.circuit)['nodes']
+    # Load circuit
+    circuit = t.load(args.circuit)['nodes']
     nodes = {
-        submod.submodule : nodes[submod.name].abs() > args.threshold for submod in submodules
+        submod: circuit[submod.name].abs() > args.threshold for submod in submodules
     }
-    n_features = sum([n.act.sum().item() for n in nodes.values()])
-    n_errs = sum([n.resc.sum().item() for n in nodes.values()])
-    print(f"# features = {n_features}")
-    print(f"# triangles = {n_errs}")
 
-    examples = load_examples(f'data/{args.data}', args.num_examples, model, length=args.length)
-    batch_size = args.batch_size
-    num_examples = min([args.num_examples, len(examples)])
-    n_batches = math.ceil(num_examples / batch_size)
-    batches = [
-        examples[batch*batch_size:(batch+1)*batch_size] for batch in range(n_batches)
+    # Load examples
+    examples = load_examples(f'data/{args.data}.json', args.examples, model, use_min_length_only=True)
+
+    # Define ablation function
+    if args.ablation == 'resample':
+        def ablation_fn(x):
+            idxs = t.multinomial(t.ones(x.act.shape[0]), x.act.shape[0], replacement=True).to(x.act.device)
+            return SparseAct(act=x.act[idxs], res=x.res[idxs])
+    elif args.ablation == 'zero':
+        ablation_fn = lambda x: x.zeros_like()
+    else:  # mean ablation
+        ablation_fn = lambda x: x.mean(dim=0).expand_as(x)
+
+    # Prepare inputs
+    clean_inputs = [
+        e['clean_prefix'] for e in examples
     ]
-    fm_list = None
-    fc_list = None
-    fccomp_list = None
-    fempty_list = None
+    clean_answer_idxs = t.tensor(
+        [
+            model.tokenizer(e['clean_answer']).input_ids[-1] for e in examples
+        ],
+        dtype=t.long,
+        device=args.device
+    )
+    patch_inputs = [
+        e['patch_prefix'] for e in examples
+    ]
+    patch_answer_idxs = t.tensor(
+        [
+            model.tokenizer(e['patch_answer']).input_ids[-1] for e in examples
+        ],
+        dtype=t.long,
+        device=args.device
+    )
 
-    for batch in tqdm(batches, desc="Batches"):   
-        clean_inputs = t.cat([e['clean_prefix'] for e in batch], dim=0).to(args.device)
-        clean_answer_idxs = t.tensor([e['clean_answer'] for e in batch], dtype=t.long, device=args.device)
-        patch_inputs = t.cat([e['patch_prefix'] for e in batch], dim=0).to(args.device)
-        patch_answer_idxs = t.tensor([e['patch_answer'] for e in batch], dtype=t.long, device=args.device)
-        def metric_fn(model):
-            return (
-                - t.gather(out_submod.output[:,-1,:], dim=-1, index=patch_answer_idxs.view(-1, 1)).squeeze(-1) + \
-                t.gather(out_submod.output[:,-1,:], dim=-1, index=clean_answer_idxs.view(-1, 1)).squeeze(-1)
-            )
-        
-        if args.ablation == 'resample': 
-            def ablation_fn(x):
-                idxs = t.multinomial(t.ones(x.act.shape[0]), x.act.shape[0], replacement=True).to(x.act.device)
-                return SparseAct(act=x.act[idxs], res=x.res[idxs])
-        if args.ablation == 'zero': ablation_fn = lambda x: x.zeros_like()
-        if args.ablation == 'mean': ablation_fn = lambda x: x.mean(dim=0).expand_as(x)
+    def metric_fn(model):
+        logits = model.output.logits[:,-1,:]
+        return (
+            - t.gather(logits, dim=-1, index=patch_answer_idxs.view(-1, 1)).squeeze(-1) +
+            t.gather(logits, dim=-1, index=clean_answer_idxs.view(-1, 1)).squeeze(-1)
+        )
 
+    # Compute faithfulness
+    with t.no_grad():
+        # Compute F(M)
         with model.trace(clean_inputs):
             metric = metric_fn(model).save()
-        fm = metric.value
-        if fm_list is None:
-            fm_list = fm
-        else:
-            fm_list = t.cat((fm_list, fm))
-        # print(f"F(M) = {fm.mean()}")
+        fm = metric.value.mean().item()
 
+        # Compute F(C)
         fc = run_with_ablations(
             clean_inputs,
             patch_inputs,
@@ -230,47 +159,25 @@ if __name__ == '__main__':
             metric_fn,
             ablation_fn=ablation_fn,
             handle_errors=args.handle_errors
-        )
-        if fc_list is None:
-            fc_list = fc
-        else:
-            fc_list = t.cat((fc_list, fc))
-        # print(f"F(C) = {fc.mean()}")
+        ).mean().item()
 
-        fccomp = run_with_ablations(
-            clean_inputs,
-            patch_inputs,
-            model,
-            submodules,
-            dictionaries,
-            nodes,
-            metric_fn,
-            ablation_fn=ablation_fn,
-            complement=True,
-            handle_errors=args.handle_errors
-        )
-        if fccomp_list is None:
-            fccomp_list = fccomp
-        else:
-            fccomp_list = t.cat((fccomp_list, fccomp))
-        # print(f"F(C') = {fccomp.mean()}")
-
+        # Compute F(∅)
         fempty = run_with_ablations(
             clean_inputs,
             patch_inputs,
             model,
             submodules,
             dictionaries,
-            nodes = {submod.submodule : SparseAct(act=t.zeros(dict_size, dtype=t.bool), resc=t.zeros(1, dtype=t.bool)).to(args.device) for submod in submodules},
+            nodes={submod: SparseAct(act=t.zeros(dictionaries[submod].dict_size, dtype=t.bool), resc=t.zeros(1, dtype=t.bool)).to(args.device) for submod in submodules},
             metric_fn=metric_fn,
             ablation_fn=ablation_fn,
             handle_errors=args.handle_errors
-        )
-        if fempty_list is None:
-            fempty_list = fempty
-        else:
-            fempty_list = t.cat((fempty_list, fempty))
-        # print(f"F(∅) = {fempty.mean()}")
+        ).mean().item()
 
-    print(f"faithfulness = {(fc_list.mean() - fempty_list.mean()) / (fm_list.mean() - fempty_list.mean())}")
-    print(f"completeness = {(fccomp_list.mean() - fempty_list.mean()) / (fm_list.mean() - fempty_list.mean())}")
+    # Calculate faithfulness
+    faithfulness = (fc - fempty) / (fm - fempty)
+
+    print(f"Faithfulness: {faithfulness:.4f}")
+    print(f"F(M): {fm:.4f}")
+    print(f"F(C): {fc:.4f}")
+    print(f"F(∅): {fempty:.4f}")

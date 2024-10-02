@@ -1,0 +1,470 @@
+{"Component": "embed", "Feature": "1425", "Name": "embed/1425"}
+{"Component": "embed", "Feature": "3734", "Name": "embed/3734"}
+{"Component": "resid", "Layer": "0", "Feature": "3974", "Name": "resid_0/3974", "Annotation": "plural nouns", "notes": "algebra contexts"}
+{"Component": "resid", "Layer": "1", "Feature": "134", "Name": "resid_1/134", "Annotation": "plural nouns", "notes": "scientific contexts"}
+{"Component": "resid", "Layer": "2", "Feature": "13449", "Name": "resid_2/13449", "Annotation": "plural nouns", "notes": "scientific and coding contexts"}
+{"Component": "attn", "Layer": "3", "Feature": "12117", "Name": "attn_3/12117", "Annotation": "plural nouns", "notes": "any syntactic position"}
+{"Component": "resid", "Layer": "3", "Feature": "12382", "Name": "resid_3/12382", "Annotation": "participial modifier phrases", "notes": "past and present participles"}
+{"Component": "resid", "Layer": "3", "Feature": "15191", "Name": "resid_3/15191", "Annotation": "plural nouns", "notes": "includes variable names in code"}
+{"Component": "resid", "Layer": "4", "Feature": "6820", "Name": "resid_4/6820", "Annotation": "plural nouns in PPs", "notes": "mainly in PPs, but not always"}
+{"Component": "resid", "Layer": "4", "Feature": "8420", "Name": "resid_4/8420", "Annotation": "plural nouns in RCs"}
+{"Component": "resid", "Layer": "4", "Feature": "13534", "Name": "resid_4/13534", "Annotation": "prepositional phrase boundaries", "notes": "preposition and final word in PP (or punctuation if at EOS)"}
+{"Component": "resid", "Layer": "5", "Feature": "3069", "Name": "resid_5/3069", "Annotation": "plural nouns", "notes": "mainly in PPs, object position. not sure if spurious"}
+{"Component": "resid", "Layer": "5", "Feature": "8641", "Name": "resid_5/8641", "Annotation": "participles and prepositions"}
+{"Component": "resid", "Layer": "6", "Feature": "428", "Name": "resid_6/428", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "6", "Feature": "11417", "Name": "resid_6/11417", "Annotation": "plural nouns", "notes": "multiple languages"}
+{"Component": "resid", "Layer": "6", "Feature": "16050", "Name": "resid_6/16050", "Annotation": "prepositions and relative pronouns on plural NPs"}
+{"Component": "resid", "Layer": "7", "Feature": "1041", "Name": "resid_7/1041", "Annotation": "plural NPs"}
+{"Component": "resid", "Layer": "7", "Feature": "5663", "Name": "resid_7/5663", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "8", "Feature": "4254", "Name": "resid_8/4254", "Annotation": "tokens between plural nouns and next noun", "notes": "activates on everything between a plural noun and the next noun in the sentence"}
+{"Component": "resid", "Layer": "8", "Feature": "9828", "Name": "resid_8/9828", "Annotation": "plural nouns, numbers, and prepositions after plural nouns"}
+{"Component": "resid", "Layer": "8", "Feature": "10678", "Name": "resid_8/10678", "Annotation": "plural nouns, usually in PPs"}
+{"Component": "resid", "Layer": "9", "Feature": "3552", "Name": "resid_9/3552", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "9", "Feature": "8717", "Name": "resid_9/8717", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "10", "Feature": "6875", "Name": "resid_10/6875", "Annotation": "predicates, RCs, and PPs after plural nouns"}
+{"Component": "resid", "Layer": "10", "Feature": "10757", "Name": "resid_10/10757", "Annotation": "plural nouns, often in RCs/PPs"}
+{"Component": "resid", "Layer": "11", "Feature": "1570", "Name": "resid_11/1570", "Annotation": "plural nouns, often in PPs/RCs"}
+{"Component": "resid", "Layer": "11", "Feature": "5663", "Name": "resid_11/5663", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "12", "Feature": "10678", "Name": "resid_12/10678", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "12", "Feature": "13561", "Name": "resid_12/13561", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "13", "Feature": "3606", "Name": "resid_13/3606", "Annotation": "prepositions and conjunctions"}
+{"Component": "resid", "Layer": "13", "Feature": "10166", "Name": "resid_13/10166", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "14", "Feature": "437", "Name": "resid_14/437", "Annotation": "verbs and RCs after plural NPs"}
+{"Component": "resid", "Layer": "14", "Feature": "14070", "Name": "resid_14/14070", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "15", "Feature": "8805", "Name": "resid_15/8805", "Annotation": "verbs after pl. nouns that take PP/RC complements"}
+{"Component": "resid", "Layer": "15", "Feature": "13449", "Name": "resid_15/13449", "Annotation": "plural nouns"}
+{"Component": "attn", "Layer": "16", "Feature": "15036", "Name": "attn_16/15036", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "16", "Feature": "5679", "Name": "resid_16/5679", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "16", "Feature": "14177", "Name": "resid_16/14177", "Annotation": "RCs and VPs after plural nouns"}
+{"Component": "mlp", "Layer": "17", "Feature": "2535", "Name": "mlp_17/2535", "Annotation": "plural NPs"}
+{"Component": "resid", "Layer": "17", "Feature": "4938", "Name": "resid_17/4938", "Annotation": "promotes plural verbs"}
+{"Component": "resid", "Layer": "17", "Feature": "11590", "Name": "resid_17/11590", "Annotation": "relative clauses on plural NPs. promotes plural verbs"}
+{"Component": "resid", "Layer": "17", "Feature": "12129", "Name": "resid_17/12129", "Annotation": "plural inanimate nouns"}
+{"Component": "resid", "Layer": "18", "Feature": "1506", "Name": "resid_18/1506", "Annotation": "plural objects and nouns in PPs"}
+{"Component": "resid", "Layer": "18", "Feature": "10665", "Name": "resid_18/10665", "Annotation": "plural subjects"}
+{"Component": "mlp", "Layer": "19", "Feature": "3408", "Name": "mlp_19/3408", "Annotation": "plural NPs", "notes": "includes plural nouns and nouns connected by conjunctions"}
+{"Component": "resid", "Layer": "19", "Feature": "2211", "Name": "resid_19/2211", "Annotation": "boundaries of plural NPs"}
+{"Component": "resid", "Layer": "20", "Feature": "301", "Name": "resid_20/301", "Annotation": "plural NPs"}
+{"Component": "mlp", "Layer": "21", "Feature": "23", "Name": "mlp_21/23", "Annotation": "relative pronouns, \"it\", singular nouns"}
+{"Component": "resid", "Layer": "21", "Feature": "1978", "Name": "resid_21/1978", "Annotation": "plural pronouns, relative pronouns, NPs"}
+{"Component": "resid", "Layer": "21", "Feature": "6162", "Name": "resid_21/6162", "Annotation": "singular subjects", "notes": "mostly starting with \"this\""}
+{"Component": "mlp", "Layer": "22", "Feature": "1915", "Name": "mlp_22/1915", "Annotation": "plural subjects"}
+{"Component": "resid", "Layer": "22", "Feature": "383", "Name": "resid_22/383", "Annotation": "plural subjects"}
+{"Component": "resid", "Layer": "22", "Feature": "4189", "Name": "resid_22/4189", "Annotation": "singular subjects"}
+{"Component": "resid", "Layer": "23", "Feature": "7507", "Name": "resid_23/7507", "Annotation": "singular subjects"}
+{"Component": "resid", "Layer": "23", "Feature": "10927", "Name": "resid_23/10927", "Annotation": "plural subjects"}
+{"Component": "resid", "Layer": "24", "Feature": "3627", "Name": "resid_24/3627", "Annotation": "promotes singular verbs"}
+{"Component": "resid", "Layer": "24", "Feature": "7780", "Name": "resid_24/7780", "Annotation": "promotes singular verbs"}
+{"Component": "resid", "Layer": "24", "Feature": "13078", "Name": "resid_24/13078", "Annotation": "promotes plural verbs"}
+{"Component": "resid", "Layer": "25", "Feature": "980", "Name": "resid_25/980", "Annotation": "promotes singular verbs"}
+{"Component": "resid", "Layer": "25", "Feature": "9833", "Name": "resid_25/9833", "Annotation": "predicts plural verbs"}
+{"Component": "embed", "Feature": "881", "Name": "embed/881"}
+{"Component": "embed", "Feature": "2134", "Name": "embed/2134"}
+{"Component": "embed", "Feature": "2430", "Name": "embed/2430"}
+{"Component": "embed", "Feature": "2764", "Name": "embed/2764"}
+{"Component": "resid", "Layer": "0", "Feature": "284", "Name": "resid_0/284", "Annotation": "plural profession names"}
+{"Component": "resid", "Layer": "1", "Feature": "3555", "Name": "resid_1/3555", "Annotation": "relative pronouns and prepositions"}
+{"Component": "resid", "Layer": "1", "Feature": "15904", "Name": "resid_1/15904", "Annotation": "singular gendered animate nouns", "notes": "e.g., \"boy\", \"woman\""}
+{"Component": "resid", "Layer": "2", "Feature": "5012", "Name": "resid_2/5012", "Annotation": "prepositions and relative pronouns"}
+{"Component": "resid", "Layer": "2", "Feature": "9827", "Name": "resid_2/9827", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "3", "Feature": "1588", "Name": "resid_3/1588", "Annotation": "relative pronouns"}
+{"Component": "resid", "Layer": "3", "Feature": "3427", "Name": "resid_3/3427", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "4", "Feature": "3410", "Name": "resid_4/3410", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "5", "Feature": "5798", "Name": "resid_5/5798", "Annotation": "singular gendered animate nouns"}
+{"Component": "resid", "Layer": "5", "Feature": "11613", "Name": "resid_5/11613", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "5", "Feature": "13102", "Name": "resid_5/13102", "Annotation": "plural profession names"}
+{"Component": "resid", "Layer": "7", "Feature": "8426", "Name": "resid_7/8426", "Annotation": "\"of\""}
+{"Component": "resid", "Layer": "7", "Feature": "11683", "Name": "resid_7/11683", "Annotation": "VPs associated with plural nouns"}
+{"Component": "resid", "Layer": "8", "Feature": "6332", "Name": "resid_8/6332", "Annotation": "promotes singular nouns"}
+{"Component": "resid", "Layer": "9", "Feature": "9617", "Name": "resid_9/9617", "Annotation": "\"of\""}
+{"Component": "resid", "Layer": "10", "Feature": "492", "Name": "resid_10/492", "Annotation": "singular nouns and associated VPs"}
+{"Component": "resid", "Layer": "10", "Feature": "4449", "Name": "resid_10/4449", "Annotation": "plural inanimate nouns"}
+{"Component": "resid", "Layer": "12", "Feature": "2355", "Name": "resid_12/2355", "Annotation": "singular gendered animate nouns"}
+{"Component": "resid", "Layer": "13", "Feature": "12849", "Name": "resid_13/12849", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "15", "Feature": "10653", "Name": "resid_15/10653", "Annotation": "plural gendered animate nouns and associated verbs"}
+{"Component": "resid", "Layer": "16", "Feature": "500", "Name": "resid_16/500", "Annotation": "plural gendered animate nouns"}
+{"Component": "resid", "Layer": "17", "Feature": "3852", "Name": "resid_17/3852", "Annotation": "singular animate nouns"}
+{"Component": "attn", "Layer": "19", "Feature": "10073", "Name": "attn_19/10073", "Annotation": "start and end of plural NPs"}
+{"Component": "mlp", "Layer": "19", "Feature": "1962", "Name": "mlp_19/1962", "Annotation": "promotes singular verbs"}
+{"Component": "resid", "Layer": "19", "Feature": "11625", "Name": "resid_19/11625", "Annotation": "plural animate nouns"}
+{"Component": "attn", "Layer": "23", "Feature": "7168", "Name": "attn_23/7168", "Annotation": "start and end of plural NPs"}
+{"Component": "mlp", "Layer": "23", "Feature": "5118", "Name": "mlp_23/5118", "Annotation": "plural nouns and pronouns. promotes plural verbs"}
+{"Component": "resid", "Layer": "24", "Feature": "2765", "Name": "resid_24/2765", "Annotation": "promotes \"is\""}
+{"Component": "resid", "Layer": "24", "Feature": "5222", "Name": "resid_24/5222", "Annotation": "promotes verbs", "notes": "both singular and plural inflections of \"to be\""}
+{"Component": "resid", "Layer": "11", "Feature": "1570", "Name": "resid_11/1570", "Annotation": "active throughout plural NPs"}
+{"Component": "resid", "Layer": "25", "Feature": "11", "Name": "resid_25/11", "Annotation": "promotes infinitival and plural verbs"}
+{"Component": "resid", "Layer": "25", "Feature": "11185", "Name": "resid_25/11185", "Annotation": "promotes \"are\""}
+{"Component": "resid", "Layer": "25", "Feature": "15523", "Name": "resid_25/15523", "Annotation": "promotes \"is\""}
+{"Component": "mlp", "Layer": "25", "Feature": "4673", "Name": "mlp_25/4673", "Annotation": "promotes \"are\""}
+{"Component": "mlp", "Layer": "25", "Feature": "12074", "Name": "mlp_25/12074", "Annotation": "promotes \"is\""}
+{"Component": "mlp", "Layer": "25", "Feature": "13136", "Name": "mlp_25/13136", "Annotation": "suppresses \"have\""}
+{"Component": "attn", "Layer": "25", "Feature": "14832", "Name": "attn_25/14832", "Annotation": "promotes plural verbs"}
+{"Component": "resid", "Layer": "24", "Feature": "454", "Name": "resid_24/454", "Annotation": "promotes \"are\""}
+{"Component": "attn", "Layer": "0", "Feature": "2115", "Name": "attn_0/2115", "Annotation": "plural nouns and following token"}
+{"Component": "attn", "Layer": "5", "Feature": "16029", "Name": "attn_5/16029", "Annotation": "plural nouns and associated prepositions/conjunctions"}
+{"Component": "mlp", "Layer": "6", "Feature": "8332", "Name": "mlp_6/8332", "Annotation": "RCs/PPs on plural nouns"}
+{"Component": "mlp", "Layer": "6", "Feature": "12069", "Name": "mlp_6/12069", "Annotation": "final token in PP/RC"}
+{"Component": "resid", "Layer": "14", "Feature": "90", "Name": "resid_14/90", "Annotation": "RCs on plural nouns"}
+{"Component": "resid", "Layer": "15", "Feature": "2307", "Name": "resid_15/2307", "Annotation": "all tokens within RC/PP on plural nouns"}
+{"Component": "mlp", "Layer": "16", "Feature": "11999", "Name": "mlp_16/11999", "Annotation": "plural NPs", "notes": "usually consisting of singular nouns joined by \"and\""}
+{"Component": "resid", "Layer": "16", "Feature": "15784", "Name": "resid_16/15784", "Annotation": "clauses starting \"those who\""}
+{"Component": "resid", "Layer": "16", "Feature": "1096", "Name": "resid_16/1096", "Annotation": "final token of RC/PP on plural noun"}
+{"Component": "resid", "Layer": "16", "Feature": "14822", "Name": "resid_16/14822", "Annotation": "promotes plural determiners"}
+{"Component": "resid", "Layer": "16", "Feature": "15737", "Name": "resid_16/15737", "Annotation": "all tokens from singular animate noun to following noun"}
+{"Component": "mlp", "Layer": "17", "Feature": "11978", "Name": "mlp_17/11978", "Annotation": "suppresses plural pronouns"}
+{"Component": "resid", "Layer": "17", "Feature": "12434", "Name": "resid_17/12434", "Annotation": "end of PP on plural noun"}
+{"Component": "resid", "Layer": "18", "Feature": "4442", "Name": "resid_18/4442", "Annotation": "final token in PP"}
+{"Component": "resid", "Layer": "18", "Feature": "8153", "Name": "resid_18/8153", "Annotation": "singular NPs"}
+{"Component": "resid", "Layer": "18", "Feature": "11484", "Name": "resid_18/11484", "Annotation": "promotes plural verbs/pronouns"}
+{"Component": "attn", "Layer": "19", "Feature": "10500", "Name": "attn_19/10500", "Annotation": "promotes singular verbs"}
+{"Component": "attn", "Layer": "19", "Feature": "10884", "Name": "attn_19/10884", "Annotation": "promotes \"are\" and \"were\""}
+{"Component": "resid", "Layer": "19", "Feature": "425", "Name": "resid_19/425", "Annotation": "final token of RC/PP on plural noun"}
+{"Component": "resid", "Layer": "19", "Feature": "1713", "Name": "resid_19/1713", "Annotation": "promotes singular verbs"}
+{"Component": "resid", "Layer": "19", "Feature": "3254", "Name": "resid_19/3254", "Annotation": "promotes singular verbs"}
+{"Component": "resid", "Layer": "19", "Feature": "7943", "Name": "resid_19/7943", "Annotation": "final token in singular NPs"}
+{"Component": "resid", "Layer": "19", "Feature": "10940", "Name": "resid_19/10940", "Annotation": "plural nouns and subsequent verbs"}
+{"Component": "resid", "Layer": "19", "Feature": "13352", "Name": "resid_19/13352", "Annotation": "active following plural subjects"}
+{"Component": "attn", "Layer": "20", "Feature": "16072", "Name": "attn_20/16072", "Annotation": "promotes plural verbs/pronouns"}
+{"Component": "resid", "Layer": "20", "Feature": "2699", "Name": "resid_20/2699", "Annotation": "final token in singular NPs"}
+{"Component": "resid", "Layer": "20", "Feature": "3339", "Name": "resid_20/3339", "Annotation": "singular animate NPs"}
+{"Component": "resid", "Layer": "20", "Feature": "5782", "Name": "resid_20/5782", "Annotation": "complement to plural subject"}
+{"Component": "resid", "Layer": "20", "Feature": "7610", "Name": "resid_20/7610", "Annotation": "promotes singular verbs"}
+{"Component": "mlp", "Layer": "21", "Feature": "14080", "Name": "mlp_21/14080", "Annotation": "promotes plural verbs"}
+{"Component": "resid", "Layer": "22", "Feature": "11956", "Name": "resid_22/11956", "Annotation": "promotes \"are\" and \"were\""}
+{"Component": "attn", "Layer": "23", "Feature": "14346", "Name": "attn_23/14346", "Annotation": "promotes singular verbs"}
+{"Component": "mlp", "Layer": "23", "Feature": "1138", "Name": "mlp_23/1138", "Annotation": "promotes plural verbs"}
+{"Component": "mlp", "Layer": "23", "Feature": "7338", "Name": "mlp_23/7338", "Annotation": "promotes singular verbs"}
+{"Component": "mlp", "Layer": "23", "Feature": "13281", "Name": "mlp_23/13281", "Annotation": "promotes plural verbs"}
+{"Component": "resid", "Layer": "23", "Feature": "6763", "Name": "resid_23/6763", "Annotation": "promotes plural verbs"}
+{"Component": "mlp", "Layer": "24", "Feature": "852", "Name": "mlp_24/852", "Annotation": "promotes singular verbs"}
+{"Component": "mlp", "Layer": "24", "Feature": "2722", "Name": "mlp_24/2722", "Annotation": "promotes plural verbs"}
+{"Component": "mlp", "Layer": "24", "Feature": "3034", "Name": "mlp_24/3034", "Annotation": "promotes singular verbs"}
+{"Component": "mlp", "Layer": "24", "Feature": "10230", "Name": "mlp_24/10230", "Annotation": "promotes singular verbs"}
+{"Component": "resid", "Layer": "24", "Feature": "1877", "Name": "resid_24/1877", "Annotation": "promotes plural verbs"}
+{"Component": "embed", "Feature": "1425", "Name": "embed/1425"}
+{"Component": "embed", "Feature": "3734", "Name": "embed/3734"}
+{"Component": "resid", "Layer": "0", "Feature": "284", "Name": "resid_0/284", "Annotation": "plural profession names"}
+{"Component": "resid", "Layer": "0", "Feature": "3974", "Name": "resid_0/3974", "Annotation": "plural nouns", "notes": "algebra contexts"}
+{"Component": "resid", "Layer": "1", "Feature": "134", "Name": "resid_1/134", "Annotation": "plural nouns", "notes": "scientific contexts"}
+{"Component": "resid", "Layer": "2", "Feature": "13449", "Name": "resid_2/13449", "Annotation": "plural nouns", "notes": "scientific and coding contexts"}
+{"Component": "resid", "Layer": "3", "Feature": "12382", "Name": "resid_3/12382", "Annotation": "participial modifier phrases"}
+{"Component": "resid", "Layer": "3", "Feature": "15191", "Name": "resid_3/15191", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "4", "Feature": "3410", "Name": "resid_4/3410", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "4", "Feature": "6820", "Name": "resid_4/6820", "Annotation": "plural nouns in PPs"}
+{"Component": "resid", "Layer": "4", "Feature": "8420", "Name": "resid_4/8420", "Annotation": "plural nouns in RCs"}
+{"Component": "resid", "Layer": "4", "Feature": "13534", "Name": "resid_4/13534", "Annotation": "prepositional phrase boundaries"}
+{"Component": "resid", "Layer": "5", "Feature": "3069", "Name": "resid_5/3069", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "5", "Feature": "8641", "Name": "resid_5/8641", "Annotation": "participles and prepositions"}
+{"Component": "resid", "Layer": "5", "Feature": "11613", "Name": "resid_5/11613", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "6", "Feature": "428", "Name": "resid_6/428", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "6", "Feature": "11417", "Name": "resid_6/11417", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "6", "Feature": "16050", "Name": "resid_6/16050", "Annotation": "prepositions and relative pronouns on plural NPs"}
+{"Component": "resid", "Layer": "7", "Feature": "1041", "Name": "resid_7/1041", "Annotation": "plural NPs"}
+{"Component": "resid", "Layer": "7", "Feature": "5663", "Name": "resid_7/5663", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "8", "Feature": "6332", "Name": "resid_8/6332", "Annotation": "singular NPs"}
+{"Component": "resid", "Layer": "8", "Feature": "9828", "Name": "resid_8/9828", "Annotation": "plural nouns, numbers, and prepositions after plural nouns"}
+{"Component": "resid", "Layer": "8", "Feature": "10678", "Name": "resid_8/10678", "Annotation": "plural nouns, usually in PPs"}
+{"Component": "resid", "Layer": "9", "Feature": "3552", "Name": "resid_9/3552", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "9", "Feature": "8717", "Name": "resid_9/8717", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "10", "Feature": "10757", "Name": "resid_10/10757", "Annotation": "plural nouns, often in RCs/PPs"}
+{"Component": "resid", "Layer": "11", "Feature": "1570", "Name": "resid_11/1570", "Annotation": "plural nouns, often in PPs/RCs"}
+{"Component": "resid", "Layer": "11", "Feature": "5663", "Name": "resid_11/5663", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "12", "Feature": "2355", "Name": "resid_12/2355", "Annotation": "singular gendered nouns and VPs"}
+{"Component": "resid", "Layer": "12", "Feature": "10678", "Name": "resid_12/10678", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "12", "Feature": "13561", "Name": "resid_12/13561", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "13", "Feature": "10166", "Name": "resid_13/10166", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "14", "Feature": "14070", "Name": "resid_14/14070", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "15", "Feature": "8805", "Name": "resid_15/8805", "Annotation": "verbs after pl. nouns that take PP/RC complements"}
+{"Component": "resid", "Layer": "15", "Feature": "10653", "Name": "resid_15/10653", "Annotation": "plural gendered nouns", "notes": "predicts \"their\", \"themselves\""}
+{"Component": "resid", "Layer": "15", "Feature": "13449", "Name": "resid_15/13449", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "16", "Feature": "500", "Name": "resid_16/500", "Annotation": "plural animate subjects"}
+{"Component": "resid", "Layer": "16", "Feature": "5679", "Name": "resid_16/5679", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "16", "Feature": "14177", "Name": "resid_16/14177", "Annotation": "RCs and VPs after plural nouns"}
+{"Component": "mlp", "Layer": "17", "Feature": "2535", "Name": "mlp_17/2535", "Annotation": "plural NPs"}
+{"Component": "resid", "Layer": "17", "Feature": "4938", "Name": "resid_17/4938", "Annotation": "plural inanimate subjects"}
+{"Component": "resid", "Layer": "17", "Feature": "12129", "Name": "resid_17/12129", "Annotation": "plural inanimate subjects", "notes": "can be subjects in main clause or within RCs"}
+{"Component": "resid", "Layer": "18", "Feature": "1506", "Name": "resid_18/1506", "Annotation": "plural objects and nouns in PPs"}
+{"Component": "resid", "Layer": "18", "Feature": "10665", "Name": "resid_18/10665", "Annotation": "plural subjects"}
+{"Component": "attn", "Layer": "19", "Feature": "10073", "Name": "attn_19/10073", "Annotation": "plural nouns", "notes": "predicts \"are\", \"were\""}
+{"Component": "mlp", "Layer": "19", "Feature": "3408", "Name": "mlp_19/3408", "Annotation": "plural NPs", "notes": "includes plural nouns and nouns connected by conjunctions"}
+{"Component": "resid", "Layer": "19", "Feature": "2211", "Name": "resid_19/2211", "Annotation": "boundaries of plural NPs"}
+{"Component": "resid", "Layer": "20", "Feature": "301", "Name": "resid_20/301", "Annotation": "plural NPs"}
+{"Component": "resid", "Layer": "21", "Feature": "1978", "Name": "resid_21/1978", "Annotation": "plural pronouns, relative pronouns, NPs"}
+{"Component": "resid", "Layer": "21", "Feature": "6162", "Name": "resid_21/6162", "Annotation": "singular subjects", "notes": "mostly starting with \"this\""}
+{"Component": "mlp", "Layer": "22", "Feature": "1915", "Name": "mlp_22/1915", "Annotation": "plural subjects"}
+{"Component": "resid", "Layer": "22", "Feature": "383", "Name": "resid_22/383", "Annotation": "plural subjects"}
+{"Component": "resid", "Layer": "22", "Feature": "4189", "Name": "resid_22/4189", "Annotation": "singular subjects"}
+{"Component": "resid", "Layer": "23", "Feature": "7507", "Name": "resid_23/7507", "Annotation": "singular subjects"}
+{"Component": "resid", "Layer": "23", "Feature": "10927", "Name": "resid_23/10927", "Annotation": "plural subjects"}
+{"Component": "resid", "Layer": "24", "Feature": "3627", "Name": "resid_24/3627", "Annotation": "promotes singular verbs"}
+{"Component": "resid", "Layer": "24", "Feature": "13078", "Name": "resid_24/13078", "Annotation": "promotes plural verbs"}
+{"Component": "resid", "Layer": "24", "Feature": "14406", "Name": "resid_24/14406", "Annotation": "predicts plural verbs"}
+{"Component": "resid", "Layer": "25", "Feature": "980", "Name": "resid_25/980", "Annotation": "promotes singular verbs"}
+{"Component": "resid", "Layer": "25", "Feature": "9833", "Name": "resid_25/9833", "Annotation": "predicts plural verbs"}
+{"Component": "embed", "Feature": "881", "Name": "embed/881", "Annotation": "0"}
+{"Component": "embed", "Feature": "2430", "Name": "embed/2430", "Annotation": "0"}
+{"Component": "embed", "Feature": "2764", "Name": "embed/2764", "Annotation": "0"}
+{"Component": "resid", "Layer": "1", "Feature": "2746", "Name": "resid_1/2746"}
+{"Component": "resid", "Layer": "1", "Feature": "15904", "Name": "resid_1/15904", "Annotation": "singular gendered animate nouns"}
+{"Component": "resid", "Layer": "2", "Feature": "9827", "Name": "resid_2/9827", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "2", "Feature": "12311", "Name": "resid_2/12311", "Annotation": "plural profession names"}
+{"Component": "resid", "Layer": "3", "Feature": "3427", "Name": "resid_3/3427", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "5", "Feature": "13102", "Name": "resid_5/13102", "Annotation": "predicts plural verbs"}
+{"Component": "resid", "Layer": "7", "Feature": "567", "Name": "resid_7/567", "Annotation": "singular gendered animate nouns"}
+{"Component": "resid", "Layer": "7", "Feature": "11683", "Name": "resid_7/11683", "Annotation": "VPs associated with plural nouns"}
+{"Component": "resid", "Layer": "8", "Feature": "4012", "Name": "resid_8/4012", "Annotation": "plural verbs and associated VPs"}
+{"Component": "resid", "Layer": "8", "Feature": "4254", "Name": "resid_8/4254", "Annotation": "tokens between plural nouns and next noun"}
+{"Component": "resid", "Layer": "10", "Feature": "492", "Name": "resid_10/492", "Annotation": "predicts plural verbs"}
+{"Component": "resid", "Layer": "10", "Feature": "4449", "Name": "resid_10/4449", "Annotation": "plural inanimate nouns"}
+{"Component": "resid", "Layer": "10", "Feature": "6875", "Name": "resid_10/6875", "Annotation": "predicates, RCs, and PPs after plural nouns"}
+{"Component": "resid", "Layer": "11", "Feature": "12614", "Name": "resid_11/12614", "Annotation": "plural nouns and associated VPs"}
+{"Component": "resid", "Layer": "12", "Feature": "8515", "Name": "resid_12/8515", "Annotation": "plural nouns and associated VPs"}
+{"Component": "resid", "Layer": "12", "Feature": "9723", "Name": "resid_12/9723", "Annotation": "predicts plural verbs"}
+{"Component": "resid", "Layer": "13", "Feature": "3606", "Name": "resid_13/3606", "Annotation": "prepositions and conjunctions"}
+{"Component": "resid", "Layer": "14", "Feature": "437", "Name": "resid_14/437", "Annotation": "verbs and RCs after plural NPs"}
+{"Component": "resid", "Layer": "17", "Feature": "3852", "Name": "resid_17/3852", "Annotation": "singular animate nouns"}
+{"Component": "resid", "Layer": "17", "Feature": "16271", "Name": "resid_17/16271", "Annotation": "prepositions"}
+{"Component": "resid", "Layer": "18", "Feature": "1271", "Name": "resid_18/1271", "Annotation": "predicts plural verbs"}
+{"Component": "attn", "Layer": "19", "Feature": "3716", "Name": "attn_19/3716", "Annotation": "start and end of plural NPs"}
+{"Component": "mlp", "Layer": "19", "Feature": "1962", "Name": "mlp_19/1962", "Annotation": "promotes singular verbs"}
+{"Component": "mlp", "Layer": "20", "Feature": "11675", "Name": "mlp_20/11675", "Annotation": "promotes singular verbs"}
+{"Component": "resid", "Layer": "22", "Feature": "14353", "Name": "resid_22/14353", "Annotation": "promotes singular verbs"}
+{"Component": "attn", "Layer": "23", "Feature": "7168", "Name": "attn_23/7168", "Annotation": "predicts plural verbs"}
+{"Component": "resid", "Layer": "25", "Feature": "14881", "Name": "resid_25/14881", "Annotation": "promotes plural verbs"}
+{"Component": "embed", "Feature": "881", "Name": "embed/881", "Annotation": "0"}
+{"Component": "embed", "Feature": "1425", "Name": "embed/1425"}
+{"Component": "embed", "Feature": "1426", "Name": "embed/1426"}
+{"Component": "embed", "Feature": "2430", "Name": "embed/2430", "Annotation": "0"}
+{"Component": "embed", "Feature": "2764", "Name": "embed/2764", "Annotation": "0"}
+{"Component": "embed", "Feature": "3734", "Name": "embed/3734"}
+{"Component": "resid", "Layer": "0", "Feature": "284", "Name": "resid_0/284", "Annotation": "plural scientific profession names", "notes": "engineers, researchers, biologists"}
+{"Component": "resid", "Layer": "0", "Feature": "3974", "Name": "resid_0/3974", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "1", "Feature": "134", "Name": "resid_1/134", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "1", "Feature": "2746", "Name": "resid_1/2746", "Annotation": "plural animate nouns", "notes": "travelers, shoppers, learners"}
+{"Component": "resid", "Layer": "1", "Feature": "15904", "Name": "resid_1/15904", "Annotation": "singular gendered nouns", "notes": "woman, guy, boy, birl"}
+{"Component": "resid", "Layer": "2", "Feature": "9827", "Name": "resid_2/9827", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "2", "Feature": "13449", "Name": "resid_2/13449", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "3", "Feature": "3427", "Name": "resid_3/3427", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "3", "Feature": "15191", "Name": "resid_3/15191", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "4", "Feature": "3410", "Name": "resid_4/3410", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "4", "Feature": "6820", "Name": "resid_4/6820", "Annotation": "plural nouns in PPs"}
+{"Component": "resid", "Layer": "4", "Feature": "8420", "Name": "resid_4/8420", "Annotation": "plural nouns in RCs"}
+{"Component": "resid", "Layer": "5", "Feature": "3069", "Name": "resid_5/3069", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "5", "Feature": "11613", "Name": "resid_5/11613", "Annotation": "plural definite nouns", "notes": "\"definite\" as in accompanied by \"the\" or \"these\""}
+{"Component": "resid", "Layer": "5", "Feature": "13102", "Name": "resid_5/13102", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "6", "Feature": "428", "Name": "resid_6/428", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "6", "Feature": "11417", "Name": "resid_6/11417", "Annotation": "tokens ending in \"s\"", "notes": "includes tokens in URLs, incomplete nouns like <brains>tem"}
+{"Component": "resid", "Layer": "7", "Feature": "1041", "Name": "resid_7/1041", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "7", "Feature": "5663", "Name": "resid_7/5663", "Annotation": "plural inanimate nouns"}
+{"Component": "resid", "Layer": "8", "Feature": "6332", "Name": "resid_8/6332", "Annotation": "all tokens from a singular noun to the next NP"}
+{"Component": "resid", "Layer": "8", "Feature": "9828", "Name": "resid_8/9828", "Annotation": "numbers, plural nouns"}
+{"Component": "resid", "Layer": "8", "Feature": "10678", "Name": "resid_8/10678", "Annotation": "plural nouns, usually in PPs"}
+{"Component": "resid", "Layer": "9", "Feature": "3552", "Name": "resid_9/3552", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "9", "Feature": "8717", "Name": "resid_9/8717", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "10", "Feature": "10757", "Name": "resid_10/10757", "Annotation": "plural nouns, often in RCs/PPs"}
+{"Component": "resid", "Layer": "11", "Feature": "1570", "Name": "resid_11/1570", "Annotation": "plural nouns, often in PPs/RCs"}
+{"Component": "resid", "Layer": "11", "Feature": "5663", "Name": "resid_11/5663", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "12", "Feature": "9723", "Name": "resid_12/9723", "Annotation": "all tokens from a plural noun to the next NP"}
+{"Component": "resid", "Layer": "12", "Feature": "10678", "Name": "resid_12/10678", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "12", "Feature": "13561", "Name": "resid_12/13561", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "13", "Feature": "10166", "Name": "resid_13/10166", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "14", "Feature": "13652", "Name": "resid_14/13652", "Annotation": "plural NPs"}
+{"Component": "resid", "Layer": "14", "Feature": "14070", "Name": "resid_14/14070", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "15", "Feature": "10653", "Name": "resid_15/10653", "Annotation": "plural animate nouns and accompanying VPs", "notes": "predicts \"their\", \"themselves\""}
+{"Component": "resid", "Layer": "15", "Feature": "13449", "Name": "resid_15/13449", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "16", "Feature": "500", "Name": "resid_16/500", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "16", "Feature": "2971", "Name": "resid_16/2971", "Annotation": "plural animate nouns", "notes": "primarily proper or capitalized nouns"}
+{"Component": "resid", "Layer": "16", "Feature": "5679", "Name": "resid_16/5679", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "17", "Feature": "3852", "Name": "resid_17/3852", "Annotation": "singular nouns", "notes": "often includes adjacent relative pronouns, copulae"}
+{"Component": "resid", "Layer": "17", "Feature": "4938", "Name": "resid_17/4938", "Annotation": "plural nouns", "notes": "predicts \"are\", \"were\""}
+{"Component": "resid", "Layer": "17", "Feature": "5438", "Name": "resid_17/5438", "Annotation": "plural NPs"}
+{"Component": "resid", "Layer": "17", "Feature": "12129", "Name": "resid_17/12129", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "17", "Feature": "16100", "Name": "resid_17/16100", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "18", "Feature": "1271", "Name": "resid_18/1271", "Annotation": "singular nouns", "notes": "predicts relative pronouns"}
+{"Component": "resid", "Layer": "18", "Feature": "1506", "Name": "resid_18/1506", "Annotation": "plural objects and nouns in PPs"}
+{"Component": "resid", "Layer": "18", "Feature": "10665", "Name": "resid_18/10665", "Annotation": "plural subjects"}
+{"Component": "resid", "Layer": "18", "Feature": "15377", "Name": "resid_18/15377", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "19", "Feature": "2211", "Name": "resid_19/2211", "Annotation": "boundaries of plural NPs"}
+{"Component": "resid", "Layer": "19", "Feature": "10531", "Name": "resid_19/10531", "Annotation": "singular nouns"}
+{"Component": "resid", "Layer": "19", "Feature": "11625", "Name": "resid_19/11625", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "19", "Feature": "13298", "Name": "resid_19/13298", "Annotation": "singular male NPs and VPs", "notes": "mainly headed by \"He\", but sometimes male names or stereotypically male professions"}
+{"Component": "mlp", "Layer": "20", "Feature": "1764", "Name": "mlp_20/1764", "Annotation": "plural nouns and verbs ending in \"s\"", "notes": "predicts \"are\"/\"were\". incorrectly considers verbs as nouns?"}
+{"Component": "resid", "Layer": "20", "Feature": "301", "Name": "resid_20/301", "Annotation": "plural NPs"}
+{"Component": "resid", "Layer": "20", "Feature": "3940", "Name": "resid_20/3940", "Annotation": "singular animate nouns"}
+{"Component": "resid", "Layer": "20", "Feature": "3985", "Name": "resid_20/3985", "Annotation": "plural animate nouns"}
+{"Component": "mlp", "Layer": "21", "Feature": "23", "Name": "mlp_21/23", "Annotation": "relative pronouns, \"it\", singular nouns"}
+{"Component": "mlp", "Layer": "21", "Feature": "4343", "Name": "mlp_21/4343", "Annotation": "plural pronouns, relative pronouns"}
+{"Component": "resid", "Layer": "21", "Feature": "1978", "Name": "resid_21/1978", "Annotation": "plural pronouns, relative pronouns, NPs"}
+{"Component": "resid", "Layer": "21", "Feature": "5720", "Name": "resid_21/5720", "Annotation": "plural animate nouns in PPs and RCs"}
+{"Component": "resid", "Layer": "21", "Feature": "6162", "Name": "resid_21/6162", "Annotation": "singular subjects"}
+{"Component": "mlp", "Layer": "22", "Feature": "1915", "Name": "mlp_22/1915", "Annotation": "plural subjects"}
+{"Component": "resid", "Layer": "22", "Feature": "383", "Name": "resid_22/383", "Annotation": "plural subjects"}
+{"Component": "resid", "Layer": "22", "Feature": "4189", "Name": "resid_22/4189", "Annotation": "singular subjects"}
+{"Component": "resid", "Layer": "22", "Feature": "8361", "Name": "resid_22/8361", "Annotation": "plural inanimate nouns"}
+{"Component": "resid", "Layer": "23", "Feature": "630", "Name": "resid_23/630", "Annotation": "plural nouns in PPs and RCs"}
+{"Component": "resid", "Layer": "23", "Feature": "7507", "Name": "resid_23/7507", "Annotation": "singular subjects"}
+{"Component": "resid", "Layer": "23", "Feature": "10927", "Name": "resid_23/10927", "Annotation": "plural subjects"}
+{"Component": "resid", "Layer": "24", "Feature": "3627", "Name": "resid_24/3627", "Annotation": "promotes singular verbs"}
+{"Component": "resid", "Layer": "24", "Feature": "5893", "Name": "resid_24/5893", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "24", "Feature": "13078", "Name": "resid_24/13078", "Annotation": "promotes plural verbs"}
+{"Component": "resid", "Layer": "24", "Feature": "14406", "Name": "resid_24/14406", "Annotation": "predicts plural verbs"}
+{"Component": "mlp", "Layer": "25", "Feature": "14737", "Name": "mlp_25/14737", "Annotation": "plural NPs and VPs", "notes": "usually headed by pronouns, but sometimes plural nouns"}
+{"Component": "resid", "Layer": "25", "Feature": "980", "Name": "resid_25/980", "Annotation": "promotes singular verbs"}
+{"Component": "resid", "Layer": "25", "Feature": "3649", "Name": "resid_25/3649", "Annotation": "tokens ending in \"s\"", "notes": "includes some verbs like \"gives\""}
+{"Component": "resid", "Layer": "25", "Feature": "9833", "Name": "resid_25/9833", "Annotation": "predicts plural verbs"}
+{"Component": "embed", "Feature": "2134", "Name": "embed/2134", "Annotation": "0"}
+{"Component": "embed", "Feature": "3953", "Name": "embed/3953"}
+{"Component": "resid", "Layer": "0", "Feature": "2434", "Name": "resid_0/2434", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "0", "Feature": "6248", "Name": "resid_0/6248", "Annotation": "\"women\""}
+{"Component": "resid", "Layer": "0", "Feature": "8815", "Name": "resid_0/8815", "Annotation": "singular profession names"}
+{"Component": "resid", "Layer": "0", "Feature": "15519", "Name": "resid_0/15519", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "1", "Feature": "8815", "Name": "resid_1/8815", "Annotation": "singular profession names"}
+{"Component": "resid", "Layer": "1", "Feature": "12072", "Name": "resid_1/12072", "Annotation": "plural gendered animate nouns"}
+{"Component": "resid", "Layer": "2", "Feature": "12311", "Name": "resid_2/12311", "Annotation": "plural profession names"}
+{"Component": "resid", "Layer": "3", "Feature": "15706", "Name": "resid_3/15706", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "4", "Feature": "14328", "Name": "resid_4/14328", "Annotation": "singular inanimate nouns"}
+{"Component": "resid", "Layer": "5", "Feature": "4139", "Name": "resid_5/4139", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "5", "Feature": "5798", "Name": "resid_5/5798", "Annotation": "singular gendered animate nouns"}
+{"Component": "resid", "Layer": "5", "Feature": "9623", "Name": "resid_5/9623", "Annotation": "singular inanimate nouns"}
+{"Component": "resid", "Layer": "6", "Feature": "1406", "Name": "resid_6/1406", "Annotation": "plural inanimate nouns"}
+{"Component": "resid", "Layer": "7", "Feature": "567", "Name": "resid_7/567", "Annotation": "singular gendered animate nouns"}
+{"Component": "resid", "Layer": "7", "Feature": "3231", "Name": "resid_7/3231", "Annotation": "plural inanimate nouns"}
+{"Component": "resid", "Layer": "8", "Feature": "4012", "Name": "resid_8/4012", "Annotation": "plural verbs and associated VPs"}
+{"Component": "resid", "Layer": "9", "Feature": "2726", "Name": "resid_9/2726", "Annotation": "singular animate nouns"}
+{"Component": "resid", "Layer": "9", "Feature": "10212", "Name": "resid_9/10212", "Annotation": "singular inanimate nouns and associated VPs"}
+{"Component": "resid", "Layer": "10", "Feature": "492", "Name": "resid_10/492", "Annotation": "singular nouns and associated VPs"}
+{"Component": "resid", "Layer": "10", "Feature": "4449", "Name": "resid_10/4449", "Annotation": "plural inanimate nouns"}
+{"Component": "resid", "Layer": "10", "Feature": "4601", "Name": "resid_10/4601", "Annotation": "plural inanimate nouns"}
+{"Component": "resid", "Layer": "10", "Feature": "14760", "Name": "resid_10/14760", "Annotation": "plural animate NPs"}
+{"Component": "resid", "Layer": "12", "Feature": "2355", "Name": "resid_12/2355", "Annotation": "singular gendered animate nouns"}
+{"Component": "resid", "Layer": "13", "Feature": "12616", "Name": "resid_13/12616", "Annotation": "singular gendered animate nouns"}
+{"Component": "resid", "Layer": "14", "Feature": "11278", "Name": "resid_14/11278", "Annotation": "plural inanimate nouns"}
+{"Component": "resid", "Layer": "15", "Feature": "5292", "Name": "resid_15/5292", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "15", "Feature": "6546", "Name": "resid_15/6546"}
+{"Component": "resid", "Layer": "15", "Feature": "11048", "Name": "resid_15/11048"}
+{"Component": "resid", "Layer": "16", "Feature": "10671", "Name": "resid_16/10671"}
+{"Component": "resid", "Layer": "16", "Feature": "13693", "Name": "resid_16/13693", "Annotation": "singular animate nouns"}
+{"Component": "mlp", "Layer": "17", "Feature": "2535", "Name": "mlp_17/2535", "Annotation": "plural NPs"}
+{"Component": "resid", "Layer": "17", "Feature": "12885", "Name": "resid_17/12885"}
+{"Component": "resid", "Layer": "17", "Feature": "14970", "Name": "resid_17/14970"}
+{"Component": "mlp", "Layer": "18", "Feature": "8691", "Name": "mlp_18/8691", "Annotation": "plural inanimate nouns"}
+{"Component": "resid", "Layer": "18", "Feature": "4973", "Name": "resid_18/4973"}
+{"Component": "mlp", "Layer": "19", "Feature": "3408", "Name": "mlp_19/3408", "Annotation": "plural NPs"}
+{"Component": "resid", "Layer": "19", "Feature": "6365", "Name": "resid_19/6365", "Annotation": "plural inanimate nouns"}
+{"Component": "resid", "Layer": "19", "Feature": "13002", "Name": "resid_19/13002"}
+{"Component": "mlp", "Layer": "21", "Feature": "14080", "Name": "mlp_21/14080", "Annotation": "promotes plural verbs"}
+{"Component": "resid", "Layer": "21", "Feature": "12588", "Name": "resid_21/12588", "Annotation": "singular animate nouns"}
+{"Component": "resid", "Layer": "22", "Feature": "301", "Name": "resid_22/301", "Annotation": "plural NPs"}
+{"Component": "resid", "Layer": "22", "Feature": "14353", "Name": "resid_22/14353", "Annotation": "promotes singular verbs"}
+{"Component": "mlp", "Layer": "23", "Feature": "4319", "Name": "mlp_23/4319", "Annotation": "promotes plural verbs"}
+{"Component": "resid", "Layer": "23", "Feature": "13335", "Name": "resid_23/13335", "Annotation": "promotes infinitival and plural verbs"}
+{"Component": "resid", "Layer": "23", "Feature": "13842", "Name": "resid_23/13842", "Annotation": "predicts singular verbs"}
+{"Component": "mlp", "Layer": "24", "Feature": "11766", "Name": "mlp_24/11766", "Annotation": "plural subjects"}
+{"Component": "mlp", "Layer": "24", "Feature": "12567", "Name": "mlp_24/12567", "Annotation": "promotes infinitival and plural verbs"}
+{"Component": "resid", "Layer": "25", "Feature": "13473", "Name": "resid_25/13473", "Annotation": "singular pronouns and names"}
+{"Component": "resid", "Layer": "25", "Feature": "14697", "Name": "resid_25/14697", "Annotation": "singular subjects"}
+{"Component": "resid", "Layer": "25", "Feature": "14881", "Name": "resid_25/14881", "Annotation": "promotes plural verbs"}
+{"Component": "attn", "Layer": "23", "Feature": "6359", "Name": "attn_23/6359", "Annotation": "suppresses \"are\" and \"were\"", "notes": "active on plural NPs! weird"}
+{"Component": "Component", "Name": "Name", "Annotation": "Annotation", "notes": "Notes"}
+{"Component": "embed", "Feature": "881", "Name": "embed/881"}
+{"Component": "embed", "Feature": "1425", "Name": "embed/1425"}
+{"Component": "embed", "Feature": "3734", "Name": "embed/3734"}
+{"Component": "resid", "Layer": "0", "Feature": "284", "Name": "resid_0/284", "Annotation": "plural profession names"}
+{"Component": "resid", "Layer": "0", "Feature": "3974", "Name": "resid_0/3974", "Annotation": "plural nouns", "notes": "algebra contexts"}
+{"Component": "resid", "Layer": "1", "Feature": "134", "Name": "resid_1/134", "Annotation": "plural nouns", "notes": "scientific contexts"}
+{"Component": "resid", "Layer": "1", "Feature": "2746", "Name": "resid_1/2746"}
+{"Component": "resid", "Layer": "2", "Feature": "12311", "Name": "resid_2/12311", "Annotation": "plural animate nouns", "notes": "professions"}
+{"Component": "resid", "Layer": "2", "Feature": "13449", "Name": "resid_2/13449", "Annotation": "plural nouns", "notes": "scientific and coding contexts"}
+{"Component": "resid", "Layer": "3", "Feature": "15191", "Name": "resid_3/15191", "Annotation": "plural nouns", "notes": "includes variable names in code"}
+{"Component": "resid", "Layer": "4", "Feature": "3410", "Name": "resid_4/3410", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "4", "Feature": "6820", "Name": "resid_4/6820", "Annotation": "plural nouns in PPs", "notes": "mainly in PPs, but not always"}
+{"Component": "resid", "Layer": "4", "Feature": "8420", "Name": "resid_4/8420", "Annotation": "plural nouns in RCs"}
+{"Component": "resid", "Layer": "5", "Feature": "3069", "Name": "resid_5/3069", "Annotation": "plural nouns", "notes": "mainly in PPs, object position. not sure if spurious"}
+{"Component": "resid", "Layer": "5", "Feature": "11613", "Name": "resid_5/11613", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "5", "Feature": "13102", "Name": "resid_5/13102", "Annotation": "plural profession names"}
+{"Component": "resid", "Layer": "6", "Feature": "428", "Name": "resid_6/428", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "6", "Feature": "11417", "Name": "resid_6/11417", "Annotation": "plural nouns", "notes": "multiple languages"}
+{"Component": "resid", "Layer": "7", "Feature": "1041", "Name": "resid_7/1041", "Annotation": "plural NPs"}
+{"Component": "resid", "Layer": "7", "Feature": "5663", "Name": "resid_7/5663", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "8", "Feature": "10678", "Name": "resid_8/10678", "Annotation": "plural nouns, usually in PPs"}
+{"Component": "resid", "Layer": "9", "Feature": "8717", "Name": "resid_9/8717", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "10", "Feature": "10757", "Name": "resid_10/10757", "Annotation": "plural nouns, often in RCs/PPs"}
+{"Component": "resid", "Layer": "11", "Feature": "1570", "Name": "resid_11/1570", "Annotation": "plural nouns, often in PPs/RCs"}
+{"Component": "resid", "Layer": "11", "Feature": "5663", "Name": "resid_11/5663", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "12", "Feature": "10678", "Name": "resid_12/10678", "Annotation": "plural nouns, usually in PPs"}
+{"Component": "resid", "Layer": "13", "Feature": "10166", "Name": "resid_13/10166", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "14", "Feature": "14070", "Name": "resid_14/14070", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "15", "Feature": "10653", "Name": "resid_15/10653", "Annotation": "plural gendered animate nouns and associated verbs"}
+{"Component": "resid", "Layer": "15", "Feature": "13449", "Name": "resid_15/13449", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "16", "Feature": "500", "Name": "resid_16/500", "Annotation": "plural gendered animate nouns"}
+{"Component": "resid", "Layer": "16", "Feature": "5679", "Name": "resid_16/5679", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "17", "Feature": "3852", "Name": "resid_17/3852", "Annotation": "singular animate nouns"}
+{"Component": "resid", "Layer": "17", "Feature": "12129", "Name": "resid_17/12129", "Annotation": "plural inanimate nouns"}
+{"Component": "resid", "Layer": "17", "Feature": "16100", "Name": "resid_17/16100", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "18", "Feature": "1271", "Name": "resid_18/1271", "Annotation": "predicts plural verbs"}
+{"Component": "resid", "Layer": "18", "Feature": "1506", "Name": "resid_18/1506", "Annotation": "plural objects and nouns in PPs"}
+{"Component": "resid", "Layer": "18", "Feature": "10665", "Name": "resid_18/10665", "Annotation": "plural subjects"}
+{"Component": "resid", "Layer": "18", "Feature": "15377", "Name": "resid_18/15377", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "19", "Feature": "2211", "Name": "resid_19/2211", "Annotation": "boundaries of plural NPs"}
+{"Component": "resid", "Layer": "19", "Feature": "10531", "Name": "resid_19/10531", "Annotation": "singular nouns"}
+{"Component": "resid", "Layer": "19", "Feature": "11625", "Name": "resid_19/11625", "Annotation": "plural animate nouns"}
+{"Component": "mlp", "Layer": "20", "Feature": "1764", "Name": "mlp_20/1764", "Annotation": "plural nouns and verbs ending in \"s\"", "notes": "predicts \"are\"/\"were\". incorrectly considers verbs as nouns?"}
+{"Component": "resid", "Layer": "20", "Feature": "301", "Name": "resid_20/301", "Annotation": "plural NPs"}
+{"Component": "resid", "Layer": "20", "Feature": "3985", "Name": "resid_20/3985", "Annotation": "plural animate nouns"}
+{"Component": "mlp", "Layer": "21", "Feature": "23", "Name": "mlp_21/23", "Annotation": "relative pronouns, \"it\", singular nouns"}
+{"Component": "mlp", "Layer": "21", "Feature": "4343", "Name": "mlp_21/4343", "Annotation": "plural pronouns, relative pronouns"}
+{"Component": "resid", "Layer": "21", "Feature": "1978", "Name": "resid_21/1978", "Annotation": "plural pronouns, relative pronouns, NPs"}
+{"Component": "resid", "Layer": "21", "Feature": "5720", "Name": "resid_21/5720", "Annotation": "plural animate nouns in PPs and RCs"}
+{"Component": "resid", "Layer": "21", "Feature": "6162", "Name": "resid_21/6162", "Annotation": "singular subjects", "notes": "mostly starting with \"this\""}
+{"Component": "mlp", "Layer": "22", "Feature": "1915", "Name": "mlp_22/1915", "Annotation": "plural subjects"}
+{"Component": "resid", "Layer": "22", "Feature": "383", "Name": "resid_22/383", "Annotation": "plural subjects"}
+{"Component": "resid", "Layer": "22", "Feature": "4189", "Name": "resid_22/4189", "Annotation": "singular subjects"}
+{"Component": "resid", "Layer": "22", "Feature": "14353", "Name": "resid_22/14353", "Annotation": "predicts singular verbs"}
+{"Component": "resid", "Layer": "23", "Feature": "3123", "Name": "resid_23/3123", "Annotation": "predicts plural and infinitival verbs", "notes": "incorrectly conflates the two"}
+{"Component": "resid", "Layer": "23", "Feature": "7507", "Name": "resid_23/7507", "Annotation": "singular subjects"}
+{"Component": "resid", "Layer": "23", "Feature": "10927", "Name": "resid_23/10927", "Annotation": "plural subjects"}
+{"Component": "resid", "Layer": "23", "Feature": "13842", "Name": "resid_23/13842", "Annotation": "predicts singular verbs"}
+{"Component": "resid", "Layer": "24", "Feature": "3627", "Name": "resid_24/3627", "Annotation": "promotes singular verbs"}
+{"Component": "resid", "Layer": "24", "Feature": "13078", "Name": "resid_24/13078", "Annotation": "promotes plural verbs"}
+{"Component": "resid", "Layer": "24", "Feature": "14129", "Name": "resid_24/14129", "Annotation": "predicts plural and infinitival verbs", "notes": "incorrectly conflates the two. mostly second-person verbs"}
+{"Component": "resid", "Layer": "25", "Feature": "980", "Name": "resid_25/980", "Annotation": "promotes singular verbs"}
+{"Component": "resid", "Layer": "25", "Feature": "3649", "Name": "resid_25/3649", "Annotation": "tokens ending in \"s\"", "notes": "includes some verbs like \"gives\""}
+{"Component": "resid", "Layer": "25", "Feature": "5757", "Name": "resid_25/5757", "Annotation": "predicts infinitival and plural verbs", "notes": "mainly infinitival"}
+{"Component": "resid", "Layer": "25", "Feature": "9833", "Name": "resid_25/9833", "Annotation": "predicts plural verbs"}
+{"Component": "resid", "Layer": "25", "Feature": "14881", "Name": "resid_25/14881", "Annotation": "predicts plural verbs"}
+{"Component": "embed", "Feature": "2430", "Name": "embed/2430"}
+{"Component": "embed", "Feature": "3953", "Name": "embed/3953"}
+{"Component": "mlp", "Layer": "0", "Feature": "6809", "Name": "mlp_0/6809", "Annotation": "plural inanimate nouns"}
+{"Component": "resid", "Layer": "0", "Feature": "2434", "Name": "resid_0/2434", "Annotation": "plural animate nouns", "notes": "animals, team names"}
+{"Component": "resid", "Layer": "2", "Feature": "9827", "Name": "resid_2/9827", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "3", "Feature": "3427", "Name": "resid_3/3427", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "3", "Feature": "15706", "Name": "resid_3/15706", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "7", "Feature": "3231", "Name": "resid_7/3231", "Annotation": "plural inanimate nouns"}
+{"Component": "resid", "Layer": "8", "Feature": "6332", "Name": "resid_8/6332", "Annotation": "promotes singular nouns"}
+{"Component": "resid", "Layer": "8", "Feature": "9828", "Name": "resid_8/9828", "Annotation": "plural nouns, numbers, and prepositions after plural nouns"}
+{"Component": "resid", "Layer": "9", "Feature": "3552", "Name": "resid_9/3552", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "10", "Feature": "4449", "Name": "resid_10/4449", "Annotation": "plural inanimate nouns"}
+{"Component": "resid", "Layer": "11", "Feature": "12614", "Name": "resid_11/12614", "Annotation": "plural nouns and associated VPs"}
+{"Component": "resid", "Layer": "12", "Feature": "13561", "Name": "resid_12/13561", "Annotation": "plural nouns"}
+{"Component": "resid", "Layer": "15", "Feature": "5292", "Name": "resid_15/5292", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "16", "Feature": "2971", "Name": "resid_16/2971", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "16", "Feature": "10025", "Name": "resid_16/10025", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "16", "Feature": "13693", "Name": "resid_16/13693", "Annotation": "singular animate nouns"}
+{"Component": "mlp", "Layer": "17", "Feature": "2535", "Name": "mlp_17/2535", "Annotation": "plural NPs"}
+{"Component": "resid", "Layer": "17", "Feature": "5438", "Name": "resid_17/5438", "Annotation": "plural NPs"}
+{"Component": "mlp", "Layer": "18", "Feature": "8691", "Name": "mlp_18/8691", "Annotation": "plural inanimate nouns"}
+{"Component": "resid", "Layer": "18", "Feature": "4045", "Name": "resid_18/4045", "Annotation": "plural pronouns", "notes": "mostly \"they\""}
+{"Component": "resid", "Layer": "19", "Feature": "6365", "Name": "resid_19/6365", "Annotation": "plural inanimate nouns"}
+{"Component": "resid", "Layer": "19", "Feature": "13298", "Name": "resid_19/13298", "Annotation": "singular male NPs and VPs"}
+{"Component": "resid", "Layer": "20", "Feature": "3940", "Name": "resid_20/3940", "Annotation": "singular animate nouns"}
+{"Component": "resid", "Layer": "21", "Feature": "12588", "Name": "resid_21/12588", "Annotation": "singular animate nouns"}
+{"Component": "resid", "Layer": "22", "Feature": "8361", "Name": "resid_22/8361", "Annotation": "plural inanimate nouns"}
+{"Component": "resid", "Layer": "22", "Feature": "12040", "Name": "resid_22/12040", "Annotation": "promotes plural verbs"}
+{"Component": "mlp", "Layer": "23", "Feature": "3646", "Name": "mlp_23/3646", "Annotation": "promotes singular verbs"}
+{"Component": "resid", "Layer": "23", "Feature": "630", "Name": "resid_23/630", "Annotation": "plural nouns in PPs and RCs"}
+{"Component": "resid", "Layer": "24", "Feature": "5893", "Name": "resid_24/5893", "Annotation": "plural animate nouns"}
+{"Component": "resid", "Layer": "24", "Feature": "14406", "Name": "resid_24/14406", "Annotation": "predicts plural verbs"}
+{"Component": "resid", "Layer": "25", "Feature": "12110", "Name": "resid_25/12110", "Annotation": "promotes singular verbs"}
+{"Component": "resid", "Layer": "25", "Feature": "13473", "Name": "resid_25/13473", "Annotation": "singular pronouns and names"}
+{"Component": "resid", "Layer": "24", "Feature": "8661", "Name": "resid_24/8661", "Annotation": "singular NPs"}
+{"Component": "mlp", "Layer": "22", "Feature": "8206", "Name": "mlp_22/8206", "Annotation": "promotes plural verbs"}

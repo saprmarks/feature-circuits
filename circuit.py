@@ -6,20 +6,15 @@ import os
 from collections import defaultdict
 
 import torch as t
-from einops import rearrange
 from tqdm import tqdm
 
-from activation_utils import SparseAct
-from attribution import patching_effect, jvp, Submodule
-from circuit_plotting_new import plot_circuit, plot_circuit_posaligned
+from circuit_plotting import plot_circuit, plot_circuit_posaligned
 from dictionary_learning import AutoEncoder
-from loading_utils_new import load_examples, load_examples_nopair
+from loading_utils import load_examples, load_examples_nopair
 from dictionary_loading_utils import load_saes_and_submodules
 from nnsight import LanguageModel
-from nnsight.envoy import Envoy
-import time
 
-from coo_utils import sparse_reshape, diag_embed, sparsely_batched_outer_prod, doubly_batched_inner_prod
+from coo_utils import sparse_reshape
 
 DEBUGGING = True
 
@@ -406,13 +401,13 @@ def get_circuit_cluster(dataset,
     edges = save_dict['edges']
 
     # feature annotations
-    try:
-        annotations = {}
-        with open(f'annotations/{dict_id}_{dict_size}.jsonl', 'r') as f:
+    if os.path.exists(f"annotations/{args.model}.jsonl"):
+        print("Loading feature annotations")
+        with open(f'annotations/{args.model}.jsonl', 'r') as f:
             for line in f:
                 line = json.loads(line)
                 annotations[line['Name']] = line['Annotation']
-    except:
+    else:
         annotations = None
 
     plot_circuit(
@@ -546,7 +541,6 @@ if __name__ == '__main__':
         print("computing circuit")
         submodules, dictionaries = load_saes_and_submodules(
             model,
-            args.model,
             separate_by_type=True,
             include_embed=include_embed,
             neurons=args.use_neurons,
@@ -644,16 +638,17 @@ if __name__ == '__main__':
         with open(save_path, 'wb') as outfile:
             t.save(save_dict, outfile)
 
-    annotations = None
-    # # feature annotations
-    # try:
-    #     annotations = {}
-    #     with open(f"annotations/{args.dict_id}_{args.dict_size}.jsonl", 'r') as annotations_data:
-    #         for annotation_line in annotations_data:
-    #             annotation = json.loads(annotation_line)
-    #             annotations[annotation["Name"]] = annotation["Annotation"]
-    # except:
-    #     annotations = None
+    # feature annotations
+    if os.path.exists(annotations_path := f"annotations/{args.model.split('/')[-1]}.jsonl"):
+        print(f"Loading feature annotations from {annotations_path}")
+        annotations = {}
+        with open(annotations_path, 'r') as f:
+            for line in f:
+                line = json.loads(line)
+                if "Annotation" in line:
+                    annotations[line['Name']] = line['Annotation']
+    else:
+        annotations = None
 
     if args.aggregation == "none":
         example = examples[0]["clean_prefix"]
@@ -664,7 +659,7 @@ if __name__ == '__main__':
             example_text=example,
             node_threshold=args.node_threshold, 
             edge_threshold=args.edge_threshold, 
-            pen_thickness=4,
+            pen_thickness=args.pen_thickness,
             annotations=annotations, 
             save_dir=f'{args.plot_dir}/{save_base}_node{args.node_threshold}_edge{args.edge_threshold}',
             gemma_mode=(args.model == "google/gemma-2-2b"),

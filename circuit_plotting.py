@@ -1,9 +1,18 @@
-from graphviz import Digraph
-from collections import defaultdict
-import re
 import os
+from collections import defaultdict
+from graphviz import Digraph
+import math
 
-def get_name(component, layer, idx):
+# Constants
+EXAMPLE_FONT = 36  # Font size for example words at the bottom
+CHAR_WIDTH = 0.1   # Width per character in labels
+NODE_BUFFER = 0.1  # Extra width added to each node
+INTERNODE_BUFFER = 0.1  # Extra space between nodes (not added to node width)
+MIN_COL_WIDTH = 1  # Minimum width for a column
+VERTICAL_SPACING = 0.1  # Vertical spacing between nodes in the same column
+NODE_HEIGHT = 0.4  # Height of each node
+
+def get_name_pythia(component, layer, idx):
     match idx:
         case (seq, feat):
             if feat == 32768: feat = 'ε'
@@ -15,222 +24,86 @@ def get_name(component, layer, idx):
             return f'{component}_{layer}/{feat}'
         case _: raise ValueError(f"Invalid idx: {idx}")
 
-
-def plot_circuit(nodes, edges, layers=6, node_threshold=0.1, edge_threshold=0.01, pen_thickness=1, annotations=None, save_dir='circuit'):
-
-    # get min and max node effects
-    min_effect = min([v.to_tensor().min() for n, v in nodes.items() if n != 'y'])
-    max_effect = max([v.to_tensor().max() for n, v in nodes.items() if n != 'y'])
-    scale = max(abs(min_effect), abs(max_effect))
-
-    # for deciding shade of node
-    def to_hex(number):
-        number = number / scale
-        
-        # Define how the intensity changes based on the number
-        # - Negative numbers increase red component to max
-        # - Positive numbers increase blue component to max
-        # - 0 results in white
-        if number < 0:
-            # Increase towards red, full intensity at -1.0
-            red = 255
-            green = blue = int((1 + number) * 255)  # Increase other components less as it gets more negative
-        elif number > 0:
-            # Increase towards blue, full intensity at 1.0
-            blue = 255
-            red = green = int((1 - number) * 255)  # Increase other components less as it gets more positive
-        else:
-            # Exact 0, resulting in white
-            red = green = blue = 255 
-        
-        # decide whether text is black or white depending on darkness of color
-        text_hex = "#000000" if (red*0.299 + green*0.587 + blue*0.114) > 170 else "#ffffff"
-
-        # Convert to hex, ensuring each component is 2 digits
-        hex_code = f'#{red:02X}{green:02X}{blue:02X}'
-        
-        return hex_code, text_hex
-    
-    if annotations is None:
-        def get_label(name):
-            return name
-    else:
-        def get_label(name):
-            match name.split(', '):
-                case seq, feat:
-                    if feat in annotations:
-                        component = feat.split('/')[0]
-                        component = feat.split('_')[0]
-                        return f'{seq}, {annotations[feat]} ({component})'
-                    return name
-                case [feat]:
-                    if feat in annotations:
-                        component = feat.split('/')[0]
-                        component = feat.split('_')[0]
-                        return f'{annotations[feat]} ({component})'
-
-    G = Digraph(name='Feature circuit')
-    G.graph_attr.update(rankdir='BT', newrank='true')
-    G.node_attr.update(shape="box", style="rounded")
-
-    # rename embed to resid_-1
-    nodes_by_submod = {
-        'resid_-1' : {tuple(idx.tolist()) : nodes['embed'].to_tensor()[tuple(idx)].item() for idx in (nodes['embed'].to_tensor().abs() > node_threshold).nonzero()}
-    }
-    for layer in range(layers):
-        for component in ['attn', 'mlp', 'resid']:
-            submod_nodes = nodes[f'{component}_{layer}'].to_tensor()
-            nodes_by_submod[f'{component}_{layer}'] = {
-                tuple(idx.tolist()) : submod_nodes[tuple(idx)].item() for idx in (submod_nodes.abs() > node_threshold).nonzero()
-            }
-    edges['resid_-1'] = edges['embed']
-    
-    for layer in range(-1, layers):
-        for component in ['attn', 'mlp', 'resid']:
-            if layer == -1 and component != 'resid': continue
-            with G.subgraph(name=f'layer {layer} {component}') as subgraph:
-                subgraph.attr(rank='same')
-                max_seq_pos = None
-                for idx, effect in nodes_by_submod[f'{component}_{layer}'].items():
-                    name = get_name(component, layer, idx)
-                    fillhex, texthex = to_hex(effect)
-                    if name[-1:].endswith('ε'):
-                        subgraph.node(name, shape='triangle', width="1.6", height="0.8", fixedsize="true",
-                                      fillcolor=fillhex, style='filled', fontcolor=texthex)
-                    else:
-                        subgraph.node(name, label=get_label(name), fillcolor=fillhex, fontcolor=texthex,
-                                      style='filled')
-                    # if sequence position is present, separate nodes by sequence position
-                    match idx:
-                        case (seq, _):
-                            subgraph.node(f'{component}_{layer}_#{seq}_pre', style='invis'), subgraph.node(f'{component}_{layer}_#{seq}_post', style='invis')
-                            subgraph.edge(f'{component}_{layer}_#{seq}_pre', name, style='invis'), subgraph.edge(name, f'{component}_{layer}_#{seq}_post', style='invis')
-                            if max_seq_pos is None or seq > max_seq_pos:
-                                max_seq_pos = seq
-
-                if max_seq_pos is None: continue
-                # make sure the auxiliary ordering nodes are in right order
-                for seq in reversed(range(max_seq_pos+1)):
-                    if f'{component}_{layer}_#{seq}_pre' in ''.join(subgraph.body):
-                        for seq_prev in range(seq):
-                            if f'{component}_{layer}_#{seq_prev}_post' in ''.join(subgraph.body):
-                                subgraph.edge(f'{component}_{layer}_#{seq_prev}_post', f'{component}_{layer}_#{seq}_pre', style='invis')
-
-        
-        for component in ['attn', 'mlp']:
-            if layer == -1: continue
-            for upstream_idx in nodes_by_submod[f'{component}_{layer}'].keys():
-                for downstream_idx in nodes_by_submod[f'resid_{layer}'].keys():
-                    weight = edges[f'{component}_{layer}'][f'resid_{layer}'][tuple(downstream_idx)][tuple(upstream_idx)].item()
-                    if abs(weight) > edge_threshold:
-                        uname = get_name(component, layer, upstream_idx)
-                        dname = get_name('resid', layer, downstream_idx)
-                        G.edge(
-                            uname, dname,
-                            penwidth=str(abs(weight) * pen_thickness),
-                            color = 'red' if weight < 0 else 'blue'
-                        )
-        
-        # add edges to previous layer resid
-        for component in ['attn', 'mlp', 'resid']:
-            if layer == -1: continue
-            for upstream_idx in nodes_by_submod[f'resid_{layer-1}'].keys():
-                for downstream_idx in nodes_by_submod[f'{component}_{layer}'].keys():
-                    weight = edges[f'resid_{layer-1}'][f'{component}_{layer}'][tuple(downstream_idx)][tuple(upstream_idx)].item()
-                    if abs(weight) > edge_threshold:
-                        uname = get_name('resid', layer-1, upstream_idx)
-                        dname = get_name(component, layer, downstream_idx)
-                        G.edge(
-                            uname, dname,
-                            penwidth=str(abs(weight) * pen_thickness),
-                            color = 'red' if weight < 0 else 'blue'
-                        )
-
-
-    # the cherry on top
-    G.node('y', shape='diamond')
-    for idx in nodes_by_submod[f'resid_{layers-1}'].keys():
-        weight = edges[f'resid_{layers-1}']['y'][tuple(idx)].item()
-        if abs(weight) > edge_threshold:
-            name = get_name('resid', layers-1, idx)
-            G.edge(
-                name, 'y',
-                penwidth=str(abs(weight) * pen_thickness),
-                color = 'red' if weight < 0 else 'blue'
-            )
-
-    if not os.path.exists(os.path.dirname(save_dir)):
-        os.makedirs(os.path.dirname(save_dir))
-    G.render(save_dir, format='png', cleanup=True)
-
+def get_name_gemma(component, layer, idx):
+    match idx:
+        case (seq, feat):
+            if feat == 2 ** 14: feat = 'ε'
+            return f'{seq}, {component}_{layer}/{feat}'
+        case (feat,):
+            if feat == 2 ** 14: feat = 'ε'
+            return f'{component}_{layer}/{feat}'
+        case _: raise ValueError(f"Invalid idx: {idx}")
 
 def plot_circuit_posaligned(
     nodes, edges, 
-    layers=6, length=6, 
+    layers=6, 
     example_text="The managers that the parent likes",
     node_threshold=0.1, edge_threshold=0.01, 
-    pen_thickness=3, node_width=1, node_height=0.2,
+    pen_thickness=3,
+    horizontal_spacing=0.2,
     annotations=None, 
-    save_dir='circuit'
+    save_dir='circuit',
+    gemma_mode=False,
 ):
+    get_name = get_name_gemma if gemma_mode else get_name_pythia
 
-    # get min and max node effects
-    min_effect = min([v.to_tensor().min() for n, v in nodes.items() if n != 'y'])
-    max_effect = max([v.to_tensor().max() for n, v in nodes.items() if n != 'y'])
-    scale = max(abs(min_effect), abs(max_effect))
-
-    words = example_text.split()
-
-    # for deciding shade of node
     def to_hex(number):
+        scale = max(abs(min([v.to_tensor().min() for n, v in nodes.items() if n != 'y'])),
+                    abs(max([v.to_tensor().max() for n, v in nodes.items() if n != 'y'])))
         number = number / scale
         
-        # Define how the intensity changes based on the number
-        # - Negative numbers increase red component to max
-        # - Positive numbers increase blue component to max
-        # - 0 results in white
         if number < 0:
-            # Increase towards red, full intensity at -1.0
             red = 255
-            green = blue = int((1 + number) * 255)  # Increase other components less as it gets more negative
+            green = blue = int((1 + number) * 255)
         elif number > 0:
-            # Increase towards blue, full intensity at 1.0
             blue = 255
-            red = green = int((1 - number) * 255)  # Increase other components less as it gets more positive
+            red = green = int((1 - number) * 255)
         else:
-            # Exact 0, resulting in white
             red = green = blue = 255 
         
-        # decide whether text is black or white depending on darkness of color
         text_hex = "#000000" if (red*0.299 + green*0.587 + blue*0.114) > 170 else "#ffffff"
-
-        # Convert to hex, ensuring each component is 2 digits
         hex_code = f'#{red:02X}{green:02X}{blue:02X}'
         
         return hex_code, text_hex
     
+    def split_label(label):
+        if len(label) > 20:  # Add a line break for labels longer than 20 characters
+            if '/' in label:
+                split_index = label.find('/', 10) + 1  # Find the first '/' after the 10th character
+                if split_index > 0:
+                    return label[:split_index], label[split_index:]
+            words = label.split()
+            mid = math.ceil(len(words) / 2)
+            return ' '.join(words[:mid]), ' '.join(words[mid:])
+        return label, ""
+
     if annotations is None:
         def get_label(name):
-            return name
+            return split_label(name.split(", ")[-1])  # Remove sequence information
     else:
         def get_label(name):
             seq, feat = name.split(", ")
             if feat in annotations:
-                component = feat.split('/')[0]
-                component = component.split('_')[0]
-                return f'{seq}, {annotations[feat]} ({component})'
-            return name
+                return split_label(annotations[feat])
+            return split_label(feat)  # Remove sequence information
 
     G = Digraph(name='Feature circuit')
     G.graph_attr.update(rankdir='BT', newrank='true')
     G.node_attr.update(shape="box", style="rounded")
 
-    nodes_by_submod = {
-        'resid_-1' : {tuple(idx.tolist()) : nodes['embed'].to_tensor()[tuple(idx)].item() for idx in (nodes['embed'].to_tensor().abs() > node_threshold).nonzero()}
-    }
-    nodes_by_seqpos = defaultdict(list)
+    words = example_text.split()
+    if gemma_mode:
+        words = ["<BOS>"] + words
+    seq_len = nodes[list(nodes.keys())[0]].act.shape[0]
+    assert (length := len(words)) == seq_len, "The number of words in example_text should match the sequence length"
+
+    nodes_by_submod = {}
+    if not gemma_mode:
+        nodes_by_submod["embed"] = {
+            tuple(idx.tolist()) : nodes['embed'].to_tensor()[tuple(idx)].item() for idx in (nodes['embed'].to_tensor().abs() > node_threshold).nonzero()
+        }
+    nodes_by_seqpos = defaultdict(lambda: defaultdict(list))
     nodes_by_layer = defaultdict(list)
-    edgeset = set()
 
     for layer in range(layers):
         for component in ['attn', 'mlp', 'resid']:
@@ -238,95 +111,146 @@ def plot_circuit_posaligned(
             nodes_by_submod[f'{component}_{layer}'] = {
                 tuple(idx.tolist()) : submod_nodes[tuple(idx)].item() for idx in (submod_nodes.abs() > node_threshold).nonzero()
             }
-    edges['resid_-1'] = edges['embed']
 
-    # add words to bottom of graph
-    with G.subgraph(name=f'words') as subgraph:
-        subgraph.attr(rank='same')
-        prev_word = None
-        for idx in range(length):
-            word = words[idx]
-            subgraph.node(word, shape='none', group=str(idx), fillcolor='transparent',
-                          fontsize="30pt")
-            if prev_word is not None:
-                subgraph.edge(prev_word, word, style='invis', minlen="2")
-            prev_word = word
+    # Calculate node widths and column widths
+    node_widths = {}
+    column_widths = [0] * length
 
-    for layer in range(-1, layers):
-        for component in ['attn', 'mlp', 'resid']:
-            if layer == -1 and component != 'resid': continue
-            with G.subgraph(name=f'layer {layer} {component}') as subgraph:
-                subgraph.attr(rank='same')
-                max_seq_pos = None
-                for idx, effect in nodes_by_submod[f'{component}_{layer}'].items():
-                    name = get_name(component, layer, idx)
-                    seq_pos, basename = name.split(", ")
-                    fillhex, texthex = to_hex(effect)
-                    if name[-1:] == 'ε':
-                        subgraph.node(name, shape='triangle', group=seq_pos, width="1.6", height="0.8", fixedsize="true",
-                                      fillcolor=fillhex, style='filled', fontcolor=texthex)
-                    else:
-                        subgraph.node(name, label=get_label(name), group=seq_pos, fillcolor=fillhex, fontcolor=texthex,
-                                      style='filled')
-                    
-                    if len(nodes_by_seqpos[seq_pos]) == 0:
-                        G.edge(words[int(seq_pos)], name, style='dotted', arrowhead='none', penwidth="1.5")
-                        edgeset.add((words[int(seq_pos)], name))
+    for submod, submod_nodes in nodes_by_submod.items():
+        component = submod.split('_')[0]
+        layer = -1 if component == 'embed' else int(submod.split('_')[1])
+        for idx, _ in submod_nodes.items():
+            name = get_name(component, layer, idx)
+            label_line1, label_line2 = get_label(name)
+            width = max(CHAR_WIDTH * len(label_line1), CHAR_WIDTH * len(label_line2)) + NODE_BUFFER
+            node_widths[name] = width
+            
+            seq = int(name.split(',')[0]) if ',' in name else -1  # -1 for global
+            if seq != -1:
+                nodes_by_seqpos[seq][submod].append(name)
+                column_widths[seq] = max(column_widths[seq], 
+                                         sum(node_widths[n] for n in nodes_by_seqpos[seq][submod]) + 
+                                         (len(nodes_by_seqpos[seq][submod]) - 1) * INTERNODE_BUFFER)
 
-                    nodes_by_seqpos[seq_pos].append(name)
-                    nodes_by_layer[layer].append(name)
+    # Ensure minimum column width
+    column_widths = [max(width, MIN_COL_WIDTH) for width in column_widths]
 
-                    # if sequence position is present, separate nodes by sequence position
-                    match idx:
-                        case (seq, _):
-                            subgraph.node(f'{component}_{layer}_#{seq}_pre', style='invis'), subgraph.node(f'{component}_{layer}_#{seq}_post', style='invis')
-                            subgraph.edge(f'{component}_{layer}_#{seq}_pre', name, style='invis'), subgraph.edge(name, f'{component}_{layer}_#{seq}_post', style='invis')
-                            if max_seq_pos is None or seq > max_seq_pos:
-                                max_seq_pos = seq
-
-                if max_seq_pos is None: continue
-                # make sure the auxiliary ordering nodes are in right order
-                for seq in reversed(range(max_seq_pos+1)):
-                    if f'{component}_{layer}_#{seq}_pre' in ''.join(subgraph.body):
-                        for seq_prev in range(seq):
-                            if f'{component}_{layer}_#{seq_prev}_post' in ''.join(subgraph.body):
-                                subgraph.edge(f'{component}_{layer}_#{seq_prev}_post', f'{component}_{layer}_#{seq}_pre', style='invis')
-
+    # Calculate positions
+    node_positions = {}
+    y_offset = 0
+    components = (
+        ['embed'] if not gemma_mode else []
+    ) + [f'{comp}_{layer}' for layer in range(layers) for comp in ['attn', 'mlp', 'resid']]
+    for submod in components:
+        x_offset = 0
+        for seq in range(length):
+            cell_x_offset = x_offset + column_widths[seq] / 2  # Center of the column
+            total_width = sum(node_widths[n] for n in nodes_by_seqpos[seq][submod]) + (len(nodes_by_seqpos[seq][submod]) - 1) * INTERNODE_BUFFER
+            start_x = cell_x_offset - total_width / 2
+            for name in nodes_by_seqpos[seq][submod]:
+                node_center = start_x + node_widths[name] / 2
+                node_positions[name] = (node_center, y_offset)
+                start_x += node_widths[name] + INTERNODE_BUFFER
+            x_offset += column_widths[seq] + horizontal_spacing
         
-        for component in ['attn', 'mlp']:
-            if layer == -1: continue
-            for upstream_idx in nodes_by_submod[f'{component}_{layer}'].keys():
+        # Add row label
+        G.node(f'row_{submod}', label=submod, pos=f"{-2},{y_offset}!", shape='plaintext')
+        
+        y_offset += NODE_HEIGHT + VERTICAL_SPACING
+
+    # Add nodes to the graph
+    for submod, submod_nodes in nodes_by_submod.items():
+        component = submod.split('_')[0]
+        layer = -1 if component == 'embed' else int(submod.split('_')[1])
+        for idx, effect in submod_nodes.items():
+            name = get_name(component, layer, idx)
+            fillhex, texthex = to_hex(effect)
+            x, y = node_positions[name]
+            
+            label_line1, label_line2 = get_label(name)
+            label = f"{label_line1}\\n{label_line2}" if label_line2 else label_line1
+            is_epsilon = 'ε' in name
+            node_shape = 'triangle' if is_epsilon else 'box'
+            
+            G.node(name, label=label, pos=f"{x},{y}!", 
+                   width=str(node_widths[name]), height=str(NODE_HEIGHT), fixedsize="true",
+                   fillcolor=fillhex, fontcolor=texthex, style='filled', shape=node_shape)
+
+    # Add edges
+    for layer in range(layers):
+        prev_layer = layer - 1
+        prev_component = 'embed' if layer == 0 and not gemma_mode else f'resid_{prev_layer}'
+        
+        if layer == 0 and gemma_mode:
+            # Skip connections from resid_{-1} in gemma_mode
+            pass
+        else:
+            # resid_{i-1} -> attn_i
+            for upstream_idx in nodes_by_submod[prev_component].keys():
+                for downstream_idx in nodes_by_submod[f'attn_{layer}'].keys():
+                    weight = edges[prev_component][f'attn_{layer}'][tuple(downstream_idx)][tuple(upstream_idx)].item()
+                    if abs(weight) > edge_threshold:
+                        uname = get_name('embed' if layer == 0 and not gemma_mode else 'resid', prev_layer, upstream_idx)
+                        dname = get_name('attn', layer, downstream_idx)
+                        G.edge(uname, dname, penwidth=str(abs(weight) * pen_thickness), color='red' if weight < 0 else 'blue')
+
+            # resid_{i-1} -> mlp_i
+            for upstream_idx in nodes_by_submod[prev_component].keys():
+                for downstream_idx in nodes_by_submod[f'mlp_{layer}'].keys():
+                    weight = edges[prev_component][f'mlp_{layer}'][tuple(downstream_idx)][tuple(upstream_idx)].item()
+                    if abs(weight) > edge_threshold:
+                        uname = get_name('embed' if layer == 0 and not gemma_mode else 'resid', prev_layer, upstream_idx)
+                        dname = get_name('mlp', layer, downstream_idx)
+                        G.edge(uname, dname, penwidth=str(abs(weight) * pen_thickness), color='red' if weight < 0 else 'blue')
+
+            # resid_{i-1} -> resid_i
+            for upstream_idx in nodes_by_submod[prev_component].keys():
                 for downstream_idx in nodes_by_submod[f'resid_{layer}'].keys():
-                    weight = edges[f'{component}_{layer}'][f'resid_{layer}'][tuple(downstream_idx)][tuple(upstream_idx)].item()
+                    weight = edges[prev_component][f'resid_{layer}'][tuple(downstream_idx)][tuple(upstream_idx)].item()
                     if abs(weight) > edge_threshold:
-                        uname = get_name(component, layer, upstream_idx)
+                        uname = get_name('embed' if layer == 0 and not gemma_mode else 'resid', prev_layer, upstream_idx)
                         dname = get_name('resid', layer, downstream_idx)
-                        G.edge(
-                            uname, dname,
-                            penwidth=str(abs(weight) * pen_thickness),
-                            color = 'red' if weight < 0 else 'blue'
-                        )
-                        edgeset.add((uname, dname))
-        
-        # add edges to previous layer resid
-        for component in ['attn', 'mlp', 'resid']:
-            if layer == -1: continue
-            for upstream_idx in nodes_by_submod[f'resid_{layer-1}'].keys():
-                for downstream_idx in nodes_by_submod[f'{component}_{layer}'].keys():
-                    weight = edges[f'resid_{layer-1}'][f'{component}_{layer}'][tuple(downstream_idx)][tuple(upstream_idx)].item()
-                    if abs(weight) > edge_threshold:
-                        uname = get_name('resid', layer-1, upstream_idx)
-                        dname = get_name(component, layer, downstream_idx)
-                        G.edge(
-                            uname, dname,
-                            penwidth=str(abs(weight) * pen_thickness),
-                            color = 'red' if weight < 0 else 'blue'
-                        )
-                        edgeset.add((uname, dname))
+                        G.edge(uname, dname, penwidth=str(abs(weight) * pen_thickness), color='red' if weight < 0 else 'blue')
 
+        # attn_i -> mlp_i
+        for upstream_idx in nodes_by_submod[f'attn_{layer}'].keys():
+            for downstream_idx in nodes_by_submod[f'mlp_{layer}'].keys():
+                weight = edges[f'attn_{layer}'][f'mlp_{layer}'][tuple(downstream_idx)][tuple(upstream_idx)].item()
+                if abs(weight) > edge_threshold:
+                    uname = get_name('attn', layer, upstream_idx)
+                    dname = get_name('mlp', layer, downstream_idx)
+                    G.edge(uname, dname, penwidth=str(abs(weight) * pen_thickness), color='red' if weight < 0 else 'blue')
 
-    # the cherry on top
-    G.node('y', shape='diamond')
+        # attn_i -> resid_i
+        for upstream_idx in nodes_by_submod[f'attn_{layer}'].keys():
+            for downstream_idx in nodes_by_submod[f'resid_{layer}'].keys():
+                weight = edges[f'attn_{layer}'][f'resid_{layer}'][tuple(downstream_idx)][tuple(upstream_idx)].item()
+                if abs(weight) > edge_threshold:
+                    uname = get_name('attn', layer, upstream_idx)
+                    dname = get_name('resid', layer, downstream_idx)
+                    G.edge(uname, dname, penwidth=str(abs(weight) * pen_thickness), color='red' if weight < 0 else 'blue')
+
+        # mlp_i -> resid_i
+        for upstream_idx in nodes_by_submod[f'mlp_{layer}'].keys():
+            for downstream_idx in nodes_by_submod[f'resid_{layer}'].keys():
+                weight = edges[f'mlp_{layer}'][f'resid_{layer}'][tuple(downstream_idx)][tuple(upstream_idx)].item()
+                if abs(weight) > edge_threshold:
+                    uname = get_name('mlp', layer, upstream_idx)
+                    dname = get_name('resid', layer, downstream_idx)
+                    G.edge(uname, dname, penwidth=str(abs(weight) * pen_thickness), color='red' if weight < 0 else 'blue')
+
+    # Add word labels at the bottom (centered)
+    word_y_offset = -1
+    x_offset = 0
+    for i, word in enumerate(words):
+        word_x = x_offset + column_widths[i] / 2
+        G.node(f'word_{i}', label=word, pos=f"{word_x},{word_y_offset}!", shape='plaintext', fontsize=str(EXAMPLE_FONT))
+        x_offset += column_widths[i] + horizontal_spacing
+    last_word_x = word_x
+
+    # Add 'y' node
+    total_width = sum(column_widths) + (length - 1) * horizontal_spacing
+    G.node('y', shape='diamond', pos=f"{last_word_x},{y_offset}!")
     for idx in nodes_by_submod[f'resid_{layers-1}'].keys():
         weight = edges[f'resid_{layers-1}']['y'][tuple(idx)].item()
         if abs(weight) > edge_threshold:
@@ -336,8 +260,26 @@ def plot_circuit_posaligned(
                 penwidth=str(abs(weight) * pen_thickness),
                 color = 'red' if weight < 0 else 'blue'
             )
-            edgeset.add((uname, dname))
+
+    # Add dashed vertical gray lines separating columns
+    x_offset = 0
+    for i in range(length + 1):
+        line_top = y_offset + 1  # Top of the image
+        line_bottom = word_y_offset - 1  # Just below the words at the bottom
+        G.node(f'line_top_{i}', shape='point', pos=f"{x_offset},{line_top}!", width='0', height='0')
+        G.node(f'line_bottom_{i}', shape='point', pos=f"{x_offset},{line_bottom}!", width='0', height='0')
+        G.edge(f'line_top_{i}', f'line_bottom_{i}', 
+               style='dashed', 
+               color='gray', 
+               penwidth=str(0.5*pen_thickness),
+               dir='none',  # This removes the arrow direction
+               arrowhead='none')  # This explicitly removes arrowheads
+        if i < length:
+            x_offset += column_widths[i] + horizontal_spacing
 
     if not os.path.exists(os.path.dirname(save_dir)):
         os.makedirs(os.path.dirname(save_dir))
-    G.render(save_dir, format='png', cleanup=True)
+    G.render(save_dir, format='png', cleanup=True, engine='neato')
+
+def plot_circuit(*args, **kwargs):
+    raise NotImplementedError("This function has been deprecated. Use plot_circuit_posaligned instead.")

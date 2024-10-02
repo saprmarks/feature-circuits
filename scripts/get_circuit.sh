@@ -5,8 +5,6 @@ DATA=$2
 NODE=$3
 EDGE=$4
 AGG=$5
-LENGTH=$6
-DICT_ID=$7
 
 python circuit.py \
     --model $MODEL \
@@ -15,6 +13,4 @@ python circuit.py \
     --dataset $DATA \
 	--node_threshold $NODE \
 	--edge_threshold $EDGE \
-	--aggregation $AGG \
-    --example_length $LENGTH \
-    --dict_id $DICT_ID
+	--aggregation $AGG

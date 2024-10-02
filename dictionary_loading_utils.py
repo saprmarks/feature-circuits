@@ -197,7 +197,6 @@ def _load_gemma_saes_and_submodules(
 
 def load_saes_and_submodules(
     model,
-    model_name: Literal["EleutherAI/pythia-70m-deduped", "google/gemma-2-2b"],
     thru_layer: int | None = None,
     separate_by_type: bool = False,
     include_embed: bool = True,
@@ -205,6 +204,8 @@ def load_saes_and_submodules(
     dtype: t.dtype = t.float32,
     device: t.device = t.device("cpu"),
 ):
+    model_name = model.config._name_or_path
+
     if model_name == "EleutherAI/pythia-70m-deduped":
         return _load_pythia_saes_and_submodules(model, thru_layer=thru_layer, separate_by_type=separate_by_type, include_embed=include_embed, neurons=neurons, dtype=dtype, device=device)
     elif model_name == "google/gemma-2-2b":

@@ -1,119 +1,73 @@
-import os
-import re
 import json
 import random
 import torch as t
 import torch.nn.functional as F
-from dictionary_learning.dictionary import AutoEncoder
-from dataclasses import dataclass
-
-@dataclass
-class DictionaryCfg():
-    def __init__(
-        self,
-        dictionary_dir,
-        dictionary_size
-        ) -> None:
-        self.dir = dictionary_dir
-        self.size = dictionary_size
+from nnsight import LanguageModel
 
 
-def load_examples(dataset, num_examples, model, seed=12, pad_to_length=None, length=None):
+def load_examples(
+    dataset: str,
+    n_examples: int,
+    model: LanguageModel,
+    use_min_length_only: bool = False,
+    max_length: int = None,
+    seed: int = 12
+):
+    with open(dataset, "r") as f:
+        dataset_items = f.readlines()
+    random.Random(seed).shuffle(dataset_items)
+
     examples = []
-    dataset_items = open(dataset).readlines()
-    random.seed(seed)
-    random.shuffle(dataset_items)
-    breakpoint()
+    if use_min_length_only:
+        min_length = float("inf")
     for line in dataset_items:
         data = json.loads(line)
-        clean_prefix = model.tokenizer(data["clean_prefix"], return_tensors="pt",
-                                        padding=False).input_ids
-        patch_prefix = model.tokenizer(data["patch_prefix"], return_tensors="pt",
-                                        padding=False).input_ids
-        clean_answer = model.tokenizer(data["clean_answer"], return_tensors="pt",
-                                        padding=False).input_ids
-        patch_answer = model.tokenizer(data["patch_answer"], return_tensors="pt",
-                                        padding=False).input_ids
-        breakpoint()
-        # only keep examples where clean and patch inputs are the same length
-        if clean_prefix.shape[1] != patch_prefix.shape[1]:
+        clean_prefix = model.tokenizer(data["clean_prefix"]).input_ids
+        patch_prefix = model.tokenizer(data["patch_prefix"]).input_ids
+        clean_answer = model.tokenizer(data["clean_answer"]).input_ids
+        patch_answer = model.tokenizer(data["patch_answer"]).input_ids
+        clean_full = model.tokenizer(data["clean_prefix"] + data["clean_answer"]).input_ids
+        patch_full = model.tokenizer(data["patch_prefix"] + data["patch_answer"]).input_ids
+
+        # strip BOS token from response if necessary
+        if clean_answer[0] == model.tokenizer.bos_token_id:
+            clean_answer = clean_answer[1:]
+        if patch_answer[0] == model.tokenizer.bos_token_id:
+            patch_answer = patch_answer[1:]
+        
+        # check that answer is one token
+        if len(clean_answer) != 1 or len(patch_answer) != 1:
             continue
-        # only keep examples where answers are single tokens
-        breakpoint()
-        if clean_answer.shape[1] != 1 or patch_answer.shape[1] != 1:
+
+        # check that prefixes are the same length
+        if len(clean_prefix) != len(patch_prefix):
             continue
-        breakpoint()
-        # if we specify a `length`, filter examples if they don't match
-        if length and clean_prefix.shape[1] != length:
+
+        # check for tokenization mismatches
+        if clean_prefix + clean_answer != clean_full:
             continue
-        breakpoint()
-        # if we specify `pad_to_length`, left-pad all inputs to a max length
-        prefix_length_wo_pad = clean_prefix.shape[1]
-        if pad_to_length:
-            model.tokenizer.padding_side = 'right'
-            pad_length = pad_to_length - prefix_length_wo_pad
-            breakpoint()
-            if pad_length < 0:  # example too long
+        if patch_prefix + patch_answer != patch_full:
+            continue
+
+        if max_length is not None and len(clean_prefix) > max_length:
+            continue
+
+        if use_min_length_only:
+            # restart collection if we've found a new shortest example
+            if (l := len(clean_prefix)) < min_length:
+                examples = [] # restart collection
+                min_length = l
+            # skip if too long
+            elif l > min_length:
                 continue
-            breakpoint()
-            # left padding: reverse, right-pad, reverse
-            clean_prefix = t.flip(F.pad(t.flip(clean_prefix, (1,)), (0, pad_length), value=model.tokenizer.pad_token_id), (1,))
-            patch_prefix = t.flip(F.pad(t.flip(patch_prefix, (1,)), (0, pad_length), value=model.tokenizer.pad_token_id), (1,))
-        breakpoint()
-        example_dict = {"clean_prefix": clean_prefix,
-                        "patch_prefix": patch_prefix,
-                        "clean_answer": clean_answer.item(),
-                        "patch_answer": patch_answer.item(),
-                        "annotations": get_annotation(dataset, model, data),
-                        "prefix_length_wo_pad": prefix_length_wo_pad,}
-        examples.append(example_dict)
-        breakpoint()
-        if len(examples) >= num_examples:
-            break
+        
+        examples.append(data)
 
-    return examples
+        if len(examples) >= n_examples:
+            return examples
 
-
-def load_examples_nopair(dataset, num_examples, model, length=None):
-    examples = []
-    if isinstance(dataset, str):        # is a path to a .json file
-        dataset = json.load(open(dataset))
-    elif isinstance(dataset, dict):     # is an already-loaded dictionary
-        pass
-    else:
-        raise ValueError(f"`dataset` is unrecognized type: {type(dataset)}. Must be path (str) or dict")
-    
-    max_len = 0     # for padding
-    for context_id in dataset:
-        context = dataset[context_id]["context"]
-        if length is not None and len(context) > length:
-            context = context[-length:]
-        clean_prefix = model.tokenizer("".join(context), return_tensors="pt",
-                        padding=False).input_ids
-        max_len = max(max_len, clean_prefix.shape[-1])
-
-    for context_id in dataset:
-        answer = dataset[context_id]["answer"]
-        context = dataset[context_id]["context"]
-        clean_prefix = model.tokenizer("".join(context), return_tensors="pt",
-                                    padding=False).input_ids
-        clean_answer = model.tokenizer(answer, return_tensors="pt",
-                                    padding=False).input_ids
-        if clean_answer.shape[1] != 1:
-            continue
-        prefix_length_wo_pad = clean_prefix.shape[1]
-        pad_length = max_len - prefix_length_wo_pad
-        # left padding: reverse, right-pad, reverse
-        clean_prefix = t.flip(F.pad(t.flip(clean_prefix, (1,)), (0, pad_length), value=model.tokenizer.pad_token_id), (1,))
-
-        example_dict = {"clean_prefix": clean_prefix,
-                        "clean_answer": clean_answer.item(),
-                        "prefix_length_wo_pad": prefix_length_wo_pad,}
-        examples.append(example_dict)
-        if len(examples) >= num_examples:
-            break
-
-    return examples
+def load_examples_nopair(*args, **kwargs):
+    pass
 
 def get_annotation(dataset, model, data):
     # First, understand which dataset we're working with
