@@ -8,12 +8,12 @@ from collections import defaultdict
 import torch as t
 from tqdm import tqdm
 
+from attribution import patching_effect, jvp
 from circuit_plotting import plot_circuit, plot_circuit_posaligned
 from dictionary_learning import AutoEncoder
 from loading_utils import load_examples, load_examples_nopair
 from dictionary_loading_utils import load_saes_and_submodules
 from nnsight import LanguageModel
-
 from coo_utils import sparse_reshape
 
 DEBUGGING = True
@@ -59,15 +59,6 @@ def get_circuit(
         method='ig' # get better approximations for early layers by using ig
     )
 
-    # def unflatten(tensor): # will break if dictionaries vary in size between layers
-    #     b, s, f = effects[resids[0]].act.shape
-    #     unflattened = rearrange(tensor, '(b s x) -> b s x', b=b, s=s)
-    #     return SparseAct(act=unflattened[...,:f], res=unflattened[...,f:])
-    
-    # features_by_submod = {
-    #     submod : (effects[submod].to_tensor().flatten().abs() > node_threshold).nonzero().flatten().tolist() for submod in all_submods
-    # }
-
     features_by_submod = {
         submod : effects[submod].abs() > node_threshold for submod in all_submods
     }
@@ -94,7 +85,7 @@ def get_circuit(
     edges[f'resid_{len(resids)-1}'] = { 'y' : effects[resids[-1]].to_tensor().flatten().to_sparse() }
 
     def N(upstream, downstream, midstream=[]):
-        return jvp(
+        result = jvp(
             clean,
             model,
             dictionaries,
@@ -105,6 +96,7 @@ def get_circuit(
             deltas[upstream],
             intermediate_stopgrads=midstream,
         )
+        return result
 
     # now we work backward through the model to get the edges
     for layer in reversed(range(len(resids))):
@@ -140,79 +132,6 @@ def get_circuit(
                 edges['embed'][f'attn_{layer}'] = RA_effect
                 edges['embed'][f'resid_0'] = RR_effect
 
-        # RM_effect = N(prev_resid, mlp)
-        # RA_effect = N(prev_resid, attn)
-        # RR_effect = N(prev_resid, resid, [mlp, attn])
-
-        # # get RR effect
-        # # W_E = dictionaries[resid].encoder.weight
-        # # W_D = dictionaries[resid].decoder.weight
-        # # W_D_prev = dictionaries[prev_resid].decoder.weight
-        # # downstream_grad = grads[resid]
-        # # downstream_idxs = features_by_submod[resid].act.nonzero()
-        # # upstream_delta = deltas[prev_resid]
-        # # upstream_idxs = features_by_submod[prev_resid].act.nonzero()
-
-        # # # define some shapes
-        # # assert (b := downstream_grad.act.shape[0]) == upstream_delta.act.shape[0]
-        # # assert (s := downstream_grad.act.shape[1]) == upstream_delta.act.shape[1]
-        # # assert (f := downstream_grad.act.shape[2]) == upstream_delta.act.shape[2] and f == W_E.shape[0] and f == W_D_prev.shape[1]
-        # # assert (d := W_E.shape[1]) == W_D_prev.shape[0]
-
-        # # mask = t.zeros(b, s, f, device=model.device, dtype=t.bool)
-        # # mask[tuple(downstream_idxs.T)] = True
-        # # downstream_grad.act[~mask] = 0
-        # # downstream_grad.act = downstream_grad.act.to_sparse_coo()
-
-        # # mask = t.zeros(b, s, f, device=model.device, dtype=t.bool)
-        # # mask[tuple(upstream_idxs.T)] = True
-        # # upstream_delta.act[~mask] = 0
-        # # upstream_delta.act = upstream_delta.act.to_sparse_coo()
-
-        # # with t.no_grad():
-
-        # #     # ffm_effect
-        # #     rfm_grad = sparsely_batched_outer_prod(
-        # #         downstream_grad.act, W_E
-        # #     ) # [b, s, f | d]
-        # #     fr_delta = sparsely_batched_outer_prod(
-        # #         upstream_delta.act, W_D_prev.T
-        # #     ) # [b, s, f | d]
-        # #     ffm_effect = doubly_batched_inner_prod(rfm_grad, fr_delta) # [b, s, f, b, s, f]
-
-        # #     # efm_effect
-        # #     efm_effect = doubly_batched_inner_prod(rfm_grad, upstream_delta.res.to_sparse(sparse_dim=2))
-        # #     efm_effect = efm_effect.unsqueeze(-1)
-
-        # #     # fem_effect
-        # #     frm_grad = (downstream_grad.res.unsqueeze(-2) @ W_D_prev).squeeze(-2) # [b, s, f]
-        # #     frm_effect = frm_grad * upstream_delta.act # [b, s, f]
-        # #     fem_effect = frm_effect - ffm_effect.sum(dim=(0, 1, 2))
-        # #     fem_effect = sparse_reshape(fem_effect, (b, s, 1, b, s, f))
-
-        # #     # eem_effect
-        # #     eem_effect = (downstream_grad.res.view(b, s, 1, 1, d) * \
-        # #         upstream_delta.res.view(1, 1, b, s, d)).sum(dim=-1)
-        # #     eem_effect =  eem_effect.unsqueeze(2).unsqueeze(-1).to_sparse()
-
-        # #     # aggregate into RR_effect
-        # #     RR_effect = t.cat(
-        # #         [
-        # #             t.cat([ffm_effect, efm_effect], dim=-1),
-        # #             t.cat([fem_effect, eem_effect], dim=-1)
-        # #         ],
-        # #         dim=2
-        # #     )
-
-        # if layer > 0: 
-        #     edges[f'resid_{layer-1}'][f'mlp_{layer}'] = RM_effect
-        #     edges[f'resid_{layer-1}'][f'attn_{layer}'] = RA_effect
-        #     edges[f'resid_{layer-1}'][f'resid_{layer}'] = RR_effect
-        # else:
-        #     edges['embed'][f'mlp_{layer}'] = RM_effect
-        #     edges['embed'][f'attn_{layer}'] = RA_effect
-        #     edges['embed'][f'resid_0'] = RR_effect
-
     # rearrange weight matrices
     for child in edges:
         # get shape for child
@@ -223,12 +142,6 @@ def get_circuit(
                 weight_matrix = sparse_reshape(weight_matrix, (bc, sc, fc+1))
             else:
                 continue
-                # bp, sp, fp = nodes[parent].act.shape
-                # assert bp == bc
-                # try:
-                #     weight_matrix = sparse_reshape(weight_matrix, (bp, sp, fp+1, bc, sc, fc+1))
-                # except:
-                #     breakpoint()
             edges[child][parent] = weight_matrix
     
     if aggregation == 'sum':
@@ -262,7 +175,6 @@ def get_circuit(
                 nodes[node] = nodes[node].mean(dim=0)
     
     elif aggregation == 'none':
-
         # aggregate across batch dimensions
         for child in edges:
             # get shape for child
@@ -275,7 +187,6 @@ def get_circuit(
                 else:
                     bp, sp, fp = nodes[parent].act.shape
                     assert bp == bc
-                    # weight_matrix = sparse_reshape(weight_matrix, (bp, sp, fp+1, bc, sc, fc+1))
                     weight_matrix = weight_matrix.sum(dim=(0, 3)) / bc
                 edges[child][parent] = weight_matrix
         for node in nodes:
