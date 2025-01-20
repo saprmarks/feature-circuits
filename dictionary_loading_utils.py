@@ -1,4 +1,3 @@
-from re import split
 from collections import namedtuple
 from dictionary_learning import AutoEncoder, JumpReluAutoEncoder, IdentityDict
 from attribution import Submodule

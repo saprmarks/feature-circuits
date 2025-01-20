@@ -2,13 +2,11 @@ from collections import namedtuple
 import torch as t
 from tqdm import tqdm
 from numpy import ndindex
-from typing import Dict, Union
 from activation_utils import SparseAct
 from dataclasses import dataclass
 from nnsight.envoy import Envoy
 from dictionary_learning.dictionary import Dictionary
 from typing import Callable
-from einops import einsum
 
 DEBUGGING = False
 
