@@ -2,57 +2,13 @@ from collections import namedtuple
 import torch as t
 from tqdm import tqdm
 from numpy import ndindex
+from loading_utils import Submodule
 from activation_utils import SparseAct
-from dataclasses import dataclass
 from nnsight.envoy import Envoy
 from dictionary_learning.dictionary import Dictionary
 from typing import Callable
 
-DEBUGGING = False
-
-if DEBUGGING:
-    tracer_kwargs = {'validate' : True, 'scan' : True}
-else:
-    tracer_kwargs = {'validate' : False, 'scan' : False}
-
 EffectOut = namedtuple('EffectOut', ['effects', 'deltas', 'grads', 'total_effect'])
-
-@dataclass(frozen=True)
-class Submodule:
-    name: str
-    submodule: Envoy
-    use_input: bool = False
-    is_tuple: bool = False
-
-    def __hash__(self):
-        return hash(self.name)
-
-    def get_activation(self):
-        if self.use_input:
-            return self.submodule.input # TODO make sure I didn't break for pythia
-        else:
-            if self.is_tuple:
-                return self.submodule.output[0]
-            else:
-                return self.submodule.output
-
-    def set_activation(self, x):
-        if self.use_input:
-            self.submodule.input[:] = x
-        else:
-            if self.is_tuple:
-                self.submodule.output[0][:] = x
-            else:
-                self.submodule.output = x
-
-    def stop_grad(self):
-        if self.use_input:
-            self.submodule.input.grad = t.zeros_like(self.submodule.input)
-        else:
-            if self.is_tuple:
-                self.submodule.output[0].grad = t.zeros_like(self.submodule.output[0])
-            else:
-                self.submodule.output.grad = t.zeros_like(self.submodule.output)
 
 
 def _pe_attrib(
@@ -66,7 +22,7 @@ def _pe_attrib(
 ):
     hidden_states_clean = {}
     grads = {}
-    with model.trace(clean, **tracer_kwargs):
+    with model.trace(clean):
         for submodule in submodules:
             dictionary = dictionaries[submodule]
             x = submodule.get_activation()
@@ -90,7 +46,7 @@ def _pe_attrib(
         total_effect = None
     else:
         hidden_states_patch = {}
-        with model.trace(patch, **tracer_kwargs), t.inference_mode():
+        with t.no_grad(), model.trace(patch):
             for submodule in submodules:
                 dictionary = dictionaries[submodule]
                 x = submodule.get_activation()
@@ -126,7 +82,7 @@ def _pe_ig(
     metric_kwargs=dict(),
 ):
     hidden_states_clean = {}
-    with t.no_grad(), model.trace(clean, **tracer_kwargs):
+    with t.no_grad(), model.trace(clean):
         for submodule in submodules:
             dictionary = dictionaries[submodule]
             x = submodule.get_activation()
@@ -144,7 +100,7 @@ def _pe_ig(
         total_effect = None
     else:
         hidden_states_patch = {}
-        with t.no_grad(), model.trace(patch, **tracer_kwargs):
+        with t.no_grad(), model.trace(patch):
             for submodule in submodules:
                 dictionary = dictionaries[submodule]
                 x = submodule.get_activation()
@@ -163,7 +119,7 @@ def _pe_ig(
         dictionary = dictionaries[submodule]
         clean_state = hidden_states_clean[submodule]
         patch_state = hidden_states_patch[submodule]
-        with model.trace(**tracer_kwargs) as tracer:
+        with model.trace() as tracer:
             metrics = []
             fs = []
             for step in range(steps):
@@ -172,7 +128,7 @@ def _pe_ig(
                 f.act.requires_grad_().retain_grad()
                 f.res.requires_grad_().retain_grad()
                 fs.append(f)
-                with tracer.invoke(clean, scan=tracer_kwargs['scan']):
+                with tracer.invoke(clean):
                     submodule.set_activation(dictionary.decode(f.act) + f.res)
                     metrics.append(metric_fn(model, **metric_kwargs))
             metric = sum([m for m in metrics])
@@ -200,7 +156,7 @@ def _pe_exact(
     metric_fn,
 ):
     hidden_states_clean = {}
-    with model.trace(clean, **tracer_kwargs), t.inference_mode():
+    with t.no_grad(), model.trace(clean):
         for submodule in submodules:
             dictionary = dictionaries[submodule]
             x = submodule.get_activation()
@@ -218,7 +174,7 @@ def _pe_exact(
         total_effect = None
     else:
         hidden_states_patch = {}
-        with model.trace(patch, **tracer_kwargs), t.inference_mode():
+        with t.no_grad(), model.trace(patch):
             for submodule in submodules:
                 dictionary = dictionaries[submodule]
                 x = submodule.get_activation()
@@ -241,24 +197,22 @@ def _pe_exact(
         # iterate over positions and features for which clean and patch differ
         idxs = t.nonzero(patch_state.act - clean_state.act)
         for idx in tqdm(idxs):
-            with t.inference_mode():
-                with model.trace(clean, **tracer_kwargs):
-                    f = clean_state.act.clone()
-                    f[tuple(idx)] = patch_state.act[tuple(idx)]
-                    x_hat = dictionary.decode(f)
-                    submodule.set_activation(x_hat + clean_state.res)
-                    metric = metric_fn(model).save()
-                effect.act[tuple(idx)] = (metric.value - metric_clean.value).sum()
+            with t.no_grad(), model.trace(clean):
+                f = clean_state.act.clone()
+                f[tuple(idx)] = patch_state.act[tuple(idx)]
+                x_hat = dictionary.decode(f)
+                submodule.set_activation(x_hat + clean_state.res)
+                metric = metric_fn(model).save()
+            effect.act[tuple(idx)] = (metric.value - metric_clean.value).sum()
 
         for idx in list(ndindex(effect.resc.shape)): # type: ignore
-            with t.inference_mode():
-                with model.trace(clean, **tracer_kwargs):
-                    res = clean_state.res.clone()
-                    res[tuple(idx)] = patch_state.res[tuple(idx)] # type: ignore
-                    x_hat = dictionary.decode(clean_state.act)
-                    submodule.set_activation(x_hat + res)
-                    metric = metric_fn(model).save()
-                effect.resc[tuple(idx)] = (metric.value - metric_clean.value).sum() # type: ignore
+            with t.no_grad(), model.trace(clean):
+                res = clean_state.res.clone()
+                res[tuple(idx)] = patch_state.res[tuple(idx)] # type: ignore
+                x_hat = dictionary.decode(clean_state.act)
+                submodule.set_activation(x_hat + res)
+                metric = metric_fn(model).save()
+            effect.resc[tuple(idx)] = (metric.value - metric_clean.value).sum() # type: ignore
         
         effects[submodule] = effect
         deltas[submodule] = patch_state - clean_state
@@ -311,8 +265,7 @@ def jvp(
     vjv_values = {}
 
     downstream_feature_idxs = downstream_features.to_tensor().nonzero()
-    with model.trace(input, **tracer_kwargs):
-
+    with model.trace(input):
         # forward pass modifications
         x = upstream_submod.get_activation()
         x_hat, f = upstream_dict.hacked_forward_for_sfc(x) # hacking around an nnsight bug

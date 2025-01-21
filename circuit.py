@@ -11,18 +11,10 @@ from tqdm import tqdm
 from attribution import patching_effect, jvp
 from circuit_plotting import plot_circuit, plot_circuit_posaligned
 from dictionary_learning import AutoEncoder
-from loading_utils import load_examples, load_examples_nopair
+from data_loading_utils import load_examples, load_examples_nopair
 from dictionary_loading_utils import load_saes_and_submodules
 from nnsight import LanguageModel
 from coo_utils import sparse_reshape
-
-DEBUGGING = True
-
-if DEBUGGING:
-    tracer_kwargs = {"validate": True, "scan": True}
-else:
-    tracer_kwargs = {"validate": False, "scan": False}
-
 
 def get_circuit(
     clean,
@@ -35,11 +27,10 @@ def get_circuit(
     dictionaries,
     metric_fn,
     metric_kwargs=dict(),
-    aggregation="sum",  # or 'none' for not aggregating across sequence position
+    aggregation="sum",  # or "none" for not aggregating across sequence position
     nodes_only=False,
     parallel_attn=False,
     node_threshold=0.1,
-    edge_threshold=0.01,
 ):
     all_submods = ([embed] if embed is not None else []) + [
         submod for layer_submods in zip(attns, mlps, resids) for submod in layer_submods
@@ -109,7 +100,7 @@ def get_circuit(
         edges[f"mlp_{layer}"][f"resid_{layer}"] = MR_effect
         edges[f"attn_{layer}"][f"resid_{layer}"] = AR_effect
 
-        if parallel_attn:
+        if not parallel_attn:
             AM_effect = N(attn, mlp)
             edges[f"attn_{layer}"][f"mlp_{layer}"] = AM_effect
 
@@ -160,13 +151,13 @@ def get_circuit(
 
         # aggregate across batch dimension
         for child in edges:
-            bc, fc = nodes[child].act.shape
+            bc, _ = nodes[child].act.shape
             for parent in edges[child]:
                 weight_matrix = edges[child][parent]
                 if parent == "y":
                     weight_matrix = weight_matrix.sum(dim=0) / bc
                 else:
-                    bp, fp = nodes[parent].act.shape
+                    bp, _ = nodes[parent].act.shape
                     assert bp == bc
                     weight_matrix = weight_matrix.sum(dim=(0, 2)) / bc
                 edges[child][parent] = weight_matrix
@@ -465,8 +456,8 @@ if __name__ == "__main__":
         "google/gemma-2-2b": 26,
     }[args.model]
     parallel_attn = {
-        "EleutherAI/pythia-70m-deduped": False,
-        "google/gemma-2-2b": True,
+        "EleutherAI/pythia-70m-deduped": True,
+        "google/gemma-2-2b": False,
     }[args.model]
     include_embed = {
         "EleutherAI/pythia-70m-deduped": True,
@@ -478,7 +469,7 @@ if __name__ == "__main__":
     }[args.model]
 
     if args.model == "EleutherAI/pythia-70m-deduped":
-        model = LanguageModel(args.model, device_map=device, dispatch=True)
+        model = LanguageModel(args.model, device_map=device, dispatch=True, torch_dtype=dtype)
     elif args.model == "google/gemma-2-2b":
         model = LanguageModel(
             args.model,
@@ -498,17 +489,17 @@ if __name__ == "__main__":
         )
     else:
         data_path = f"data/{args.dataset}.json"
-        if args.aggregation == "sum":
-            raise NotImplementedError(
-                "Sum aggregation is not yet implemented for new data loading."
-            )
-            examples = load_examples(
-                data_path, args.num_examples, model, pad_to_length=args.example_length
-            )
-        else:
-            examples = load_examples(
-                data_path, args.num_examples, model, use_min_length_only=True
-            )
+        # if args.aggregation == "sum":
+        #     raise NotImplementedError(
+        #         "Sum aggregation is not yet implemented for new data loading."
+        #     )
+        #     examples = load_examples(
+        #         data_path, args.num_examples, model, pad_to_length=args.example_length
+        #     )
+        # else:
+        examples = load_examples(
+            data_path, args.num_examples, model, use_min_length_only=True
+        )
 
     num_examples = min([args.num_examples, len(examples)])
     if num_examples < args.num_examples:  # warn the user
@@ -616,7 +607,6 @@ if __name__ == "__main__":
                 nodes_only=args.nodes_only,
                 aggregation=args.aggregation,
                 node_threshold=args.node_threshold,
-                edge_threshold=args.edge_threshold,
                 parallel_attn=parallel_attn,
             )
 
@@ -688,11 +678,9 @@ if __name__ == "__main__":
             annotations=annotations,
             save_dir=f"{args.plot_dir}/{save_base}_node{args.node_threshold}_edge{args.edge_threshold}",
             gemma_mode=(args.model == "google/gemma-2-2b"),
+            parallel_attn=parallel_attn,
         )
     else:
-        raise NotImplementedError(
-            "Sum aggregation is not yet implemented for new data loading."
-        )
         plot_circuit(
             nodes,
             edges,
@@ -701,5 +689,7 @@ if __name__ == "__main__":
             edge_threshold=args.edge_threshold,
             pen_thickness=args.pen_thickness,
             annotations=annotations,
-            save_dir=f"{args.plot_dir}/{save_basename}_dict{args.dict_id}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}",
+            save_dir=f"{args.plot_dir}/{save_base}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}",
+            gemma_mode=(args.model == "google/gemma-2-2b"),
+            parallel_attn=parallel_attn,
         )
