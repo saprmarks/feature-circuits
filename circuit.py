@@ -208,32 +208,38 @@ def get_circuit_cluster(
     model=None,
     dictionaries=None,
 ):
-    model = LanguageModel(model_name, device_map=device, dispatch=True)
+    
+    n_layers = {
+        "EleutherAI/pythia-70m-deduped": 6,
+        "google/gemma-2-2b": 26,
+    }[model_name]
+    parallel_attn = {
+        "EleutherAI/pythia-70m-deduped": True,
+        "google/gemma-2-2b": False,
+    }[model_name]
+    include_embed = {
+        "EleutherAI/pythia-70m-deduped": True,
+        "google/gemma-2-2b": False,
+    }[model_name]
+    dtype = {
+        "EleutherAI/pythia-70m-deduped": t.float32,
+        "google/gemma-2-2b": t.bfloat16,
+    }[model_name]
 
-    embed = model.gpt_neox.embed_in
-    attns = [layer.attention for layer in model.gpt_neox.layers]
-    mlps = [layer.mlp for layer in model.gpt_neox.layers]
-    resids = [layer for layer in model.gpt_neox.layers]
-    dictionaries = {}
-    dictionaries[embed] = AutoEncoder.from_pretrained(
-        os.path.join(dict_path, f"embed/{dict_id}_{dict_size}/ae.pt"), device=device
+    if model_name == "EleutherAI/pythia-70m-deduped":
+        model = LanguageModel(model_name, device_map=device, dispatch=True, torch_dtype=dtype)
+    elif model_name == "google/gemma-2-2b":
+        model = LanguageModel(model_name, device_map=device, dispatch=True, attn_implementation="eager", torch_dtype=dtype)
+    
+    submodules, dictionaries = load_saes_and_submodules(
+        model,
+        separate_by_type=True,
+        include_embed=include_embed,
+        device=device,
+        dtype=dtype,
     )
-    for i in range(len(model.gpt_neox.layers)):
-        dictionaries[attns[i]] = AutoEncoder.from_pretrained(
-            os.path.join(dict_path, f"attn_out_layer{i}/{dict_id}_{dict_size}/ae.pt"),
-            device=device,
-        )
-        dictionaries[mlps[i]] = AutoEncoder.from_pretrained(
-            os.path.join(dict_path, f"mlp_out_layer{i}/{dict_id}_{dict_size}/ae.pt"),
-            device=device,
-        )
-        dictionaries[resids[i]] = AutoEncoder.from_pretrained(
-            os.path.join(dict_path, f"resid_out_layer{i}/{dict_id}_{dict_size}/ae.pt"),
-            device=device,
-        )
 
-    examples = load_examples_nopair(dataset, max_examples, model, length=max_length)
-
+    examples = load_examples_nopair(dataset, max_examples, model)
     num_examples = min(len(examples), max_examples)
     n_batches = math.ceil(num_examples / batch_size)
     batches = [
@@ -249,16 +255,18 @@ def get_circuit_cluster(
     running_edges = None
 
     for batch in tqdm(batches, desc="Batches"):
-        clean_inputs = t.cat([e["clean_prefix"] for e in batch], dim=0).to(device)
+        clean_inputs = [e["clean_prefix"] for e in batch]
         clean_answer_idxs = t.tensor(
-            [e["clean_answer"] for e in batch], dtype=t.long, device=device
+            [model.tokenizer(e["clean_answer"]).input_ids[-1] for e in batch],
+            dtype=t.long,
+            device=device
         )
 
         patch_inputs = None
 
         def metric_fn(model):
             return -1 * t.gather(
-                t.nn.functional.log_softmax(model.embed_out.output[:, -1, :], dim=-1),
+                model.output.logits[:, -1, :],
                 dim=-1,
                 index=clean_answer_idxs.view(-1, 1),
             ).squeeze(-1)
@@ -267,15 +275,16 @@ def get_circuit_cluster(
             clean_inputs,
             patch_inputs,
             model,
-            embed,
-            attns,
-            mlps,
-            resids,
+            submodules.embed,
+            submodules.attns,
+            submodules.mlps,
+            submodules.resids,
             dictionaries,
             metric_fn,
             aggregation="sum",
             node_threshold=node_threshold,
             edge_threshold=edge_threshold,
+            parallel_attn=parallel_attn,
         )
 
         if running_nodes is None:
@@ -312,26 +321,19 @@ def get_circuit_cluster(
     nodes = save_dict["nodes"]
     edges = save_dict["edges"]
 
-    # feature annotations
-    if os.path.exists(f"annotations/{args.model}.jsonl"):
-        print("Loading feature annotations")
-        annotations = {}
-        with open(f"annotations/{args.model}.jsonl", "r") as f:
-            for line in f:
-                line = json.loads(line)
-                annotations[line["Name"]] = line["Annotation"]
-    else:
-        annotations = None
+    annotations = None
 
     plot_circuit(
         nodes,
         edges,
-        layers=len(model.gpt_neox.layers),
+        layers=n_layers,
         node_threshold=node_threshold,
         edge_threshold=edge_threshold,
         pen_thickness=1,
         annotations=annotations,
         save_dir=os.path.join(plot_dir, save_basename),
+        gemma_mode=(model_name == "google/gemma-2-2b"),
+        parallel_attn=parallel_attn,
     )
 
 
@@ -480,23 +482,12 @@ if __name__ == "__main__":
         )
 
     if args.nopair:
-        raise NotImplementedError(
-            "No-pair mode is not yet implemented for new data loading."
-        )
-        save_basename = os.path.splitext(os.path.basename(args.dataset))[0]
+        data_path = f"data/{args.dataset}.json"
         examples = load_examples_nopair(
-            args.dataset, args.num_examples, model, length=args.example_length
+            data_path, args.num_examples, model
         )
     else:
         data_path = f"data/{args.dataset}.json"
-        # if args.aggregation == "sum":
-        #     raise NotImplementedError(
-        #         "Sum aggregation is not yet implemented for new data loading."
-        #     )
-        #     examples = load_examples(
-        #         data_path, args.num_examples, model, pad_to_length=args.example_length
-        #     )
-        # else:
         examples = load_examples(
             data_path, args.num_examples, model, use_min_length_only=True
         )
@@ -565,16 +556,11 @@ if __name__ == "__main__":
             )
 
             if args.nopair:
-                raise NotImplementedError(
-                    "No-pair mode is not yet implemented for new data loading."
-                )
                 patch_inputs = None
 
                 def metric_fn(model):
                     return -1 * t.gather(
-                        t.nn.functional.log_softmax(
-                            model.embed_out.output[:, -1, :], dim=-1
-                        ),
+                        model.output.logits[:, -1, :],
                         dim=-1,
                         index=clean_answer_idxs.view(-1, 1),
                     ).squeeze(-1)

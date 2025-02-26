@@ -14,5 +14,4 @@ python circuit.py \
 	--edge_threshold $EDGE \
 	--aggregation sum \
     --example_length 64 \
-    --dict_id $DICT \
 	--nopair
