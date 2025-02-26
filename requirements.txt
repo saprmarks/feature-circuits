@@ -3,7 +3,7 @@ datasets>=2.18.0
 einops>=0.7.0
 graphviz>=0.20.1
 matplotlib>=3.8.3
-nnsight>=0.2.9
+nnsight<0.4
 numpy>=1.26.4
 pandas>=2.2.1
 plotly>=5.18.0
