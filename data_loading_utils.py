@@ -66,8 +66,33 @@ def load_examples(
         if len(examples) >= n_examples:
             return examples
 
-def load_examples_nopair(*args, **kwargs):
-    raise NotImplementedError("load_examples_nopair is not implemented")
+def load_examples_nopair(dataset, num_examples, model):
+    examples = []
+    if isinstance(dataset, str):
+        with open(dataset, "r") as f:
+            dataset = json.load(f)
+    elif isinstance(dataset, dict):
+        pass
+    else:
+        raise ValueError(f"Invalid dataset type: {type(dataset)}")
+    
+    for context_id in dataset:
+        context = dataset[context_id]["context"]
+        context = "".join(context)
+        answer = dataset[context_id]["answer"]
+        if model.tokenizer(answer, return_tensors="pt").input_ids.shape[1] != 1:
+            continue
+        examples.append(
+            {
+                "clean_prefix": context,
+                "clean_answer": answer,
+            }
+        )
+
+        if len(examples) >= num_examples:
+            break
+
+    return examples
 
 def get_annotation(dataset, model, data):
     # First, understand which dataset we're working with
