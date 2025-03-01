@@ -5,8 +5,9 @@ from numpy import ndindex
 from loading_utils import Submodule
 from activation_utils import SparseAct
 from nnsight.envoy import Envoy
-from dictionary_learning.dictionary import Dictionary
+from dictionary_learning.dictionary import Dictionary, JumpReluAutoEncoder
 from typing import Callable
+import types
 
 EffectOut = namedtuple('EffectOut', ['effects', 'deltas', 'grads', 'total_effect'])
 
@@ -252,6 +253,29 @@ def jvp(
     right_vec: SparseAct,
     intermediate_stopgrads: list[Submodule] = [],
 ):
+    # monkey patching to get around an nnsight bug
+    for dictionary in dictionaries.values():
+        if isinstance(dictionary, JumpReluAutoEncoder):
+            def hacked_forward(self, x):
+                W_enc, W_dec = self.W_enc.data, self.W_dec.data
+                b_enc, b_dec = self.b_enc.data, self.b_dec.data
+
+                # hacking around an nnsight bug
+                pre_jump = x @ W_enc + b_enc
+                f = t.nn.ReLU()(pre_jump * (pre_jump > self.threshold))
+                f = f * W_dec.norm(dim=1)
+
+                f_normed = f / W_dec.norm(dim=1)
+                x_hat = f_normed @ W_dec + b_dec
+
+                return x_hat, f
+
+            dictionary.hacked_forward = types.MethodType(hacked_forward, dictionary)
+
+        else:
+            def hacked_forward(self, x):
+                return self.forward(x, output_features=True)
+
     downstream_dict, upstream_dict = dictionaries[downstream_submod], dictionaries[upstream_submod]
     b, s, n_feats = downstream_features.act.shape
 
@@ -268,13 +292,13 @@ def jvp(
     with model.trace(input):
         # forward pass modifications
         x = upstream_submod.get_activation()
-        x_hat, f = upstream_dict(x, output_features=True) # hacking around an nnsight bug
+        x_hat, f = upstream_dict.hacked_forward(x)
         x_res = x - x_hat
         upstream_submod.set_activation(x_hat + x_res)
         upstream_act = SparseAct(act=f, res=x_res).save()
         
         y = downstream_submod.get_activation()
-        y_hat, g = downstream_dict(y, output_features=True) # hacking around an nnsight bug
+        y_hat, g = downstream_dict.hacked_forward(y) 
         y_res = y - y_hat
         downstream_act = SparseAct(act=g, res=y_res)
 
