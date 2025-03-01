@@ -1,5 +1,6 @@
 from collections import namedtuple
-from dictionary_learning import AutoEncoder, JumpReluAutoEncoder, IdentityDict
+from dictionary_learning import AutoEncoder, JumpReluAutoEncoder
+from dictionary_learning.dictionary import IdentityDict
 from attribution import Submodule
 from typing import Literal
 import torch as t

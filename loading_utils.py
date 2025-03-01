@@ -2,7 +2,8 @@ from dataclasses import dataclass
 import torch as t
 from nnsight.envoy import Envoy
 from collections import namedtuple
-from dictionary_learning import AutoEncoder, JumpReluAutoEncoder, IdentityDict
+from dictionary_learning import AutoEncoder, JumpReluAutoEncoder
+from dictionary_learning.dictionary import IdentityDict
 from typing import Literal
 from huggingface_hub import list_repo_files
 from tqdm import tqdm

@@ -12,4 +12,4 @@ torchtyping>=0.1.4
 tqdm>=4.66.1
 zstandard>=0.22.0
 numpy<2.0
-sae_lens
+dictionary_learning
