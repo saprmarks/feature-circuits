@@ -268,13 +268,13 @@ def jvp(
     with model.trace(input):
         # forward pass modifications
         x = upstream_submod.get_activation()
-        x_hat, f = upstream_dict.hacked_forward_for_sfc(x) # hacking around an nnsight bug
+        x_hat, f = upstream_dict(x, output_features=True) # hacking around an nnsight bug
         x_res = x - x_hat
         upstream_submod.set_activation(x_hat + x_res)
         upstream_act = SparseAct(act=f, res=x_res).save()
         
         y = downstream_submod.get_activation()
-        y_hat, g = downstream_dict.hacked_forward_for_sfc(y) # hacking around an nnsight bug
+        y_hat, g = downstream_dict(y, output_features=True) # hacking around an nnsight bug
         y_res = y - y_hat
         downstream_act = SparseAct(act=g, res=y_res)
 
