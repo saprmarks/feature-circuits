@@ -1,17 +1,16 @@
 #!/bin/bash
 
-DATA=$1 # path/to/cluster/data
-NODE=$2
-EDGE=$3
-DICT=$4
+MODEL=$1
+DATA=$2 # path/to/cluster/data
+NODE=$3
+EDGE=$4
 
 python circuit.py \
-    --model EleutherAI/pythia-70m-deduped \
+    --model $MODEL \
     --num_examples 100 \
     --batch_size 6 \
     --dataset $DATA \
 	--node_threshold $NODE \
 	--edge_threshold $EDGE \
 	--aggregation sum \
-    --example_length 64 \
 	--nopair

@@ -354,13 +354,6 @@ if __name__ == "__main__":
         help="The number of examples from the --dataset over which to average indirect effects.",
     )
     parser.add_argument(
-        "--example_length",
-        "-l",
-        type=int,
-        default=None,
-        help="The max length (if using sum aggregation) or exact length (if not aggregating) of examples.",
-    )
-    parser.add_argument(
         "--model",
         type=str,
         default="EleutherAI/pythia-70m-deduped",
