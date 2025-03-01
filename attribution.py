@@ -269,12 +269,11 @@ def jvp(
                 x_hat = f_normed @ W_dec + b_dec
 
                 return x_hat, f
-
-            dictionary.hacked_forward = types.MethodType(hacked_forward, dictionary)
-
         else:
             def hacked_forward(self, x):
                 return self.forward(x, output_features=True)
+            
+        dictionary.hacked_forward = types.MethodType(hacked_forward, dictionary)
 
     downstream_dict, upstream_dict = dictionaries[downstream_submod], dictionaries[upstream_submod]
     b, s, n_feats = downstream_features.act.shape
