@@ -13,3 +13,7 @@ tqdm>=4.66.1
 zstandard>=0.22.0
 numpy<2.0
 dictionary_learning
+
+# for converting the clusters
+huggingface-hub
+sqlitedict

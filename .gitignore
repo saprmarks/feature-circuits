@@ -167,3 +167,5 @@ dictionaries/*
 experiments/effects/*
 experiments/faithfulness/*
 nohup.out
+/data
+*.zip

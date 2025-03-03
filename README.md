@@ -2,6 +2,11 @@
 
 This repository contains code, data, and links to autoencoders for replicating the experiments of [Sparse Feature Circuits: Discovering and Editing Interpretable Causal Graphs in Language Models](https://arxiv.org/abs/2403.19647). 
 
+## Rerunning clusters from webapp
+1. run `convert_clusters.py`
+2. download SAEs with `pretrained_dictionary_loader.sh`
+3. Iteratively run circuit discovery via `/scripts/get_circuit_cluster.sh`
+
 ## Demos and Links
 - We provide an interface for exploring and downloading clusters [here](https://feature-circuits.xyz).
 - View our SAEs and their features on [Neuronpedia](https://www.neuronpedia.org/p70d-sm).
