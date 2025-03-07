@@ -56,11 +56,14 @@ def get_circuit(
 
     nodes = {"y": total_effect}
     if embed is not None:
-        nodes["embed"] = effects[embed]
+        nodes["embed"] = effects[embed].detach()
     for i in range(n_layers):
-        nodes[f"attn_{i}"] = effects[attns[i]]
-        nodes[f"mlp_{i}"] = effects[mlps[i]]
-        nodes[f"resid_{i}"] = effects[resids[i]]
+        nodes[f"attn_{i}"] = effects[attns[i]].detach()
+        nodes[f"mlp_{i}"] = effects[mlps[i]].detach()
+        nodes[f"resid_{i}"] = effects[resids[i]].detach()
+
+    del effects
+    t.cuda.empty_cache()
 
     if nodes_only:
         if aggregation == "sum":
@@ -68,11 +71,13 @@ def get_circuit(
                 if k != "y":
                     nodes[k] = nodes[k].sum(dim=1)
         nodes = {k: v.mean(dim=0) for k, v in nodes.items()}
+        del deltas, grads
+        t.cuda.empty_cache()
         return nodes, None
 
     edges = defaultdict(lambda: {})
     edges[f"resid_{len(resids) - 1}"] = {
-        "y": effects[resids[-1]].to_tensor().flatten().to_sparse()
+        "y": nodes[f"resid_{len(resids) - 1}"].to_tensor().flatten().to_sparse()
     }
 
     def N(upstream, downstream, midstream=[]):
@@ -87,7 +92,7 @@ def get_circuit(
             deltas[upstream],
             intermediate_stopgrads=midstream,
         )
-        return result
+        return result.detach()  # Detach immediately to save memory
 
     # now we work backward through the model to get the edges
     for layer in reversed(range(len(resids))):
@@ -95,14 +100,22 @@ def get_circuit(
         mlp = mlps[layer]
         attn = attns[layer]
 
+        # Process each edge computation separately with cleanup
         MR_effect = N(mlp, resid)
-        AR_effect = N(attn, resid, [mlp])
         edges[f"mlp_{layer}"][f"resid_{layer}"] = MR_effect
+        del MR_effect
+        t.cuda.empty_cache()
+
+        AR_effect = N(attn, resid, [mlp])
         edges[f"attn_{layer}"][f"resid_{layer}"] = AR_effect
+        del AR_effect
+        t.cuda.empty_cache()
 
         if not parallel_attn:
             AM_effect = N(attn, mlp)
             edges[f"attn_{layer}"][f"mlp_{layer}"] = AM_effect
+            del AM_effect
+            t.cuda.empty_cache()
 
         if layer > 0:
             prev_resid = resids[layer - 1]
@@ -122,6 +135,12 @@ def get_circuit(
                 edges["embed"][f"mlp_{layer}"] = RM_effect
                 edges["embed"][f"attn_{layer}"] = RA_effect
                 edges["embed"]["resid_0"] = RR_effect
+
+            del RM_effect, RA_effect, RR_effect
+            t.cuda.empty_cache()
+
+    del deltas, grads
+    t.cuda.empty_cache()
 
     # rearrange weight matrices
     for child in edges:
@@ -195,9 +214,9 @@ def get_circuit_cluster(
     d_model=512,
     dict_id=10,
     dict_size=32768,
-    max_length=64,
+    max_length=100,
     max_examples=100,
-    batch_size=2,
+    batch_size=1,
     node_threshold=0.1,
     edge_threshold=0.01,
     device="cuda:0",
@@ -207,6 +226,7 @@ def get_circuit_cluster(
     plot_dir="circuits/figures/",
     model=None,
     dictionaries=None,
+    create_plots=False,
 ):
     
     n_layers = {
@@ -261,7 +281,13 @@ def get_circuit_cluster(
             dtype=t.long,
             device=device
         )
-
+        clean_inputs = model.tokenizer(
+            clean_inputs, 
+            return_tensors="pt", 
+            padding=True,
+            padding_side="left",
+        ).input_ids
+        clean_inputs = clean_inputs[:, -max_length:] #truncate on the left
         patch_inputs = None
 
         def metric_fn(model):
@@ -283,7 +309,7 @@ def get_circuit_cluster(
             metric_fn,
             aggregation="sum",
             node_threshold=node_threshold,
-            edge_threshold=edge_threshold,
+            # edge_threshold=edge_threshold,
             parallel_attn=parallel_attn,
         )
 
@@ -315,26 +341,36 @@ def get_circuit_cluster(
 
     save_dict = {"examples": examples, "nodes": nodes, "edges": edges}
     save_basename = f"{dataset_name}_dict{dict_id}_node{node_threshold}_edge{edge_threshold}_n{num_examples}_aggsum"
-    with open(f"{circuit_dir}/{save_basename}.pt", "wb") as outfile:
+    
+    # Create the full path for saving the circuit file
+    save_path = os.path.join(circuit_dir, save_basename + ".pt")
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    
+    with open(save_path, "wb") as outfile:
         t.save(save_dict, outfile)
 
-    nodes = save_dict["nodes"]
-    edges = save_dict["edges"]
 
-    annotations = None
+    if create_plots:
+        nodes = save_dict["nodes"]
+        edges = save_dict["edges"]
+        annotations = None
 
-    plot_circuit(
-        nodes,
-        edges,
-        layers=n_layers,
-        node_threshold=node_threshold,
-        edge_threshold=edge_threshold,
-        pen_thickness=1,
-        annotations=annotations,
-        save_dir=os.path.join(plot_dir, save_basename),
-        gemma_mode=(model_name == "google/gemma-2-2b"),
-        parallel_attn=parallel_attn,
-    )
+        # Create the full path for saving the plot
+        plot_save_path = os.path.join(plot_dir, save_basename)
+        os.makedirs(os.path.dirname(plot_save_path), exist_ok=True)
+
+        plot_circuit(
+            nodes,
+            edges,
+            layers=n_layers,
+            node_threshold=node_threshold,
+            edge_threshold=edge_threshold,
+            pen_thickness=1,
+            annotations=annotations,
+            save_dir=plot_save_path,
+            gemma_mode=(model_name == "google/gemma-2-2b"),
+            parallel_attn=parallel_attn,
+        )
 
 
 if __name__ == "__main__":
@@ -507,7 +543,7 @@ if __name__ == "__main__":
     if os.path.exists(save_path := f"{args.circuit_dir}/{save_base}_{node_suffix}.pt"):
         print(f"Loading circuit from {save_path}")
         with open(save_path, "rb") as infile:
-            save_dict = t.load(infile)
+            save_dict = t.load(infile, weights_only=False)
         nodes = save_dict["nodes"]
         edges = save_dict["edges"]
         loaded_from_disk = True
@@ -627,6 +663,10 @@ if __name__ == "__main__":
             edges = None
 
         save_dict = {"examples": examples, "nodes": nodes, "edges": edges}
+        # Create the full path for saving the circuit file
+        save_path = os.path.join(args.circuit_dir, f"{save_base}_{node_suffix}.pt")
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        
         with open(save_path, "wb") as outfile:
             t.save(save_dict, outfile)
 
@@ -646,6 +686,8 @@ if __name__ == "__main__":
 
     if args.aggregation == "none":
         example = examples[0]["clean_prefix"]
+        plot_save_path = f"{args.plot_dir}/{save_base}_node{args.node_threshold}_edge{args.edge_threshold}"
+        os.makedirs(os.path.dirname(plot_save_path), exist_ok=True)
         plot_circuit_posaligned(
             nodes,
             edges,
@@ -655,11 +697,13 @@ if __name__ == "__main__":
             edge_threshold=args.edge_threshold,
             pen_thickness=args.pen_thickness,
             annotations=annotations,
-            save_dir=f"{args.plot_dir}/{save_base}_node{args.node_threshold}_edge{args.edge_threshold}",
+            save_dir=plot_save_path,
             gemma_mode=(args.model == "google/gemma-2-2b"),
             parallel_attn=parallel_attn,
         )
     else:
+        plot_save_path = f"{args.plot_dir}/{save_base}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}"
+        os.makedirs(os.path.dirname(plot_save_path), exist_ok=True)
         plot_circuit(
             nodes,
             edges,
@@ -668,7 +712,7 @@ if __name__ == "__main__":
             edge_threshold=args.edge_threshold,
             pen_thickness=args.pen_thickness,
             annotations=annotations,
-            save_dir=f"{args.plot_dir}/{save_base}_node{args.node_threshold}_edge{args.edge_threshold}_n{num_examples}_agg{args.aggregation}",
+            save_dir=plot_save_path,
             gemma_mode=(args.model == "google/gemma-2-2b"),
             parallel_attn=parallel_attn,
         )

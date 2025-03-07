@@ -113,7 +113,7 @@ def convert_all_runs(database_path, output_dir):
 def main():
     database_path = DEFAULT_DATABASE_PATH
     # download the clusters from the huggingface hub
-    # download_clusters_from_hf(database_path)
+    download_clusters_from_hf(database_path)
     output_dir = os.path.join(database_path, "clusters")
     # Create the output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
