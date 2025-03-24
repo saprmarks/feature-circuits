@@ -285,9 +285,11 @@ def jvp(
             size=(b, s, n_feats+1, b, s, n_feats+1)
         ).to(model.device)
 
+    vjv_indices = {}
     vjv_values = {}
 
     downstream_feature_idxs = downstream_features.to_tensor().nonzero()
+    downstream_feature_idxs = [tuple(idx.tolist()) for idx in downstream_feature_idxs]
     with model.trace(input):
         # forward pass modifications
         x = upstream_submod.get_activation()
@@ -310,10 +312,23 @@ def jvp(
             x_res.grad = t.zeros_like(x_res.grad)
 
             vjv = (upstream_act.grad @ right_vec).to_tensor()
-            to_backprops[tuple(downstream_feat_idx)].backward(retain_graph=True)
-            vjv_values[downstream_feat_idx] = vjv.save() # type: ignore
+            to_backprops[downstream_feat_idx].backward(retain_graph=True)
 
-    vjv_indices = t.stack(list(vjv_values.keys()), dim=0).T
-    vjv_values = t.stack([v.value for v in vjv_values.values()], dim=0)
+            vjv_indices[downstream_feat_idx] = vjv.nonzero().save() # type: ignore
+            vjv_values[downstream_feat_idx] = vjv[vjv != 0].save() # type: ignore
 
-    return t.sparse_coo_tensor(vjv_indices, vjv_values, size=(b, s, n_feats+1, b, s, n_feats+1))
+    indices = t.tensor(
+        [
+            [*downstream_feat_idx, *upstream_feat_idx]
+            for downstream_feat_idx in downstream_feature_idxs
+            for upstream_feat_idx in vjv_indices[downstream_feat_idx].value
+        ],
+        device=model.device
+    )
+    values = t.cat([vjv_values[downstream_feat_idx].value for downstream_feat_idx in downstream_feature_idxs])
+
+    return t.sparse_coo_tensor(
+        indices.T,
+        values,
+        size=(b, s, n_feats+1, b, s, n_feats+1)
+    ).to(model.device)
