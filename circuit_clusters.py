@@ -2,14 +2,12 @@
 """
 Script to run circuit discovery on converted cluster data.
 """
-
 import os
 import argparse
 import glob
-import torch as t
-from circuit import get_circuit_cluster
+from circuit import get_circuit_cluster, load_model_and_dictionaries
 
-def run_circuit_discovery(data_file, node_threshold, edge_threshold, output_dir, batch_size=2, device="cuda:0", max_sequence_length=100):
+def run_circuit_discovery(model_dict, data_file, node_threshold, edge_threshold, output_dir, batch_size=2, max_sequence_length=100):
     """Run circuit discovery on a single data file"""
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
@@ -18,25 +16,39 @@ def run_circuit_discovery(data_file, node_threshold, edge_threshold, output_dir,
     base_name = os.path.basename(data_file)
     
     # Run circuit discovery using the get_circuit_cluster function
-    print(f"Running circuit discovery on {data_file} with batch_size={batch_size}, device={device}...")
+    print(f"Running circuit discovery on {data_file} with batch_size={batch_size}, device={model_dict['device']}...")
     
-    get_circuit_cluster(
-        dataset=data_file,
-        model_name="EleutherAI/pythia-70m-deduped",
-        max_length=max_sequence_length,
-        max_examples=100,
-        batch_size=batch_size,
-        node_threshold=node_threshold,
-        edge_threshold=edge_threshold,
-        device=device,
-        dataset_name=base_name.replace(".json", ""),
-        circuit_dir=output_dir,
-        plot_dir=os.path.join(output_dir, "figures"),
-    )
-    
-    print(f"Finished circuit discovery on {data_file}")
+    try:
+        get_circuit_cluster(
+            dataset=data_file,
+            model_name=model_dict["model_name"],
+            model=model_dict["model"],
+            submodules=model_dict["submodules"],
+            dictionaries=model_dict["dictionaries"],
+            parallel_attn=model_dict["parallel_attn"],
+            n_layers=model_dict["n_layers"],
+            max_length=max_sequence_length,
+            max_examples=100,
+            batch_size=batch_size,
+            node_threshold=node_threshold,
+            edge_threshold=edge_threshold,
+            device=model_dict["device"],
+            dataset_name=base_name.replace(".json", ""),
+            circuit_dir=output_dir,
+            plot_dir=os.path.join(output_dir, "figures"),
+        )
+        print(f"Finished circuit discovery on {data_file}")
+    except RuntimeError as e:
+        if "CUDA out of memory" in str(e):
+            print(f"CUDA out of memory error for {data_file}. Skipping this cluster and continuing with the next one.")
+            # Create a log file to record the skipped cluster
+            with open(os.path.join(output_dir, "skipped_clusters.log"), "a") as f:
+                f.write(f"{data_file}: CUDA out of memory error\n")
+        else:
+            # Re-raise other runtime errors
+            raise
 
-def run_on_all_clusters_in_run(run_name, clusters_dir, node_threshold, edge_threshold, output_dir, batch_size=2, device="cuda:0", max_sequence_length=100):
+def run_on_all_clusters_in_run(model_dict, run_name, clusters_dir, node_threshold, edge_threshold, output_dir, batch_size=2, max_sequence_length=100):
     """Run circuit discovery on all clusters in a run"""
     # Find all cluster files for this run
     cluster_files = glob.glob(os.path.join(clusters_dir, f"{run_name}_cluster_*.json"))
@@ -51,9 +63,9 @@ def run_on_all_clusters_in_run(run_name, clusters_dir, node_threshold, edge_thre
     
     # Run circuit discovery on each cluster file
     for cluster_file in sorted(cluster_files):
-        run_circuit_discovery(cluster_file, node_threshold, edge_threshold, run_output_dir, batch_size, device, max_sequence_length)
+        run_circuit_discovery(model_dict, cluster_file, node_threshold, edge_threshold, run_output_dir, batch_size, max_sequence_length)
 
-def run_on_all_runs(clusters_dir, node_threshold, edge_threshold, output_dir, batch_size=2, device="cuda:0", max_sequence_length=100):
+def run_on_all_runs(model_dict, clusters_dir, node_threshold, edge_threshold, output_dir, batch_size=2, max_sequence_length=100):
     """Run circuit discovery on all clusters from all runs"""
     # Find all unique run names
     all_files = glob.glob(os.path.join(clusters_dir, "*_cluster_*.json"))
@@ -66,7 +78,7 @@ def run_on_all_runs(clusters_dir, node_threshold, edge_threshold, output_dir, ba
     
     # Run circuit discovery on each run
     for run_name in sorted(run_names):
-        run_on_all_clusters_in_run(run_name, clusters_dir, node_threshold, edge_threshold, output_dir, batch_size, device, max_sequence_length)
+        run_on_all_clusters_in_run(model_dict, run_name, clusters_dir, node_threshold, edge_threshold, output_dir, batch_size, max_sequence_length)
 
 def main():
     parser = argparse.ArgumentParser(description='Run circuit discovery on converted cluster data')
@@ -84,7 +96,7 @@ def main():
                         help='Edge threshold for circuit discovery')
     parser.add_argument('--batch-size', type=int, default=2,
                         help='Batch size for processing examples')
-    parser.add_argument('--device', type=str, default='cuda:0',
+    parser.add_argument('--device', type=str, default="cuda:7",
                         help='Device to run the model on (e.g., cuda:0, cuda:1, cpu)')
     parser.add_argument('--max-sequence-length', type=int, default=100,
                         help='Maximum sequence length for tokenized inputs')
@@ -93,21 +105,23 @@ def main():
     
     # Create the output directory if it doesn't exist
     os.makedirs(args.output_dir, exist_ok=True)
+
+    model_dict = load_model_and_dictionaries("EleutherAI/pythia-70m-deduped", args.device)
     
     if args.run and args.cluster is not None:
         # Run circuit discovery on a specific cluster
         cluster_file = os.path.join(args.clusters_dir, f"{args.run}_cluster_{args.cluster}.json")
         if os.path.exists(cluster_file):
             cluster_output_dir = os.path.join(args.output_dir, args.run)
-            run_circuit_discovery(cluster_file, args.node_threshold, args.edge_threshold, cluster_output_dir, args.batch_size, args.device, args.max_sequence_length)
+            run_circuit_discovery(model_dict, cluster_file, args.node_threshold, args.edge_threshold, cluster_output_dir, args.batch_size, args.max_sequence_length)
         else:
             print(f"Cluster file {cluster_file} not found")
     elif args.run:
         # Run circuit discovery on all clusters in a specific run
-        run_on_all_clusters_in_run(args.run, args.clusters_dir, args.node_threshold, args.edge_threshold, args.output_dir, args.batch_size, args.device, args.max_sequence_length)
+        run_on_all_clusters_in_run(model_dict, args.run, args.clusters_dir, args.node_threshold, args.edge_threshold, args.output_dir, args.batch_size, args.max_sequence_length)
     else:
         # Run circuit discovery on all clusters from all runs
-        run_on_all_runs(args.clusters_dir, args.node_threshold, args.edge_threshold, args.output_dir, args.batch_size, args.device, args.max_sequence_length)
+        run_on_all_runs(model_dict, args.clusters_dir, args.node_threshold, args.edge_threshold, args.output_dir, args.batch_size, args.max_sequence_length)
 
 if __name__ == "__main__":
     main() 

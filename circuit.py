@@ -208,24 +208,7 @@ def get_circuit(
     return nodes, edges
 
 
-def get_circuit_cluster(
-    dataset,
-    model_name="EleutherAI/pythia-70m-deduped",
-    dict_id=10,
-    max_length=100,
-    max_examples=100,
-    batch_size=1,
-    node_threshold=0.1,
-    edge_threshold=0.01,
-    device="cuda:0",
-    dataset_name="cluster_circuit",
-    circuit_dir="circuits/",
-    plot_dir="circuits/figures/",
-    model=None,
-    dictionaries=None,
-    create_plots=False,
-):
-    
+def load_model_and_dictionaries(model_name, device):
     n_layers = {
         "EleutherAI/pythia-70m-deduped": 6,
         "google/gemma-2-2b": 26,
@@ -247,14 +230,37 @@ def get_circuit_cluster(
         model = LanguageModel(model_name, device_map=device, dispatch=True, torch_dtype=dtype)
     elif model_name == "google/gemma-2-2b":
         model = LanguageModel(model_name, device_map=device, dispatch=True, attn_implementation="eager", torch_dtype=dtype)
-    
+
     submodules, dictionaries = load_saes_and_submodules(
         model,
         separate_by_type=True,
         include_embed=include_embed,
-        device=device,
+        device=t.device(device),
         dtype=dtype,
     )
+    return {"model_name": model_name, "model": model, "submodules": submodules, "dictionaries": dictionaries, "device": device, "parallel_attn": parallel_attn, "n_layers": n_layers}
+
+def get_circuit_cluster(
+    dataset,
+    model_name,
+    model, 
+    submodules,
+    dictionaries,
+    parallel_attn,
+    n_layers,
+    dict_id=10,
+    max_length=100,
+    max_examples=100,
+    batch_size=1,
+    node_threshold=0.1,
+    edge_threshold=0.01,
+    device="cuda:0",
+    dataset_name="cluster_circuit",
+    circuit_dir="circuits/",
+    plot_dir="circuits/figures/",
+    create_plots=False,
+):
+    
 
     examples = load_examples_nopair(dataset, max_examples, model)
     num_examples = min(len(examples), max_examples)
@@ -285,6 +291,7 @@ def get_circuit_cluster(
             padding_side="left",
         ).input_ids
         clean_inputs = clean_inputs[:, -max_length:] #truncate on the left
+        clean_inputs = clean_inputs.to(device)
         patch_inputs = None
 
         def metric_fn(model):
