@@ -5,7 +5,7 @@ This repository contains code, data, and links to autoencoders for replicating t
 ## Rerunning clusters from webapp
 1. run `convert_clusters.py`
 2. download SAEs with `pretrained_dictionary_loader.sh`
-3. Iteratively run circuit discovery via `/scripts/get_circuit_cluster.sh`
+3. Adapt cuda devices in this script, which iteratively run circuit discovery `/scripts/run_all_circuit_clusters.sh` and call it
 
 ## Demos and Links
 - We provide an interface for exploring and downloading clusters [here](https://feature-circuits.xyz).
