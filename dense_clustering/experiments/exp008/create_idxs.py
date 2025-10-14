@@ -63,21 +63,24 @@ induction_idxs = []
 i = 0
 for document_idx in tqdm(range(20_000)):
     document = dataset[document_idx]
-    document_trigrams = defaultdict(int)
+    document_bigrams = defaultdict(int)
     tokens = document['input_ids'][0]
     if len(tokens) > 1:
         i += 1
-        for j in range(2, len(tokens)):
-            trigram = tuple(tokens[j-2:j+1])
-            if trigram in document_trigrams:
+        for j in range(1, len(tokens)):
+            # trigram = tuple(tokens[j-2:j+1])
+            bigram = tuple(tokens[j-1:j+1])
+            if bigram in document_bigrams:
                 # induction_idxs[i] = 1
                 induction_idxs.append(i)
-            document_trigrams[trigram] += 1
+            document_bigrams[bigram] += 1
             i += 1
 
-non_induction_zeros = set(zero_idxs).difference(set(induction_idxs))
-non_induction_zeros = sorted(list(non_induction_zeros))
-print(f"found {len(non_induction_zeros)} non-induction zeros")
+# non_induction_zeros = set(zero_idxs).difference(set(induction_idxs))
+# non_induction_zeros = sorted(list(non_induction_zeros))
+# print(f"found {len(non_induction_zeros)} non-induction zeros")
+filtered_idxs = set(zero_idxs).difference(set(induction_idxs))
+
 
 # save idxs
 with open("zero_and_induction_idxs-pythia-70m-deduped.pkl", "wb") as f:
